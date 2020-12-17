@@ -2,8 +2,6 @@
 #include "EventDispatcher.h"
 #include "WindowEvents.h"
 
-std::vector<WindowListener*> EventDispatcher::m_WindowListeners;
-
 void EventDispatcher::Poll()
 {
 	SDL_Event e = {};
@@ -11,6 +9,10 @@ void EventDispatcher::Poll()
 	{
 		switch (e.type)
 		{
+		case SDL_QUIT:
+			PollQuitEvents();
+			break;
+
 		case SDL_WINDOWEVENT:
 			PollWindowEvents(e);
 			break;
@@ -21,6 +23,11 @@ void EventDispatcher::Poll()
 void EventDispatcher::Attach(WindowListener* listener)
 {
 	m_WindowListeners.push_back(listener);
+}
+
+void EventDispatcher::Attach(QuitListener* listener)
+{
+	m_QuitListener.push_back(listener);
 }
 
 void EventDispatcher::PollWindowEvents(SDL_Event& e)
@@ -36,6 +43,17 @@ void EventDispatcher::PollWindowEvents(SDL_Event& e)
 					listener->OnResize();
 				}
 			}
+		}
+	}
+}
+
+void EventDispatcher::PollQuitEvents()
+{
+	for (auto& listener : m_QuitListener)
+	{
+		if (listener != nullptr)
+		{
+			listener->OnQuit();
 		}
 	}
 }

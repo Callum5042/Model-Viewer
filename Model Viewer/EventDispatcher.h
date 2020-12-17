@@ -4,14 +4,29 @@
 
 class WindowListener;
 
+class QuitListener
+{
+public:
+	QuitListener() = default;
+	virtual ~QuitListener() = default;
+	virtual void OnQuit() = 0;
+};
+
 class EventDispatcher
 {
 public:
-	static void Poll();
+	EventDispatcher() = default;
+	virtual ~EventDispatcher() = default;
 
-	static void Attach(WindowListener* listener);
+	void Poll();
+
+	void Attach(WindowListener* listener);
+	void Attach(QuitListener* listener);
 
 private:
-	static std::vector<WindowListener*> m_WindowListeners;
-	static void PollWindowEvents(SDL_Event& e);
+	std::vector<WindowListener*> m_WindowListeners;
+	void PollWindowEvents(SDL_Event& e);
+
+	std::vector<QuitListener*> m_QuitListener;
+	void PollQuitEvents();
 };

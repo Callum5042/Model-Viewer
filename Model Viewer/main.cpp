@@ -1,24 +1,16 @@
 #include "Pch.h"
-#include <iostream>
+#include "Application.h"
 
-#include "EventDispatcher.h"
-#include "Window.h"
+#ifdef _WIN32
+#include <crtdbg.h>
+#endif
 
 int main(int argc, char** argv)
 {
-	EventDispatcher eventDispatcher;
+#ifdef _WIN32
+	_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
+#endif
 
-	Window window;
-	if (!window.Create("Test", 800, 600))
-	{
-		SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", "Window::Create failed!", nullptr);
-		return -1;
-	}
-
-	while (true)
-	{
-		eventDispatcher.Poll();
-	}
-
-	return 0;
+	std::unique_ptr<Application> application = std::make_unique<Application>();
+	return application->Execute();
 }

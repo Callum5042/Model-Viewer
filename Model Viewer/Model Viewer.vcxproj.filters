@@ -16,9 +16,6 @@
     <Filter Include="Header Files\Events">
       <UniqueIdentifier>{f8759f6f-4cdb-448b-ba84-54be1be0ee8a}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source Files\Events">
-      <UniqueIdentifier>{9f279350-1131-48fc-9256-d2f62cf20948}</UniqueIdentifier>
-    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -33,8 +30,8 @@
     <ClCompile Include="EventDispatcher.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="WindowEvents.cpp">
-      <Filter>Source Files\Events</Filter>
+    <ClCompile Include="Application.cpp">
+      <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -49,6 +46,9 @@
     </ClInclude>
     <ClInclude Include="WindowEvents.h">
       <Filter>Header Files\Events</Filter>
+    </ClInclude>
+    <ClInclude Include="Application.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
