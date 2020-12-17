@@ -66,7 +66,12 @@ void Renderer::Clear()
 
 void Renderer::Present()
 {
-	DX::ThrowIfFailed(m_SwapChain->Present(0, 0));
+	ComPtr<IDXGISwapChain1> swapChain1 = nullptr;
+	m_SwapChain->QueryInterface(__uuidof(IDXGISwapChain1), reinterpret_cast<void**>(swapChain1.GetAddressOf()));
+
+	//DX::ThrowIfFailed(m_SwapChain->Present(0, 0));
+	DXGI_PRESENT_PARAMETERS  presentParameters = { 0 };
+	swapChain1->Present1(0, 0, &presentParameters);
 }
 
 bool Renderer::CreateDevice()
@@ -114,7 +119,8 @@ bool Renderer::CreateSwapChain(HWND hwnd, int width, int height)
 		sd.SampleDesc.Count = 1;
 		sd.SampleDesc.Quality = 0;
 		sd.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
-		sd.BufferCount = 1;
+		sd.BufferCount = 2;
+		sd.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
 
 		ComPtr<IDXGISwapChain1> swapChain1 = nullptr;
 		DX::ThrowIfFailed(dxgiFactory2->CreateSwapChainForHwnd(m_Device.Get(), hwnd, &sd, nullptr, nullptr, &swapChain1));
@@ -124,7 +130,7 @@ bool Renderer::CreateSwapChain(HWND hwnd, int width, int height)
 	{
 		// DirectX 11
 		DXGI_SWAP_CHAIN_DESC sd = {};
-		sd.BufferCount = 1;
+		sd.BufferCount = 2;
 		sd.BufferDesc.Width = width;
 		sd.BufferDesc.Height = height;
 		sd.BufferDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
@@ -135,6 +141,7 @@ bool Renderer::CreateSwapChain(HWND hwnd, int width, int height)
 		sd.SampleDesc.Count = 1;
 		sd.SampleDesc.Quality = 0;
 		sd.Windowed = TRUE;
+		sd.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
 
 		DX::ThrowIfFailed(dxgiFactory->CreateSwapChain(m_Device.Get(), &sd, &m_SwapChain));
 	}
@@ -150,8 +157,7 @@ bool Renderer::CreateRenderTargetAndDepthStencilView(int width, int height)
 	DX::ThrowIfFailed(m_Device->CreateRenderTargetView(backBuffer.Get(), nullptr, m_RenderTargetView.GetAddressOf()));
 
 	// Depth stencil view
-	D3D11_TEXTURE2D_DESC descDepth;
-	ZeroMemory(&descDepth, sizeof(descDepth));
+	D3D11_TEXTURE2D_DESC descDepth = {};
 	descDepth.Width = width;
 	descDepth.Height = height;
 	descDepth.MipLevels = 1;
