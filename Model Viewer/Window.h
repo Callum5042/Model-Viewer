@@ -1,9 +1,8 @@
 #pragma once
 
 #include "Pch.h"
-#include "WindowEvents.h"
 
-class Window : public WindowListener
+class Window
 {
 public:
 	Window() = default;
@@ -12,9 +11,11 @@ public:
 	bool Create(std::string&& title, int width, int height);
 	void Destroy();
 
+	constexpr SDL_Window* GetSdlWindow() { return m_Window; }
+
+	int GetWidth() const;
+	int GetHeight() const;
+
 private:
 	SDL_Window* m_Window = nullptr;
-
-	// Inherited via WindowListener
-	virtual void OnResize() override;
 };

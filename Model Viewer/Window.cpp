@@ -22,7 +22,16 @@ void Window::Destroy()
     SDL_DestroyWindow(m_Window);
 }
 
-void Window::OnResize()
+int Window::GetWidth() const
 {
-    std::cout << "Resize\n";
+    int width = 0;
+    SDL_GetWindowSize(m_Window, &width, nullptr);
+    return width;
+}
+
+int Window::GetHeight() const
+{
+    int height = 0;
+    SDL_GetWindowSize(m_Window, nullptr, &height);
+    return height;
 }
