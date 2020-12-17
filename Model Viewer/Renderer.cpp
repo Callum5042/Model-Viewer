@@ -53,13 +53,15 @@ void Renderer::Resize(int width, int height)
 	m_DepthStencilView.ReleaseAndGetAddressOf();
 	m_RenderTargetView.ReleaseAndGetAddressOf();
 
-	DX::ThrowIfFailed(m_SwapChain->ResizeBuffers(1, width, height, DXGI_FORMAT_R8G8B8A8_UNORM, 0));
+	DX::ThrowIfFailed(m_SwapChain->ResizeBuffers(2, width, height, DXGI_FORMAT_R8G8B8A8_UNORM, 0));
 	CreateRenderTargetAndDepthStencilView(width, height);
 	SetViewport(width, height);
+
 }
 
 void Renderer::Clear()
 {
+	m_DeviceContext->OMSetRenderTargets(1, m_RenderTargetView.GetAddressOf(), NULL);
 	m_DeviceContext->ClearRenderTargetView(m_RenderTargetView.Get(), reinterpret_cast<const float*>(&DirectX::Colors::SteelBlue));
 	m_DeviceContext->ClearDepthStencilView(m_DepthStencilView.Get(), D3D11_CLEAR_DEPTH, 1.0f, 0);
 }
@@ -69,9 +71,8 @@ void Renderer::Present()
 	ComPtr<IDXGISwapChain1> swapChain1 = nullptr;
 	m_SwapChain->QueryInterface(__uuidof(IDXGISwapChain1), reinterpret_cast<void**>(swapChain1.GetAddressOf()));
 
-	//DX::ThrowIfFailed(m_SwapChain->Present(0, 0));
 	DXGI_PRESENT_PARAMETERS  presentParameters = { 0 };
-	swapChain1->Present1(0, 0, &presentParameters);
+	DX::ThrowIfFailed(swapChain1->Present1(0, 0, &presentParameters));
 }
 
 bool Renderer::CreateDevice()

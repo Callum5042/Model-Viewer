@@ -17,6 +17,9 @@ public:
 	void Clear();
 	void Present();
 
+	constexpr ComPtr<ID3D11Device>& GetDevice() { return m_Device; }
+	constexpr ComPtr<ID3D11DeviceContext>& GetDeviceContext() { return m_DeviceContext; }
+
 private:
 	ComPtr<ID3D11Device> m_Device = nullptr;
 	ComPtr<ID3D11DeviceContext> m_DeviceContext = nullptr;

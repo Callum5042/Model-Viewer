@@ -1,12 +1,15 @@
 #include "Pch.h"
 #include "EventDispatcher.h"
 #include "WindowEvents.h"
+#include "imgui_impl_sdl.h"
 
 void EventDispatcher::Poll()
 {
 	SDL_Event e = {};
 	while (SDL_PollEvent(&e))
 	{
+		ImGui_ImplSDL2_ProcessEvent(&e);
+
 		switch (e.type)
 		{
 		case SDL_QUIT:
@@ -40,7 +43,7 @@ void EventDispatcher::PollWindowEvents(SDL_Event& e)
 			{
 				if (listener != nullptr)
 				{
-					listener->OnResize();
+					listener->OnResize(e.window.data1, e.window.data2);
 				}
 			}
 		}

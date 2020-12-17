@@ -27,5 +27,5 @@ private:
 	virtual void OnQuit() override;
 
 	// Inherited via WindowListener
-	virtual void OnResize() override;
+	virtual void OnResize(int width, int height) override;
 };

@@ -1,6 +1,10 @@
 #include "Pch.h"
 #include "Application.h"
 
+#include "imgui.h"
+#include "imgui_impl_sdl.h"
+#include "imgui_impl_dx11.h"
+
 Application::Application()
 {
     m_Window = std::make_unique<Window>();
@@ -19,14 +23,40 @@ int Application::Execute()
         return -1;
     }
 
+    // ImGui
+    IMGUI_CHECKVERSION();
+    ImGui::CreateContext();
+    ImGuiIO& io = ImGui::GetIO(); (void)io;
+    ImGui::GetStyle().WindowRounding = 0.0f;
+
+    ImGui::StyleColorsDark();
+
+    if (!ImGui_ImplSDL2_InitForD3D(m_Window->GetSdlWindow()))
+        return -1;
+
+    if (!ImGui_ImplDX11_Init(m_Renderer->GetDevice().Get(), m_Renderer->GetDeviceContext().Get()))
+        return -1;
+
     while (m_Running)
     {
         m_EventDispatcher->Poll();
 
+        ImGui_ImplDX11_NewFrame();
+        ImGui_ImplSDL2_NewFrame(m_Window->GetSdlWindow());
+        ImGui::NewFrame();
+
+        bool show_demo_window = true;
+        ImGui::ShowDemoWindow(&show_demo_window);
+
+        ImGui::Render();
+
         m_Renderer->Clear();
+        ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
+
         m_Renderer->Present();
     }
 
+    ImGui::DestroyContext();
     return 0;
 }
 
@@ -40,7 +70,7 @@ bool Application::Init()
     }
 
     // Create window
-    if (!m_Window->Create("Test", 800, 600))
+    if (!m_Window->Create("Model Viewer", 800, 600))
     {
     	SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", "Window::Create failed!", nullptr);
     	return false;
@@ -63,6 +93,7 @@ void Application::OnQuit()
     m_Running = false;
 }
 
-void Application::OnResize()
+void Application::OnResize(int width, int height)
 {
+    m_Renderer->Resize(width, height);
 }
