@@ -75,6 +75,61 @@ void Renderer::Present()
 	DX::ThrowIfFailed(swapChain1->Present1(0, 0, &presentParameters));
 }
 
+std::string Renderer::GetDescription()
+{
+	std::vector<ComPtr<IDXGIAdapter>> adapters;
+	ComPtr<IDXGIAdapter> adapter = nullptr;
+
+	int i = 0;
+	while (m_DxgiFactory2->EnumAdapters(i++, adapter.GetAddressOf()) != DXGI_ERROR_NOT_FOUND)
+	{
+		adapters.push_back(adapter);
+	}
+
+
+	std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
+
+	std::string result;
+	for (size_t i = 0; i < adapters.size(); i++)
+	{
+		DXGI_ADAPTER_DESC adapterDescription;
+		adapters[i]->GetDesc(&adapterDescription);
+
+		// Check for Microsoft Basic Render Driver
+		if (adapterDescription.VendorId != 0x1414 && adapterDescription.DeviceId != 0x8c)
+		{
+			std::string converted_str = converter.to_bytes(adapterDescription.Description);
+			result += converted_str + '\n';
+			result += "RAM: " + std::to_string(adapterDescription.SharedSystemMemory / 1024 / 1024) + "MB" + '\n';
+			result += "VRAM: " + std::to_string(adapterDescription.DedicatedVideoMemory / 1024 / 1024) + "MB" + '\n';
+
+			/*int outputcount = 0;
+			ComPtr<IDXGIOutput> output = nullptr;
+			while (adapters[i]->EnumOutputs(outputcount++, output.GetAddressOf()) != DXGI_ERROR_NOT_FOUND)
+			{
+				DXGI_OUTPUT_DESC desc;
+				output->GetDesc(&desc);
+				result += converter.to_bytes(desc.DeviceName) + '\n';
+
+				UINT numModes = 0;
+				DX::ThrowIfFailed(output->GetDisplayModeList(DXGI_FORMAT_R8G8B8A8_UNORM, DXGI_ENUM_MODES_INTERLACED, &numModes, NULL));
+
+				DXGI_MODE_DESC* modes = new DXGI_MODE_DESC[numModes];
+				DX::ThrowIfFailed(output->GetDisplayModeList(DXGI_FORMAT_R8G8B8A8_UNORM, DXGI_ENUM_MODES_INTERLACED, &numModes, modes));
+
+				for (size_t j = 0; j < numModes; j++)
+				{
+					result += "Width: " + std::to_string(modes[j].Width) + "\t- Height: " + std::to_string(modes[j].Height) + 
+						"\t- Refresh Rate: " + std::to_string(modes[j].RefreshRate.Numerator / modes[j].RefreshRate.Denominator) + 
+						"\t - Format: " + std::to_string(modes[j].Format) + '\n';
+				}
+			}*/
+		}
+	} 
+
+	return result;
+}
+
 bool Renderer::CreateDevice()
 {
 	D3D_FEATURE_LEVEL featureLevels[] =
@@ -104,13 +159,10 @@ bool Renderer::CreateSwapChain(HWND hwnd, int width, int height)
 	ComPtr<IDXGIAdapter> adapter = nullptr;
 	DX::ThrowIfFailed(dxgiDevice->GetAdapter(adapter.GetAddressOf()));
 
-	ComPtr<IDXGIFactory1> dxgiFactory = nullptr;
-	DX::ThrowIfFailed(adapter->GetParent(__uuidof(IDXGIFactory1), reinterpret_cast<void**>(dxgiFactory.GetAddressOf())));
+	DX::ThrowIfFailed(adapter->GetParent(__uuidof(IDXGIFactory1), reinterpret_cast<void**>(m_DxgiFactory1.GetAddressOf())));
+	DX::ThrowIfFailed(m_DxgiFactory1->QueryInterface(__uuidof(IDXGIFactory2), reinterpret_cast<void**>(m_DxgiFactory2.GetAddressOf())));
 
-	ComPtr<IDXGIFactory2> dxgiFactory2 = nullptr;
-	DX::ThrowIfFailed(dxgiFactory->QueryInterface(__uuidof(IDXGIFactory2), reinterpret_cast<void**>(dxgiFactory2.GetAddressOf())));
-
-	if (dxgiFactory2 != nullptr)
+	if (m_DxgiFactory2 != nullptr)
 	{
 		// DirectX 11.1
 		DXGI_SWAP_CHAIN_DESC1 sd = {};
@@ -124,7 +176,7 @@ bool Renderer::CreateSwapChain(HWND hwnd, int width, int height)
 		sd.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
 
 		ComPtr<IDXGISwapChain1> swapChain1 = nullptr;
-		DX::ThrowIfFailed(dxgiFactory2->CreateSwapChainForHwnd(m_Device.Get(), hwnd, &sd, nullptr, nullptr, &swapChain1));
+		DX::ThrowIfFailed(m_DxgiFactory2->CreateSwapChainForHwnd(m_Device.Get(), hwnd, &sd, nullptr, nullptr, &swapChain1));
 		DX::ThrowIfFailed(swapChain1->QueryInterface(__uuidof(IDXGISwapChain), reinterpret_cast<void**>(m_SwapChain.GetAddressOf())));
 	}
 	else
@@ -144,7 +196,7 @@ bool Renderer::CreateSwapChain(HWND hwnd, int width, int height)
 		sd.Windowed = TRUE;
 		sd.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
 
-		DX::ThrowIfFailed(dxgiFactory->CreateSwapChain(m_Device.Get(), &sd, &m_SwapChain));
+		DX::ThrowIfFailed(m_DxgiFactory1->CreateSwapChain(m_Device.Get(), &sd, &m_SwapChain));
 	}
 
 	return true;

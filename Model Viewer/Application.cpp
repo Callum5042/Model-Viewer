@@ -41,12 +41,28 @@ int Application::Execute()
     {
         m_EventDispatcher->Poll();
 
+        // Gui
         ImGui_ImplDX11_NewFrame();
         ImGui_ImplSDL2_NewFrame(m_Window->GetSdlWindow());
         ImGui::NewFrame();
 
         bool show_demo_window = true;
         ImGui::ShowDemoWindow(&show_demo_window);
+
+        const float distance = 15.0f;
+        bool open = true;
+        ImGui::SetNextWindowBgAlpha(0.35f); // Transparent background
+        ImGui::SetNextWindowPos(ImVec2(0 + distance, 0 + distance), ImGuiCond_Always);
+        if (ImGui::Begin("FPS Display", &open, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoFocusOnAppearing | ImGuiWindowFlags_NoNav))
+        {
+            ImGui::Text(m_Renderer->GetDescription().c_str());
+
+            /*const char* items[] = { "DirectX 11", "OpenGL" };
+            static int item_current = 0;
+            ImGui::Combo("##renderingApi", &item_current, items, IM_ARRAYSIZE(items));*/
+        }
+
+        ImGui::End();
 
         ImGui::Render();
 

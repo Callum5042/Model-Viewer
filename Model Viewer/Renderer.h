@@ -20,10 +20,14 @@ public:
 	constexpr ComPtr<ID3D11Device>& GetDevice() { return m_Device; }
 	constexpr ComPtr<ID3D11DeviceContext>& GetDeviceContext() { return m_DeviceContext; }
 
+	std::string GetDescription();
+
 private:
 	ComPtr<ID3D11Device> m_Device = nullptr;
 	ComPtr<ID3D11DeviceContext> m_DeviceContext = nullptr;
 	ComPtr<IDXGISwapChain> m_SwapChain = nullptr;
+	ComPtr<IDXGIFactory1> m_DxgiFactory1 = nullptr;
+	ComPtr<IDXGIFactory2> m_DxgiFactory2 = nullptr;
 
 	ComPtr<ID3D11RenderTargetView> m_RenderTargetView = nullptr;
 	ComPtr<ID3D11DepthStencilView> m_DepthStencilView = nullptr;
