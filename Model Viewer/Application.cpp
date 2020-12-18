@@ -14,6 +14,11 @@ Application::Application()
 
 Application::~Application()
 {
+    ImGui_ImplDX11_Shutdown();
+    ImGui_ImplSDL2_Shutdown();
+    ImGui::DestroyContext();
+
+    SDL_Quit();
 }
 
 int Application::Execute()
@@ -72,7 +77,6 @@ int Application::Execute()
         m_Renderer->Present();
     }
 
-    ImGui::DestroyContext();
     return 0;
 }
 

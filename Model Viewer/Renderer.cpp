@@ -27,6 +27,9 @@ namespace DX
 
 Renderer::~Renderer()
 {
+	ComPtr<ID3D11Debug> debug = nullptr;
+	m_Device.As(&debug);
+	debug->ReportLiveDeviceObjects(D3D11_RLDO_DETAIL);
 }
 
 bool Renderer::Create(Window* window)
@@ -56,7 +59,6 @@ void Renderer::Resize(int width, int height)
 	DX::ThrowIfFailed(m_SwapChain->ResizeBuffers(2, width, height, DXGI_FORMAT_R8G8B8A8_UNORM, 0));
 	CreateRenderTargetAndDepthStencilView(width, height);
 	SetViewport(width, height);
-
 }
 
 void Renderer::Clear()
@@ -69,9 +71,9 @@ void Renderer::Clear()
 void Renderer::Present()
 {
 	ComPtr<IDXGISwapChain1> swapChain1 = nullptr;
-	m_SwapChain->QueryInterface(__uuidof(IDXGISwapChain1), reinterpret_cast<void**>(swapChain1.GetAddressOf()));
+	m_SwapChain.As(&swapChain1);
 
-	DXGI_PRESENT_PARAMETERS  presentParameters = { 0 };
+	DXGI_PRESENT_PARAMETERS presentParameters = {};
 	DX::ThrowIfFailed(swapChain1->Present1(0, 0, &presentParameters));
 }
 
@@ -156,13 +158,13 @@ bool Renderer::CreateDevice()
 bool Renderer::CreateSwapChain(HWND hwnd, int width, int height)
 {
 	ComPtr<IDXGIDevice> dxgiDevice = nullptr;
-	DX::ThrowIfFailed(m_Device->QueryInterface(__uuidof(IDXGIDevice), reinterpret_cast<void**>(dxgiDevice.GetAddressOf())));
+	DX::ThrowIfFailed(m_Device.As(&dxgiDevice));
 
 	ComPtr<IDXGIAdapter> adapter = nullptr;
 	DX::ThrowIfFailed(dxgiDevice->GetAdapter(adapter.GetAddressOf()));
 
 	DX::ThrowIfFailed(adapter->GetParent(__uuidof(IDXGIFactory1), reinterpret_cast<void**>(m_DxgiFactory1.GetAddressOf())));
-	DX::ThrowIfFailed(m_DxgiFactory1->QueryInterface(__uuidof(IDXGIFactory2), reinterpret_cast<void**>(m_DxgiFactory2.GetAddressOf())));
+	DX::ThrowIfFailed(m_DxgiFactory1.As(&m_DxgiFactory2));
 
 	if (m_DxgiFactory2 != nullptr)
 	{
@@ -179,7 +181,7 @@ bool Renderer::CreateSwapChain(HWND hwnd, int width, int height)
 
 		ComPtr<IDXGISwapChain1> swapChain1 = nullptr;
 		DX::ThrowIfFailed(m_DxgiFactory2->CreateSwapChainForHwnd(m_Device.Get(), hwnd, &sd, nullptr, nullptr, &swapChain1));
-		DX::ThrowIfFailed(swapChain1->QueryInterface(__uuidof(IDXGISwapChain), reinterpret_cast<void**>(m_SwapChain.GetAddressOf())));
+		DX::ThrowIfFailed(swapChain1.As(&m_SwapChain));
 	}
 	else
 	{
