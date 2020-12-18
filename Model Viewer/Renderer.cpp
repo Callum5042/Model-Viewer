@@ -81,11 +81,10 @@ std::string Renderer::GetDescription()
 	ComPtr<IDXGIAdapter> adapter = nullptr;
 
 	int i = 0;
-	while (m_DxgiFactory2->EnumAdapters(i++, adapter.GetAddressOf()) != DXGI_ERROR_NOT_FOUND)
+	while (m_DxgiFactory2->EnumAdapters(i++, &adapter) != DXGI_ERROR_NOT_FOUND)
 	{
 		adapters.push_back(adapter);
 	}
-
 
 	std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
 
@@ -105,7 +104,7 @@ std::string Renderer::GetDescription()
 
 			/*int outputcount = 0;
 			ComPtr<IDXGIOutput> output = nullptr;
-			while (adapters[i]->EnumOutputs(outputcount++, output.GetAddressOf()) != DXGI_ERROR_NOT_FOUND)
+			while (adapters[i]->EnumOutputs(outputcount++, &output) != DXGI_ERROR_NOT_FOUND)
 			{
 				DXGI_OUTPUT_DESC desc;
 				output->GetDesc(&desc);
@@ -119,10 +118,13 @@ std::string Renderer::GetDescription()
 
 				for (size_t j = 0; j < numModes; j++)
 				{
-					result += "Width: " + std::to_string(modes[j].Width) + "\t- Height: " + std::to_string(modes[j].Height) + 
+					result += "Width: " + std::to_string(modes[j].Width) + 
+						"\t- Height: " + std::to_string(modes[j].Height) + 
 						"\t- Refresh Rate: " + std::to_string(modes[j].RefreshRate.Numerator / modes[j].RefreshRate.Denominator) + 
 						"\t - Format: " + std::to_string(modes[j].Format) + '\n';
 				}
+
+				delete[] modes;
 			}*/
 		}
 	} 
