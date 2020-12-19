@@ -42,8 +42,12 @@ int Application::Execute()
     if (!ImGui_ImplDX11_Init(m_Renderer->GetDevice().Get(), m_Renderer->GetDeviceContext().Get()))
         return -1;
 
+    m_Timer.Start();
     while (m_Running)
     {
+        m_Timer.Tick();
+        CalculateFramesPerSecond();
+
         m_EventDispatcher->Poll();
 
         // Gui
@@ -60,6 +64,8 @@ int Application::Execute()
         ImGui::SetNextWindowPos(ImVec2(0 + distance, 0 + distance), ImGuiCond_Always);
         if (ImGui::Begin("FPS Display", &open, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoFocusOnAppearing | ImGuiWindowFlags_NoNav))
         {
+            std::string fps = "FPS: " + std::to_string(m_FramesPerSecond);
+            ImGui::Text(fps.c_str());
             ImGui::Text(m_Renderer->GetDescription().c_str());
 
             /*const char* items[] = { "DirectX 11", "OpenGL" };
@@ -78,6 +84,21 @@ int Application::Execute()
     }
 
     return 0;
+}
+
+void Application::CalculateFramesPerSecond()
+{
+    static double time = 0;
+    static int frameCount = 0;
+
+    frameCount++;
+    time += m_Timer.DeltaTime();
+    if (time > 1.0f)
+    {
+        m_FramesPerSecond = frameCount;
+        time = 0.0f;
+        frameCount = 0;
+    }
 }
 
 bool Application::Init()

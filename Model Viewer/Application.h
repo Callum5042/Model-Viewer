@@ -3,6 +3,7 @@
 #include "EventDispatcher.h"
 #include "Window.h"
 #include "Renderer.h"
+#include "Timer.h"
 
 class Application : public QuitListener, public WindowListener
 {
@@ -14,6 +15,9 @@ public:
 
 private:
 	bool m_Running = true;
+	Timer m_Timer;
+	int m_FramesPerSecond = 0;
+	void CalculateFramesPerSecond();
 
 	bool Init();
 

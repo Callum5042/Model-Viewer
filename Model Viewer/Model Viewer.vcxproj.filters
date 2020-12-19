@@ -57,6 +57,9 @@
     <ClCompile Include="..\external\imgui\imgui_widgets.cpp">
       <Filter>External\ImGui</Filter>
     </ClCompile>
+    <ClCompile Include="Timer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Window.h">
@@ -97,6 +100,9 @@
     </ClInclude>
     <ClInclude Include="..\external\imgui\imstb_truetype.h">
       <Filter>External\ImGui</Filter>
+    </ClInclude>
+    <ClInclude Include="Timer.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
