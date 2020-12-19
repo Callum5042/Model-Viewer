@@ -36,14 +36,14 @@ Renderer::~Renderer()
 
 bool Renderer::Create(Window* window)
 {
-	HWND hwnd = DX::GetHwnd(window);
+	
 	int width = window->GetWidth();
 	int height = window->GetHeight();
 
 	if (!CreateDevice())
 		return false;
 
-	if (!CreateSwapChain(hwnd, width, height))
+	if (!CreateSwapChain(window, width, height))
 		return false;
 
 	if (!CreateRenderTargetAndDepthStencilView(width, height))
@@ -157,8 +157,10 @@ bool Renderer::CreateDevice()
 	return true;
 }
 
-bool Renderer::CreateSwapChain(HWND hwnd, int width, int height)
+bool Renderer::CreateSwapChain(Window* window, int width, int height)
 {
+	HWND hwnd = DX::GetHwnd(window);
+
 	ComPtr<IDXGIDevice> dxgiDevice = nullptr;
 	DX::ThrowIfFailed(m_Device.As(&dxgiDevice));
 
@@ -181,8 +183,11 @@ bool Renderer::CreateSwapChain(HWND hwnd, int width, int height)
 		sd.BufferCount = 2;
 		sd.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
 
+		DXGI_SWAP_CHAIN_FULLSCREEN_DESC fsd = {};
+		fsd.Windowed = window->GetWindowMode() != WindowMode::FULLSCREEN;
+
 		ComPtr<IDXGISwapChain1> swapChain1 = nullptr;
-		DX::ThrowIfFailed(m_DxgiFactory2->CreateSwapChainForHwnd(m_Device.Get(), hwnd, &sd, nullptr, nullptr, &swapChain1));
+		DX::ThrowIfFailed(m_DxgiFactory2->CreateSwapChainForHwnd(m_Device.Get(), hwnd, &sd, &fsd, nullptr, &swapChain1));
 		DX::ThrowIfFailed(swapChain1.As(&m_SwapChain));
 	}
 	else
@@ -199,7 +204,7 @@ bool Renderer::CreateSwapChain(HWND hwnd, int width, int height)
 		sd.OutputWindow = hwnd;
 		sd.SampleDesc.Count = 1;
 		sd.SampleDesc.Quality = 0;
-		sd.Windowed = TRUE;
+		sd.Windowed = window->GetWindowMode() != WindowMode::FULLSCREEN;
 		sd.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
 
 		DX::ThrowIfFailed(m_DxgiFactory1->CreateSwapChain(m_Device.Get(), &sd, &m_SwapChain));

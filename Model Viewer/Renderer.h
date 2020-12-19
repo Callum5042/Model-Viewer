@@ -34,7 +34,7 @@ private:
 	D3D11_VIEWPORT m_Viewport = {};
 
 	bool CreateDevice();
-	bool CreateSwapChain(HWND hwnd, int width, int height);
+	bool CreateSwapChain(Window* window, int width, int height);
 	bool CreateRenderTargetAndDepthStencilView(int width, int height);
 	void SetViewport(int width, int height);
 };

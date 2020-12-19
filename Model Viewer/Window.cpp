@@ -6,9 +6,15 @@ Window::~Window()
     Destroy();
 }
 
-bool Window::Create(std::string&& title, int width, int height)
+bool Window::Create(std::string&& title, int width, int height, WindowMode windowMode)
 {
-    m_Window = SDL_CreateWindow(title.c_str(), SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, width, height, SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE | SDL_WINDOW_ALLOW_HIGHDPI);
+    Uint32 windowFlags = SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE | SDL_WINDOW_ALLOW_HIGHDPI;
+    if (windowMode == WindowMode::BORDERLESS_FULLSCREEN)
+    {
+        windowFlags |= SDL_WINDOW_MAXIMIZED | SDL_WINDOW_BORDERLESS;
+    }
+
+    m_Window = SDL_CreateWindow(title.c_str(), SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, width, height, windowFlags);
     if (m_Window == nullptr)
     {
         return false;

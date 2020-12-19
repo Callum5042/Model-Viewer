@@ -111,7 +111,7 @@ bool Application::Init()
     }
 
     // Create window
-    if (!m_Window->Create("Model Viewer", 800, 600))
+    if (!m_Window->Create("Model Viewer", 800, 600, WindowMode::WINDOW))
     {
     	SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", "Window::Create failed!", nullptr);
     	return false;
