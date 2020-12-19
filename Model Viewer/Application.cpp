@@ -1,10 +1,6 @@
 #include "Pch.h"
 #include "Application.h"
-
-#include "imgui.h"
-#include "imgui_impl_sdl.h"
-#include "imgui_impl_dx11.h"
-#include "imgui_impl_opengl3.h"
+#include "Gui.h"
 
 Application::Application()
 {
@@ -15,19 +11,7 @@ Application::Application()
 
 Application::~Application()
 {
-    ImGui_ImplSDL2_Shutdown();
-
-    if (m_Renderer->GetRenderAPI() == RenderAPI::DIRECTX)
-    {
-        ImGui_ImplDX11_Shutdown();
-    }
-    else if (m_Renderer->GetRenderAPI() == RenderAPI::OPENGL)
-    {
-        ImGui_ImplOpenGL3_Shutdown();
-    }
-
-    ImGui::DestroyContext();
-
+    Gui::Destroy(m_Renderer.get());
     SDL_Quit();
 }
 
@@ -37,7 +21,7 @@ int Application::Execute()
     if (SDL_Init(SDL_INIT_EVENTS) != 0)
     {
         SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", "SDL_Init failed!", nullptr);
-        return false;
+        return -1;
     }
 
     if (!Init())
@@ -57,111 +41,9 @@ int Application::Execute()
         CalculateFramesPerSecond();
 
         m_EventDispatcher->Poll();
+        Render();
 
-        // Gui
-        if (m_Renderer->GetRenderAPI() == RenderAPI::DIRECTX)
-        {
-            ImGui_ImplDX11_NewFrame();
-        }
-        else if (m_Renderer->GetRenderAPI() == RenderAPI::OPENGL)
-        {
-            ImGui_ImplOpenGL3_NewFrame();
-        }
-
-        ImGui_ImplSDL2_NewFrame(m_Window->GetSdlWindow());
-        ImGui::NewFrame();
-
-        //bool show_demo_window = true;
-        //ImGui::ShowDemoWindow(&show_demo_window);
-
-        // Info
-        const float distance = 15.0f;
-        bool open = true;
-        ImGui::SetNextWindowBgAlpha(0.35f); // Transparent background
-        ImGui::SetNextWindowPos(ImVec2(0 + distance, 0 + distance), ImGuiCond_Always);
-        if (ImGui::Begin("FPS Display", &open, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoFocusOnAppearing | ImGuiWindowFlags_NoNav))
-        {
-            std::string fps = "FPS: " + std::to_string(m_FramesPerSecond);
-            ImGui::Text(fps.c_str());
-            ImGui::Text(m_Renderer->GetDescription().c_str());
-
-            int ram = SDL_GetSystemRAM();
-            std::string ramStr = "RAM: " + std::to_string(ram) + "MB";
-            ImGui::Text(ramStr.c_str());
-        }
-
-        ImGui::End();
-
-        // Button
-        static bool rendererOpen = true;
-        ImGui::Begin("Renderer", &rendererOpen);
-
-        if (m_Renderer->GetRenderAPI() == RenderAPI::DIRECTX)
-        {
-            ImGui::Text("DirectX");
-        }
-        else if (m_Renderer->GetRenderAPI() == RenderAPI::OPENGL)
-        {
-            ImGui::Text("OpenGL");
-        }
-
-        if (ImGui::Button("OpenGL"))
-        {
-            switchApi = RenderAPI::OPENGL;
-        }
-        if (ImGui::Button("DirectX"))
-        {
-            switchApi = RenderAPI::DIRECTX;
-        }
-
-        ImGui::End();
-
-        ImGui::Render();
-
-        m_Renderer->Clear();
-
-        if (m_Renderer->GetRenderAPI() == RenderAPI::DIRECTX)
-        {
-            ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
-        }
-        else if (m_Renderer->GetRenderAPI() == RenderAPI::OPENGL)
-        {
-            ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
-        }
-
-        m_Renderer->Present();
-
-        if (switchApi != RenderAPI::NONE)
-        {
-            if (m_Renderer->GetRenderAPI() == RenderAPI::DIRECTX)
-            {
-                ImGui_ImplDX11_Shutdown();
-            }
-            else if (m_Renderer->GetRenderAPI() == RenderAPI::OPENGL)
-            {
-                ImGui_ImplOpenGL3_Shutdown();
-            }
-
-            ImGui_ImplSDL2_Shutdown();
-            ImGui::DestroyContext();
-
-            m_Window.reset();
-            m_Renderer.reset();
-
-            if (switchApi == RenderAPI::DIRECTX)
-            {
-                m_Window = std::make_unique<Window>();
-                m_Renderer = std::make_unique<DxRenderer>();
-            }
-            else if (switchApi == RenderAPI::OPENGL)
-            {
-                m_Window = std::make_unique<OpenGLWindow>();
-                m_Renderer = std::make_unique<GlRenderer>();
-            }
-
-            Init();
-            switchApi = RenderAPI::NONE;
-        }
+        ChangeRenderAPI();
     }
 
     return 0;
@@ -199,34 +81,97 @@ bool Application::Init()
     }
 
     // Setup ImGui
-    IMGUI_CHECKVERSION();
-    ImGui::CreateContext();
-    ImGuiIO& io = ImGui::GetIO(); (void)io;
-    ImGui::GetStyle().WindowRounding = 0.0f;
-    ImGui::StyleColorsDark();
-
-    if (m_Renderer->GetRenderAPI() == RenderAPI::DIRECTX)
+    if (!Gui::Init(m_Window.get(), m_Renderer.get()))
     {
-        if (!ImGui_ImplSDL2_InitForD3D(m_Window->GetSdlWindow()))
-            return false;
-
-        DxRenderer* renderer = reinterpret_cast<DxRenderer*>(m_Renderer.get());
-        if (!ImGui_ImplDX11_Init(renderer->GetDevice().Get(), renderer->GetDeviceContext().Get()))
-            return false;
-    }
-    else if (m_Renderer->GetRenderAPI() == RenderAPI::OPENGL)
-    {
-        OpenGLWindow* glWindow = reinterpret_cast<OpenGLWindow*>(m_Window.get());
-
-        if (!ImGui_ImplSDL2_InitForOpenGL(glWindow->GetSdlWindow(), glWindow->GetOpenGLContext()))
-            return false;
-
-        GlRenderer* renderer = reinterpret_cast<GlRenderer*>(m_Renderer.get());
-        if (!ImGui_ImplOpenGL3_Init())
-            return false;
+        SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", "Gui::Init failed!", nullptr);
+        return false;
     }
 
     return true;
+}
+
+void Application::Render()
+{
+    m_Renderer->Clear();
+    RenderGui();
+    m_Renderer->Present();
+}
+
+void Application::RenderGui()
+{
+    // Gui
+    Gui::StartFrame(m_Window.get(), m_Renderer.get());
+
+    //bool show_demo_window = true;
+    //ImGui::ShowDemoWindow(&show_demo_window);
+
+    // Info
+    const float distance = 15.0f;
+    bool open = true;
+    ImGui::SetNextWindowBgAlpha(0.35f); // Transparent background
+    ImGui::SetNextWindowPos(ImVec2(0 + distance, 0 + distance), ImGuiCond_Always);
+    if (ImGui::Begin("FPS Display", &open, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoFocusOnAppearing | ImGuiWindowFlags_NoNav))
+    {
+        std::string fps = "FPS: " + std::to_string(m_FramesPerSecond);
+        ImGui::Text(fps.c_str());
+        ImGui::Text(m_Renderer->GetDescription().c_str());
+
+        int ram = SDL_GetSystemRAM();
+        std::string ramStr = "RAM: " + std::to_string(ram) + "MB";
+        ImGui::Text(ramStr.c_str());
+    }
+
+    ImGui::End();
+
+    // Button
+    static bool rendererOpen = true;
+    ImGui::Begin("Renderer", &rendererOpen);
+
+    if (m_Renderer->GetRenderAPI() == RenderAPI::DIRECTX)
+    {
+        ImGui::Text("DirectX");
+    }
+    else if (m_Renderer->GetRenderAPI() == RenderAPI::OPENGL)
+    {
+        ImGui::Text("OpenGL");
+    }
+
+    if (ImGui::Button("OpenGL"))
+    {
+        m_SwitchRenderAPI = RenderAPI::OPENGL;
+    }
+    else if (ImGui::Button("DirectX"))
+    {
+        m_SwitchRenderAPI = RenderAPI::DIRECTX;
+    }
+
+    ImGui::End();
+    Gui::Render(m_Renderer.get());
+}
+
+void Application::ChangeRenderAPI()
+{
+    if (m_SwitchRenderAPI != RenderAPI::NONE)
+    {
+        Gui::Destroy(m_Renderer.get());
+
+        m_Window.reset();
+        m_Renderer.reset();
+
+        if (m_SwitchRenderAPI == RenderAPI::DIRECTX)
+        {
+            m_Window = std::make_unique<Window>();
+            m_Renderer = std::make_unique<DxRenderer>();
+        }
+        else if (m_SwitchRenderAPI == RenderAPI::OPENGL)
+        {
+            m_Window = std::make_unique<OpenGLWindow>();
+            m_Renderer = std::make_unique<GlRenderer>();
+        }
+
+        Init();
+        m_SwitchRenderAPI = RenderAPI::NONE;
+    }
 }
 
 void Application::OnQuit()

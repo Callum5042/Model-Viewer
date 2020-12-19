@@ -20,10 +20,15 @@ private:
 	void CalculateFramesPerSecond();
 
 	bool Init();
+	void Render();
+	void RenderGui();
 
 	std::unique_ptr<Window> m_Window;
 	std::unique_ptr<EventDispatcher> m_EventDispatcher;
 	std::unique_ptr<IRenderer> m_Renderer;
+
+	void ChangeRenderAPI();
+	RenderAPI m_SwitchRenderAPI = RenderAPI::NONE;
 
 	// Inherited via QuitListener
 	virtual void OnQuit() override;

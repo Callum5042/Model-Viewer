@@ -63,6 +63,9 @@
     <ClCompile Include="..\external\imgui\imgui_impl_opengl3.cpp">
       <Filter>External\ImGui</Filter>
     </ClCompile>
+    <ClCompile Include="Gui.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Window.h">
@@ -109,6 +112,9 @@
     </ClInclude>
     <ClInclude Include="..\external\imgui\imgui_impl_opengl3.h">
       <Filter>External\ImGui</Filter>
+    </ClInclude>
+    <ClInclude Include="Gui.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
