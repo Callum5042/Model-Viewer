@@ -27,9 +27,11 @@ namespace DX
 
 Renderer::~Renderer()
 {
-	ComPtr<ID3D11Debug> debug = nullptr;
-	m_Device.As(&debug);
-	debug->ReportLiveDeviceObjects(D3D11_RLDO_DETAIL);
+#ifdef _DEBUG
+	//ComPtr<ID3D11Debug> debug = nullptr;
+	//m_Device.As(&debug);
+	//debug->ReportLiveDeviceObjects(D3D11_RLDO_DETAIL);
+#endif
 }
 
 bool Renderer::Create(Window* window)

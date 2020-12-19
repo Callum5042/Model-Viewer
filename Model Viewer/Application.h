@@ -4,8 +4,6 @@
 #include "Window.h"
 #include "Renderer.h"
 
-#include "WindowEvents.h"
-
 class Application : public QuitListener, public WindowListener
 {
 public:

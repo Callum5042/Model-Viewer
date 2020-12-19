@@ -13,9 +13,6 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
-    <Filter Include="Header Files\Events">
-      <UniqueIdentifier>{f8759f6f-4cdb-448b-ba84-54be1be0ee8a}</UniqueIdentifier>
-    </Filter>
     <Filter Include="External">
       <UniqueIdentifier>{b3a3e7a3-c8d0-4426-83a1-75927f4a2cce}</UniqueIdentifier>
     </Filter>
@@ -70,9 +67,6 @@
     </ClInclude>
     <ClInclude Include="EventDispatcher.h">
       <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="WindowEvents.h">
-      <Filter>Header Files\Events</Filter>
     </ClInclude>
     <ClInclude Include="Application.h">
       <Filter>Header Files</Filter>
