@@ -4,6 +4,9 @@
 #include "Window.h"
 #include "Renderer.h"
 #include "Timer.h"
+#include "Model.h"
+#include "Camera.h"
+#include "Shader.h"
 
 class Application : public QuitListener, public WindowListener
 {
@@ -23,12 +26,16 @@ private:
 	void Render();
 	void RenderGui();
 
-	std::unique_ptr<Window> m_Window;
-	std::unique_ptr<EventDispatcher> m_EventDispatcher;
-	std::unique_ptr<IRenderer> m_Renderer;
+	std::unique_ptr<Window> m_Window = nullptr;
+	std::unique_ptr<EventDispatcher> m_EventDispatcher = nullptr;
+	std::unique_ptr<IRenderer> m_Renderer = nullptr;
 
 	void ChangeRenderAPI();
 	RenderAPI m_SwitchRenderAPI = RenderAPI::NONE;
+
+	std::unique_ptr<Model> m_Model = nullptr;
+	std::unique_ptr<Camera> m_Camera = nullptr;
+	std::unique_ptr<Shader> m_Shader = nullptr;
 
 	// Inherited via QuitListener
 	virtual void OnQuit() override;

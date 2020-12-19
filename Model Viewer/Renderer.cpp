@@ -2,27 +2,12 @@
 #include "Renderer.h"
 #include <DirectXColors.h>
 
-#include <SDL_syswm.h>
-
-namespace DX
+HWND DX::GetHwnd(Window* window)
 {
-	void ThrowIfFailed(HRESULT hr)
-	{
-#ifdef _DEBUG
-		if (FAILED(hr))
-		{
-			throw std::exception();
-		}
-#endif
-	}
-
-	HWND GetHwnd(Window* window)
-	{
-		SDL_SysWMinfo wmInfo = {};
-		SDL_GetVersion(&wmInfo.version);
-		SDL_GetWindowWMInfo(window->GetSdlWindow(), &wmInfo);
-		return wmInfo.info.win.window;
-	}
+	SDL_SysWMinfo wmInfo = {};
+	SDL_GetVersion(&wmInfo.version);
+	SDL_GetWindowWMInfo(window->GetSdlWindow(), &wmInfo);
+	return wmInfo.info.win.window;
 }
 
 DxRenderer::~DxRenderer()
@@ -50,6 +35,9 @@ bool DxRenderer::Create(Window* window)
 		return false;
 
 	SetViewport(width, height);
+
+	CreateRasterStateSolid();
+
 	return true;
 }
 
@@ -250,6 +238,11 @@ void DxRenderer::SetViewport(int width, int height)
 	m_Viewport.TopLeftY = 0;
 
 	m_DeviceContext->RSSetViewports(1, &m_Viewport);
+}
+
+void DxRenderer::CreateRasterStateSolid()
+{
+
 }
 
 bool GlRenderer::Create(Window* window)

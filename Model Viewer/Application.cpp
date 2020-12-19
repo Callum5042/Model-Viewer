@@ -1,12 +1,16 @@
 #include "Pch.h"
 #include "Application.h"
 #include "Gui.h"
+#include "Shader.h"
 
 Application::Application()
 {
     m_Window = std::make_unique<Window>();
     m_EventDispatcher = std::make_unique<EventDispatcher>();
     m_Renderer = std::make_unique<DxRenderer>();
+    m_Model = std::make_unique<Model>(m_Renderer.get());
+    m_Camera = std::make_unique<Camera>(800, 600);
+    m_Shader = std::make_unique<Shader>(m_Renderer.get());
 }
 
 Application::~Application()
@@ -87,12 +91,22 @@ bool Application::Init()
         return false;
     }
 
+    m_Shader->Create();
+
+    // Load model
+    if (!m_Model->Load())
+    {
+        return false;
+    }
+
     return true;
 }
 
 void Application::Render()
 {
     m_Renderer->Clear();
+    m_Shader->Use();
+    m_Model->Render(m_Camera.get());
     RenderGui();
     m_Renderer->Present();
 }
@@ -157,16 +171,20 @@ void Application::ChangeRenderAPI()
 
         m_Window.reset();
         m_Renderer.reset();
+        m_Model.reset();
 
         if (m_SwitchRenderAPI == RenderAPI::DIRECTX)
         {
             m_Window = std::make_unique<Window>();
             m_Renderer = std::make_unique<DxRenderer>();
+            m_Model = std::make_unique<Model>(m_Renderer.get());
         }
         else if (m_SwitchRenderAPI == RenderAPI::OPENGL)
         {
+            SDL_ShowSimpleMessageBox(MB_ICONERROR, "Error", "OpenGL is not fully supported!", nullptr);
             m_Window = std::make_unique<OpenGLWindow>();
             m_Renderer = std::make_unique<GlRenderer>();
+            // m_Model = std::make_unique<Model>(m_Renderer.get());
         }
 
         Init();

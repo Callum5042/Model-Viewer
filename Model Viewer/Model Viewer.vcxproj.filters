@@ -19,6 +19,12 @@
     <Filter Include="External\ImGui">
       <UniqueIdentifier>{86baaa9e-c1b2-497e-96cd-29a427fbdc1a}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Shaders">
+      <UniqueIdentifier>{53f0ac2e-6ecc-480a-bb25-c6b7687021a1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Shaders\HLSL">
+      <UniqueIdentifier>{3d3b9bb0-4b01-44ac-ba61-79d4f976c60c}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -64,6 +70,15 @@
       <Filter>External\ImGui</Filter>
     </ClCompile>
     <ClCompile Include="Gui.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Model.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Camera.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Shader.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -116,5 +131,27 @@
     <ClInclude Include="Gui.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Model.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Camera.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Shader.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Header.hlsli">
+      <Filter>Shaders\HLSL</Filter>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <FxCompile Include="VertexShader.hlsl">
+      <Filter>Shaders\HLSL</Filter>
+    </FxCompile>
+    <FxCompile Include="PixelShader.hlsl">
+      <Filter>Shaders\HLSL</Filter>
+    </FxCompile>
   </ItemGroup>
 </Project>

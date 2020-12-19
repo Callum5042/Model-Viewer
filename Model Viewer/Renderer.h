@@ -1,9 +1,21 @@
 #pragma once
 
 #include "Window.h"
-#include <d3d11_4.h>
-#include <wrl\client.h>
-using Microsoft::WRL::ComPtr;
+
+namespace DX
+{
+	inline void ThrowIfFailed(HRESULT hr)
+	{
+#ifdef _DEBUG
+		if (FAILED(hr))
+		{
+			throw std::exception();
+		}
+#endif
+	}
+
+	HWND GetHwnd(Window* window);
+}
 
 enum class RenderAPI
 {
@@ -63,6 +75,10 @@ private:
 	bool CreateSwapChain(Window* window, int width, int height);
 	bool CreateRenderTargetAndDepthStencilView(int width, int height);
 	void SetViewport(int width, int height);
+
+	// Raster states
+	ComPtr<ID3D11RasterizerState> m_RasterStateSolid = nullptr;
+	void CreateRasterStateSolid();
 };
 
 class GlRenderer : public IRenderer
