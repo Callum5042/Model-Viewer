@@ -23,7 +23,7 @@ private:
 
 	std::unique_ptr<Window> m_Window;
 	std::unique_ptr<EventDispatcher> m_EventDispatcher;
-	std::unique_ptr<Renderer> m_Renderer;
+	std::unique_ptr<IRenderer> m_Renderer;
 
 	// Inherited via QuitListener
 	virtual void OnQuit() override;

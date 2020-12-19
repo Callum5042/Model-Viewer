@@ -25,16 +25,16 @@ namespace DX
 	}
 }
 
-Renderer::~Renderer()
+DxRenderer::~DxRenderer()
 {
 #ifdef _DEBUG
-	//ComPtr<ID3D11Debug> debug = nullptr;
-	//m_Device.As(&debug);
-	//debug->ReportLiveDeviceObjects(D3D11_RLDO_DETAIL);
+	ComPtr<ID3D11Debug> debug = nullptr;
+	m_Device.As(&debug);
+	debug->ReportLiveDeviceObjects(D3D11_RLDO_DETAIL);
 #endif
 }
 
-bool Renderer::Create(Window* window)
+bool DxRenderer::Create(Window* window)
 {
 	
 	int width = window->GetWidth();
@@ -53,7 +53,7 @@ bool Renderer::Create(Window* window)
 	return true;
 }
 
-void Renderer::Resize(int width, int height)
+void DxRenderer::Resize(int width, int height)
 {
 	m_DepthStencilView.ReleaseAndGetAddressOf();
 	m_RenderTargetView.ReleaseAndGetAddressOf();
@@ -63,14 +63,14 @@ void Renderer::Resize(int width, int height)
 	SetViewport(width, height);
 }
 
-void Renderer::Clear()
+void DxRenderer::Clear()
 {
 	m_DeviceContext->OMSetRenderTargets(1, m_RenderTargetView.GetAddressOf(), NULL);
 	m_DeviceContext->ClearRenderTargetView(m_RenderTargetView.Get(), reinterpret_cast<const float*>(&DirectX::Colors::SteelBlue));
 	m_DeviceContext->ClearDepthStencilView(m_DepthStencilView.Get(), D3D11_CLEAR_DEPTH, 1.0f, 0);
 }
 
-void Renderer::Present()
+void DxRenderer::Present()
 {
 	ComPtr<IDXGISwapChain1> swapChain1 = nullptr;
 	m_SwapChain.As(&swapChain1);
@@ -79,7 +79,7 @@ void Renderer::Present()
 	DX::ThrowIfFailed(swapChain1->Present1(0, 0, &presentParameters));
 }
 
-std::string Renderer::GetDescription()
+std::string DxRenderer::GetDescription()
 {
 	std::vector<ComPtr<IDXGIAdapter>> adapters;
 	ComPtr<IDXGIAdapter> adapter = nullptr;
@@ -103,7 +103,7 @@ std::string Renderer::GetDescription()
 		{
 			std::string converted_str = converter.to_bytes(adapterDescription.Description);
 			result += converted_str + '\n';
-			result += "RAM: " + std::to_string(adapterDescription.SharedSystemMemory / 1024 / 1024) + "MB" + '\n';
+			//result += "RAM: " + std::to_string(adapterDescription.SharedSystemMemory / 1024 / 1024) + "MB" + '\n';
 			result += "VRAM: " + std::to_string(adapterDescription.DedicatedVideoMemory / 1024 / 1024) + "MB" + '\n';
 
 			/*int outputcount = 0;
@@ -136,7 +136,7 @@ std::string Renderer::GetDescription()
 	return result;
 }
 
-bool Renderer::CreateDevice()
+bool DxRenderer::CreateDevice()
 {
 	D3D_FEATURE_LEVEL featureLevels[] =
 	{
@@ -157,7 +157,7 @@ bool Renderer::CreateDevice()
 	return true;
 }
 
-bool Renderer::CreateSwapChain(Window* window, int width, int height)
+bool DxRenderer::CreateSwapChain(Window* window, int width, int height)
 {
 	HWND hwnd = DX::GetHwnd(window);
 
@@ -213,7 +213,7 @@ bool Renderer::CreateSwapChain(Window* window, int width, int height)
 	return true;
 }
 
-bool Renderer::CreateRenderTargetAndDepthStencilView(int width, int height)
+bool DxRenderer::CreateRenderTargetAndDepthStencilView(int width, int height)
 {
 	// Render target view
 	ComPtr<ID3D11Resource> backBuffer = nullptr;
@@ -240,7 +240,7 @@ bool Renderer::CreateRenderTargetAndDepthStencilView(int width, int height)
 	return true;
 }
 
-void Renderer::SetViewport(int width, int height)
+void DxRenderer::SetViewport(int width, int height)
 {
 	m_Viewport.Width = static_cast<float>(width);
 	m_Viewport.Height = static_cast<float>(height);
@@ -250,4 +250,51 @@ void Renderer::SetViewport(int width, int height)
 	m_Viewport.TopLeftY = 0;
 
 	m_DeviceContext->RSSetViewports(1, &m_Viewport);
+}
+
+bool GlRenderer::Create(Window* window)
+{
+	// Glew
+	GLenum error = glewInit();
+	if (error != GLEW_OK)
+	{
+		//std::cout << "Error: " << glewGetErrorString(error) << '\n';
+		return false;
+	}
+
+#ifdef _DEBUG
+	const unsigned char* glewVersion = glewGetString(GLEW_VERSION);
+	//std::cout << "Glew: " << glewVersion << '\n';
+#endif
+
+	m_Window = window;
+	return true;
+}
+
+void GlRenderer::Resize(int width, int height)
+{
+}
+
+void GlRenderer::Clear()
+{
+	static const GLfloat blue[] = { 0.0f, 0.5f, 0.7f, 1.0f };
+	glClearBufferfv(GL_COLOR, 0, blue);
+}
+
+void GlRenderer::Present()
+{
+	SDL_GL_SetSwapInterval(0);
+	SDL_GL_SwapWindow(m_Window->GetSdlWindow());
+}
+
+std::string GlRenderer::GetDescription()
+{
+	std::string desc;
+
+	const GLubyte* version = glGetString(GL_VENDOR);
+	const GLubyte* renderer = glGetString(GL_RENDERER);
+
+	desc += (char*)renderer;
+
+	return desc;
 }

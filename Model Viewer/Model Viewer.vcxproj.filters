@@ -60,6 +60,9 @@
     <ClCompile Include="Timer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\external\imgui\imgui_impl_opengl3.cpp">
+      <Filter>External\ImGui</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Window.h">
@@ -103,6 +106,9 @@
     </ClInclude>
     <ClInclude Include="Timer.h">
       <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\external\imgui\imgui_impl_opengl3.h">
+      <Filter>External\ImGui</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

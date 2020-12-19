@@ -5,11 +5,35 @@
 #include <wrl\client.h>
 using Microsoft::WRL::ComPtr;
 
-class Renderer
+enum class RenderAPI
+{
+	NONE,
+	DIRECTX,
+	OPENGL
+};
+
+class IRenderer
 {
 public:
-	Renderer() = default;
-	virtual ~Renderer();
+	IRenderer() = default;
+	virtual ~IRenderer() = default;
+
+	virtual bool Create(Window* window) = 0;
+	virtual void Resize(int width, int height) = 0;
+
+	virtual void Clear() = 0;
+	virtual void Present() = 0;
+
+	virtual std::string GetDescription() = 0;
+
+	virtual RenderAPI GetRenderAPI() = 0;
+};
+
+class DxRenderer : public IRenderer
+{
+public:
+	DxRenderer() = default;
+	virtual ~DxRenderer();
 
 	bool Create(Window* window);
 	void Resize(int width, int height);
@@ -20,7 +44,9 @@ public:
 	constexpr ComPtr<ID3D11Device>& GetDevice() { return m_Device; }
 	constexpr ComPtr<ID3D11DeviceContext>& GetDeviceContext() { return m_DeviceContext; }
 
-	std::string GetDescription();
+	std::string GetDescription() override;
+
+	RenderAPI GetRenderAPI() { return RenderAPI::DIRECTX; }
 
 private:
 	ComPtr<ID3D11Device> m_Device = nullptr;
@@ -37,4 +63,24 @@ private:
 	bool CreateSwapChain(Window* window, int width, int height);
 	bool CreateRenderTargetAndDepthStencilView(int width, int height);
 	void SetViewport(int width, int height);
+};
+
+class GlRenderer : public IRenderer
+{
+public:
+	GlRenderer() = default;
+	virtual ~GlRenderer() = default;
+
+	bool Create(Window* window) override;
+	void Resize(int width, int height) override;
+
+	void Clear() override;
+	void Present() override;
+
+	std::string GetDescription() override;
+
+	RenderAPI GetRenderAPI() { return RenderAPI::OPENGL; }
+
+private:
+	Window* m_Window = nullptr;
 };
