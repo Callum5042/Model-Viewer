@@ -4,6 +4,10 @@
 class IRenderer;
 class DxRenderer;
 class Camera;
+class ICamera;
+class GlShader;
+class IShader;
+class GlCamera;
 
 struct Vertex
 {
@@ -28,45 +32,38 @@ public:
 	virtual ~IModel() = default;
 
 	virtual bool Load() = 0;
-	virtual void Render() = 0;
+	virtual void Render(ICamera* camera) = 0;
 };
 
 class DxModel : public IModel
 {
 public:
-	DxModel(IRenderer* renderer, Camera* camera);
+	DxModel(IRenderer* renderer);
 	virtual ~DxModel();
 
 	bool Load() override;
-	void Render() override;
+	void Render(ICamera* camera) override;
 
 private:
 	DxRenderer* m_Renderer = nullptr;
-	Camera* m_Camera = nullptr;
 	std::unique_ptr<MeshData> m_MeshData = nullptr;
 
 	ComPtr<ID3D11Buffer> m_VertexBuffer = nullptr;
 	ComPtr<ID3D11Buffer> m_IndexBuffer = nullptr;
-
 	ComPtr<ID3D11Buffer> m_ConstantBuffer = nullptr;
 };
-
-class GlShader;
-class IShader;
-class GlCamera;
 
 class GlModel : public IModel
 {
 public:
-	GlModel(IShader* shader, GlCamera* camera);
+	GlModel(IShader* shader);
 	virtual ~GlModel();
 
 	bool Load() override;
-	void Render() override;
+	void Render(ICamera* camera) override;
 
 private:
 	GlShader* m_Shader = nullptr;
-	GlCamera* m_Camera = nullptr;
 
 	GLuint m_VertexArrayObject = 0;
 	GLuint m_VertexBuffer = 0;

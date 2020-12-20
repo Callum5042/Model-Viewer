@@ -79,7 +79,7 @@ namespace Geometry
 	}
 }
 
-DxModel::DxModel(IRenderer* renderer, Camera* camera) : m_Camera(camera)
+DxModel::DxModel(IRenderer* renderer)
 {
 	m_Renderer = reinterpret_cast<DxRenderer*>(renderer);
 }
@@ -126,8 +126,10 @@ bool DxModel::Load()
 	return true;
 }
 
-void DxModel::Render()
+void DxModel::Render(ICamera* camera)
 {
+	auto dxCamera = reinterpret_cast<Camera*>(camera);
+
 	// Bind the vertex buffer
 	UINT stride = sizeof(Vertex);
 	UINT offset = 0;
@@ -145,8 +147,8 @@ void DxModel::Render()
 
 	ConstantBuffer cb = {};
 	cb.world = DirectX::XMMatrixTranspose(world);
-	cb.view = DirectX::XMMatrixTranspose(m_Camera->GetView());
-	cb.projection = DirectX::XMMatrixTranspose(m_Camera->GetProjection());
+	cb.view = DirectX::XMMatrixTranspose(dxCamera->GetView());
+	cb.projection = DirectX::XMMatrixTranspose(dxCamera->GetProjection());
 
 	m_Renderer->GetDeviceContext()->VSSetConstantBuffers(0, 1, m_ConstantBuffer.GetAddressOf());
 	m_Renderer->GetDeviceContext()->PSSetConstantBuffers(0, 1, m_ConstantBuffer.GetAddressOf());
@@ -156,7 +158,7 @@ void DxModel::Render()
 	m_Renderer->GetDeviceContext()->DrawIndexed(static_cast<UINT>(m_MeshData->indices.size()), 0, 0);
 }
 
-GlModel::GlModel(IShader* shader, GlCamera* camera) : m_Camera(camera)
+GlModel::GlModel(IShader* shader)
 {
 	m_Shader = reinterpret_cast<GlShader*>(shader);
 }
@@ -196,8 +198,10 @@ bool GlModel::Load()
 	return true;
 }
 
-void GlModel::Render()
+void GlModel::Render(ICamera* camera)
 {
+	auto glCamera = reinterpret_cast<GlCamera*>(camera);
+
 	// Update shader transform
 	glm::mat4 transform = glm::mat4(1.0f);
 	unsigned int transformLoc = glGetUniformLocation(m_Shader->GetShaderId(), "transform");
@@ -205,11 +209,11 @@ void GlModel::Render()
 
 	// Update shader view
 	unsigned int viewLoc = glGetUniformLocation(m_Shader->GetShaderId(), "view");
-	glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(m_Camera->GetView()));
+	glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(glCamera->GetView()));
 
 	// Update shader projection
 	unsigned int projLoc = glGetUniformLocation(m_Shader->GetShaderId(), "projection");
-	glUniformMatrix4fv(projLoc, 1, GL_FALSE, glm::value_ptr(m_Camera->GetProjection()));
+	glUniformMatrix4fv(projLoc, 1, GL_FALSE, glm::value_ptr(glCamera->GetProjection()));
 
 	// Draw
 	glBindVertexArray(m_VertexArrayObject);

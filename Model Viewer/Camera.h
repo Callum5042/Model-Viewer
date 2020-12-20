@@ -6,7 +6,14 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
-class Camera
+class ICamera
+{
+public:
+	ICamera() = default;
+	virtual ~ICamera() = default;
+};
+
+class Camera : public ICamera
 {
 public:
 	Camera(int width, int height);
@@ -33,7 +40,7 @@ private:
 	int m_WindowHeight = 0;
 };
 
-class GlCamera
+class GlCamera : public ICamera
 {
 public:
 	GlCamera(int width, int height);

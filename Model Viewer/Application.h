@@ -28,15 +28,14 @@ private:
 
 	std::unique_ptr<Window> m_Window = nullptr;
 	std::unique_ptr<EventDispatcher> m_EventDispatcher = nullptr;
-	std::unique_ptr<IRenderer> m_Renderer = nullptr;
 
 	void ChangeRenderAPI();
 	RenderAPI m_SwitchRenderAPI = RenderAPI::NONE;
 
-	std::unique_ptr<IModel> m_Model = nullptr;
-	std::unique_ptr<Camera> m_Camera = nullptr;
-	std::unique_ptr<GlCamera> m_GlCamera = nullptr;
+	std::unique_ptr<IRenderer> m_Renderer = nullptr;
 	std::unique_ptr<IShader> m_Shader = nullptr;
+	std::unique_ptr<ICamera> m_Camera = nullptr;
+	std::unique_ptr<IModel> m_Model = nullptr;
 
 	// Inherited via QuitListener
 	virtual void OnQuit() override;
