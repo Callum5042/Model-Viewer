@@ -44,3 +44,32 @@ void Camera::UpdateFov(float fov)
 
 	Resize(m_WindowWidth, m_WindowHeight);
 }
+
+GlCamera::GlCamera(int width, int height)
+{
+	Update();
+	Resize(width, height);
+}
+
+void GlCamera::Update()
+{
+	float distance = 5.0f;
+
+	glm::vec3 direction;
+	direction.x = distance * cos(glm::radians(m_Yaw)) * cos(glm::radians(m_Pitch));
+	direction.y = distance * sin(glm::radians(m_Pitch));
+	direction.z = distance * sin(glm::radians(m_Yaw)) * cos(glm::radians(m_Pitch));
+
+	m_Position = direction;
+
+	glm::vec3 eye = m_Position = direction;
+	glm::vec3 at(0, 0, 0);
+	glm::vec3 up(0, 1, 0);
+
+	m_View = glm::lookAt(eye, at, up);
+}
+
+void GlCamera::Resize(int width, int height)
+{
+	m_Projection = glm::perspective(glm::radians(m_FOV), ((float)width / height), 0.1f, 100.0f);
+}

@@ -8,9 +8,20 @@ Application::Application()
     m_Window = std::make_unique<Window>();
     m_EventDispatcher = std::make_unique<EventDispatcher>();
     m_Renderer = std::make_unique<DxRenderer>();
-    m_Model = std::make_unique<Model>(m_Renderer.get());
     m_Camera = std::make_unique<Camera>(800, 600);
-    m_Shader = std::make_unique<Shader>(m_Renderer.get());
+    m_Model = std::make_unique<DxModel>(m_Renderer.get(), m_Camera.get());
+    m_Shader = std::make_unique<DxShader>(m_Renderer.get());
+
+    m_GlCamera = std::make_unique<GlCamera>(800, 600);
+
+    /*m_EventDispatcher = std::make_unique<EventDispatcher>();
+
+    m_Window = std::make_unique<OpenGLWindow>();
+    m_Renderer = std::make_unique<GlRenderer>();
+
+    m_Camera = std::make_unique<GlCamera>(800, 600);
+    m_Shader = std::make_unique<GlShader>();
+    m_Model = std::make_unique<GlModel>(m_Shader.get(), m_Camera.get());*/
 }
 
 Application::~Application()
@@ -91,7 +102,10 @@ bool Application::Init()
         return false;
     }
 
-    m_Shader->Create();
+    if (!m_Shader->Create())
+    {
+        return false;
+    }
 
     // Load model
     if (!m_Model->Load())
@@ -106,7 +120,7 @@ void Application::Render()
 {
     m_Renderer->Clear();
     m_Shader->Use();
-    m_Model->Render(m_Camera.get());
+    m_Model->Render();
     RenderGui();
     m_Renderer->Present();
 }
@@ -178,15 +192,16 @@ void Application::ChangeRenderAPI()
         {
             m_Window = std::make_unique<Window>();
             m_Renderer = std::make_unique<DxRenderer>();
-            m_Model = std::make_unique<Model>(m_Renderer.get());
-            m_Shader = std::make_unique<Shader>(m_Renderer.get());
+            m_Model = std::make_unique<DxModel>(m_Renderer.get(), m_Camera.get());
+            m_Shader = std::make_unique<DxShader>(m_Renderer.get());
         }
         else if (m_SwitchRenderAPI == RenderAPI::OPENGL)
         {
-            SDL_ShowSimpleMessageBox(MB_ICONERROR, "Error", "OpenGL is not fully supported!", nullptr);
+            //SDL_ShowSimpleMessageBox(MB_ICONERROR, "Error", "OpenGL is not fully supported!", nullptr);
             m_Window = std::make_unique<OpenGLWindow>();
             m_Renderer = std::make_unique<GlRenderer>();
-            // m_Model = std::make_unique<Model>(m_Renderer.get());
+            m_Shader = std::make_unique<GlShader>();
+            m_Model = std::make_unique<GlModel>(m_Shader.get(), m_GlCamera.get());
         }
 
         Init();

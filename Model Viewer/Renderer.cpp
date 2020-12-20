@@ -260,18 +260,25 @@ bool GlRenderer::Create(Window* window)
 	//std::cout << "Glew: " << glewVersion << '\n';
 #endif
 
+	glEnable(GL_DEPTH_TEST);
+	glDepthFunc(GL_LEQUAL);
+
 	m_Window = window;
 	return true;
 }
 
 void GlRenderer::Resize(int width, int height)
 {
+	glViewport(0, 0, width, height);
 }
 
 void GlRenderer::Clear()
 {
 	static const GLfloat blue[] = { 0.0f, 0.5f, 0.7f, 1.0f };
 	glClearBufferfv(GL_COLOR, 0, blue);
+
+	static GLfloat depth = 1.0f;
+	glClearBufferfv(GL_DEPTH, 0, &depth);
 }
 
 void GlRenderer::Present()

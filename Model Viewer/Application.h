@@ -33,9 +33,10 @@ private:
 	void ChangeRenderAPI();
 	RenderAPI m_SwitchRenderAPI = RenderAPI::NONE;
 
-	std::unique_ptr<Model> m_Model = nullptr;
+	std::unique_ptr<IModel> m_Model = nullptr;
 	std::unique_ptr<Camera> m_Camera = nullptr;
-	std::unique_ptr<Shader> m_Shader = nullptr;
+	std::unique_ptr<GlCamera> m_GlCamera = nullptr;
+	std::unique_ptr<IShader> m_Shader = nullptr;
 
 	// Inherited via QuitListener
 	virtual void OnQuit() override;

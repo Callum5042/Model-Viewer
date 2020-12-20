@@ -2,14 +2,24 @@
 
 #include "Renderer.h"
 
-class Shader
+class IShader
 {
 public:
-	Shader(IRenderer* renderer);
-	virtual ~Shader() = default;
+	IShader() = default;
+	virtual ~IShader() = default;
 
-	bool Create();
-	void Use();
+	virtual bool Create() = 0;
+	virtual void Use() = 0;
+};
+
+class DxShader : public IShader
+{
+public:
+	DxShader(IRenderer* renderer);
+	virtual ~DxShader() = default;
+
+	bool Create() override;
+	void Use() override;
 
 private:
 	DxRenderer* m_Renderer = nullptr;
@@ -20,4 +30,26 @@ private:
 
 	bool CreateVertexShader(const std::string& vertex_shader_path);
 	bool CreatePixelShader(const std::string& pixel_shader_path);
+};
+
+class GlShader : public IShader
+{
+public:
+	GlShader() = default;
+	virtual ~GlShader();
+
+	bool Create() override;
+	void Use() override;
+
+	constexpr GLuint GetShaderId() { return m_ShaderId; }
+
+private:
+	GLuint m_ShaderId = -1;
+	GLuint m_VertexShader = -1;
+	GLuint m_FragmentShader = -1;
+
+	GLuint LoadVertexShader(std::string&& vertexPath);
+	GLuint LoadFragmentShader(std::string&& fragmentPath);
+	std::string ReadShader(std::string&& filename);
+	bool HasCompiled(GLuint shader);
 };

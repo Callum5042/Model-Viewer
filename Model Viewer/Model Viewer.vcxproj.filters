@@ -25,6 +25,9 @@
     <Filter Include="Shaders\HLSL">
       <UniqueIdentifier>{3d3b9bb0-4b01-44ac-ba61-79d4f976c60c}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Shaders\GLSL">
+      <UniqueIdentifier>{3f417f41-49ee-4ed8-a0d2-3ff61da97553}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -144,6 +147,12 @@
   <ItemGroup>
     <None Include="Header.hlsli">
       <Filter>Shaders\HLSL</Filter>
+    </None>
+    <None Include="VertexShader.glsl">
+      <Filter>Shaders\GLSL</Filter>
+    </None>
+    <None Include="FragmentShader.glsl">
+      <Filter>Shaders\GLSL</Filter>
     </None>
   </ItemGroup>
   <ItemGroup>

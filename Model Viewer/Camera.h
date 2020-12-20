@@ -2,6 +2,10 @@
 
 #include <DirectXMath.h>
 
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
+
 class Camera
 {
 public:
@@ -27,4 +31,27 @@ private:
 
 	int m_WindowWidth = 0;
 	int m_WindowHeight = 0;
+};
+
+class GlCamera
+{
+public:
+	GlCamera(int width, int height);
+	virtual ~GlCamera() = default;
+
+	constexpr glm::mat4 GetView() { return m_View; }
+	constexpr glm::mat4 GetProjection() { return m_Projection; }
+
+	void Update();
+	void Resize(int width, int height);
+
+private:
+	glm::vec3 m_Position = glm::vec3(0, 0, -5);
+	glm::mat4 m_View = glm::mat4(1.0f);
+	glm::mat4 m_Projection = glm::mat4(1.0f);
+
+	float m_FOV = 85.0f;
+
+	float m_Pitch = 30.0f;
+	float m_Yaw = 90.0f;
 };

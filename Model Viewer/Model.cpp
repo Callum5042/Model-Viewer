@@ -3,6 +3,11 @@
 #include "Renderer.h"
 #include "Camera.h"
 #include <DirectXMath.h>
+#include "Shader.h"
+
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
 
 _declspec(align(16)) struct ConstantBuffer
 {
@@ -74,16 +79,16 @@ namespace Geometry
 	}
 }
 
-Model::Model(IRenderer* renderer)
+DxModel::DxModel(IRenderer* renderer, Camera* camera) : m_Camera(camera)
 {
 	m_Renderer = reinterpret_cast<DxRenderer*>(renderer);
 }
 
-Model::~Model()
+DxModel::~DxModel()
 {
 }
 
-bool Model::Load()
+bool DxModel::Load()
 {
 	m_MeshData = std::make_unique<MeshData>();
 	Geometry::CreateBox(1.0f, 1.0f, 1.0f, m_MeshData.get());
@@ -121,7 +126,7 @@ bool Model::Load()
 	return true;
 }
 
-void Model::Render(Camera* camera)
+void DxModel::Render()
 {
 	// Bind the vertex buffer
 	UINT stride = sizeof(Vertex);
@@ -140,8 +145,8 @@ void Model::Render(Camera* camera)
 
 	ConstantBuffer cb = {};
 	cb.world = DirectX::XMMatrixTranspose(world);
-	cb.view = DirectX::XMMatrixTranspose(camera->GetView());
-	cb.projection = DirectX::XMMatrixTranspose(camera->GetProjection());
+	cb.view = DirectX::XMMatrixTranspose(m_Camera->GetView());
+	cb.projection = DirectX::XMMatrixTranspose(m_Camera->GetProjection());
 
 	m_Renderer->GetDeviceContext()->VSSetConstantBuffers(0, 1, m_ConstantBuffer.GetAddressOf());
 	m_Renderer->GetDeviceContext()->PSSetConstantBuffers(0, 1, m_ConstantBuffer.GetAddressOf());
@@ -149,4 +154,118 @@ void Model::Render(Camera* camera)
 
 	// Render geometry
 	m_Renderer->GetDeviceContext()->DrawIndexed(static_cast<UINT>(m_MeshData->indices.size()), 0, 0);
+}
+
+GlModel::GlModel(IShader* shader, GlCamera* camera) : m_Camera(camera)
+{
+	m_Shader = reinterpret_cast<GlShader*>(shader);
+}
+
+GlModel::~GlModel()
+{
+	glDeleteVertexArrays(1, &m_VertexArrayObject);
+	glDeleteBuffers(1, &m_VertexBuffer);
+	glDeleteBuffers(1, &m_IndexBuffer);
+}
+
+bool GlModel::Load()
+{
+	Vertex vertices[] =
+	{
+		{ -1.0f, -1.0f, -1.0f, 1.0f, 0.0f, 0.0f },
+		{ -1.0f, +1.0f, -1.0f, 0.0f, 1.0f, 0.0f },
+		{ +1.0f, +1.0f, -1.0f, 0.0f, 0.0f, 1.0f },
+		{ +1.0f, -1.0f, -1.0f, 1.0f, 1.0f, 0.0f },
+
+		{ -1.0f, -1.0f, +1.0f, 1.0f, 0.0f, 0.0f },
+		{ +1.0f, -1.0f, +1.0f, 0.0f, 1.0f, 0.0f },
+		{ +1.0f, +1.0f, +1.0f, 0.0f, 0.0f, 1.0f },
+		{ -1.0f, +1.0f, +1.0f, 1.0f, 1.0f, 0.0f },
+
+		{ -1.0f, +1.0f, -1.0f, 1.0f, 0.0f, 0.0f },
+		{ -1.0f, +1.0f, +1.0f, 0.0f, 1.0f, 0.0f },
+		{ +1.0f, +1.0f, +1.0f, 0.0f, 0.0f, 1.0f },
+		{ +1.0f, +1.0f, -1.0f, 1.0f, 1.0f, 0.0f },
+
+		{ -1.0f, -1.0f, -1.0f, 1.0f, 0.0f, 0.0f },
+		{ +1.0f, -1.0f, -1.0f, 0.0f, 1.0f, 0.0f },
+		{ +1.0f, -1.0f, +1.0f, 0.0f, 0.0f, 1.0f },
+		{ -1.0f, -1.0f, +1.0f, 1.0f, 1.0f, 0.0f },
+
+		{ -1.0f, -1.0f, +1.0f, 1.0f, 0.0f, 0.0f },
+		{ -1.0f, +1.0f, +1.0f, 0.0f, 1.0f, 0.0f },
+		{ -1.0f, +1.0f, -1.0f, 0.0f, 0.0f, 1.0f },
+		{ -1.0f, -1.0f, -1.0f, 1.0f, 1.0f, 0.0f },
+
+		{ +1.0f, -1.0f, -1.0f, 1.0f, 0.0f, 0.0f },
+		{ +1.0f, +1.0f, -1.0f, 0.0f, 1.0f, 0.0f },
+		{ +1.0f, +1.0f, +1.0f, 0.0f, 0.0f, 1.0f },
+		{ +1.0f, -1.0f, +1.0f, 1.0f, 1.0f, 0.0f }
+	};
+
+	GLuint indices[] =
+	{
+		0, 1, 2,
+		0, 2, 3,
+
+		4, 5, 6,
+		4, 6, 7,
+
+		8, 9, 10,
+		8, 10, 11,
+
+		12, 13, 14,
+		12, 14, 15,
+
+		16, 17, 18,
+		16, 18, 19,
+
+		20, 21, 22,
+		20, 22, 23,
+	};
+
+	// Vertex Array Object
+	glCreateVertexArrays(1, &m_VertexArrayObject);
+	glBindVertexArray(m_VertexArrayObject);
+
+	// Vertex Buffer
+	glCreateBuffers(1, &m_VertexBuffer);
+	glBindBuffer(GL_ARRAY_BUFFER, m_VertexBuffer);
+
+	glNamedBufferStorage(m_VertexBuffer, sizeof(vertices), nullptr, GL_DYNAMIC_STORAGE_BIT);
+	glNamedBufferSubData(m_VertexBuffer, 0, sizeof(vertices), vertices);
+
+	// Index Buffer
+	glCreateBuffers(1, &m_IndexBuffer);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_IndexBuffer);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
+
+	// Something pipeline
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), 0);
+	glEnableVertexAttribArray(0);
+
+	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GL_FLOAT), (GLvoid*)(3 * sizeof(GL_FLOAT)));
+	glEnableVertexAttribArray(1);
+
+	return true;
+}
+
+void GlModel::Render()
+{
+	// Update shader transform
+	glm::mat4 transform = glm::mat4(1.0f);
+	unsigned int transformLoc = glGetUniformLocation(m_Shader->GetShaderId(), "transform");
+	glUniformMatrix4fv(transformLoc, 1, GL_FALSE, glm::value_ptr(transform));
+
+	// Update shader view
+	unsigned int viewLoc = glGetUniformLocation(m_Shader->GetShaderId(), "view");
+	glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(m_Camera->GetView()));
+
+	// Update shader projection
+	unsigned int projLoc = glGetUniformLocation(m_Shader->GetShaderId(), "projection");
+	glUniformMatrix4fv(projLoc, 1, GL_FALSE, glm::value_ptr(m_Camera->GetProjection()));
+
+	// Draw
+	glBindVertexArray(m_VertexArrayObject);
+	glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, nullptr);
 }
