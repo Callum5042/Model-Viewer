@@ -91,7 +91,6 @@ std::string DxRenderer::GetDescription()
 		{
 			std::string converted_str = converter.to_bytes(adapterDescription.Description);
 			result += converted_str + '\n';
-			//result += "RAM: " + std::to_string(adapterDescription.SharedSystemMemory / 1024 / 1024) + "MB" + '\n';
 			result += "VRAM: " + std::to_string(adapterDescription.DedicatedVideoMemory / 1024 / 1024) + "MB" + '\n';
 
 			/*int outputcount = 0;
@@ -294,6 +293,7 @@ std::string GlRenderer::GetDescription()
 	const GLubyte* version = glGetString(GL_VENDOR);
 	const GLubyte* renderer = glGetString(GL_RENDERER);
 	
+	// Only works for Nvidia devices
 	GLint totalMemory = 0;
 	glGetIntegerv(GL_GPU_MEMORY_INFO_TOTAL_AVAILABLE_MEMORY_NVX, &totalMemory);
 
