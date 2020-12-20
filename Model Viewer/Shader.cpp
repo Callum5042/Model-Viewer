@@ -21,9 +21,9 @@ bool Shader::Create()
 
 void Shader::Use()
 {
-	m_Renderer->GetDeviceContext()->IASetInputLayout(m_VertexLayout);
-	m_Renderer->GetDeviceContext()->VSSetShader(m_VertexShader, nullptr, 0);
-	m_Renderer->GetDeviceContext()->PSSetShader(m_PixelShader, nullptr, 0);
+	m_Renderer->GetDeviceContext()->IASetInputLayout(m_VertexLayout.Get());
+	m_Renderer->GetDeviceContext()->VSSetShader(m_VertexShader.Get(), nullptr, 0);
+	m_Renderer->GetDeviceContext()->PSSetShader(m_PixelShader.Get(), nullptr, 0);
 }
 
 bool Shader::CreateVertexShader(const std::string& vertex_shader_path)
@@ -36,22 +36,21 @@ bool Shader::CreateVertexShader(const std::string& vertex_shader_path)
 	}
 
 	vertexFile.seekg(0, vertexFile.end);
-	int vertexsize = (int)vertexFile.tellg();
+	int vertexsize = static_cast<int>(vertexFile.tellg());
 	vertexFile.seekg(0, vertexFile.beg);
 
 	char* vertexbuffer = new char[vertexsize];
 	vertexFile.read(vertexbuffer, vertexsize);
 
-	m_Renderer->GetDevice()->CreateVertexShader(vertexbuffer, vertexsize, nullptr, &m_VertexShader);
+	DX::ThrowIfFailed(m_Renderer->GetDevice()->CreateVertexShader(vertexbuffer, vertexsize, nullptr, m_VertexShader.ReleaseAndGetAddressOf()));
 
 	D3D11_INPUT_ELEMENT_DESC layout[] =
 	{
 		{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
-		/*{ "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 12, D3D11_INPUT_PER_VERTEX_DATA, 0 },*/
 	};
 
 	UINT numElements = ARRAYSIZE(layout);
-	m_Renderer->GetDevice()->CreateInputLayout(layout, numElements, vertexbuffer, vertexsize, &m_VertexLayout);
+	DX::ThrowIfFailed(m_Renderer->GetDevice()->CreateInputLayout(layout, numElements, vertexbuffer, vertexsize, m_VertexLayout.ReleaseAndGetAddressOf()));
 
 	delete[] vertexbuffer;
 	return true;
@@ -67,13 +66,13 @@ bool Shader::CreatePixelShader(const std::string& pixel_shader_path)
 	}
 
 	pixelFile.seekg(0, pixelFile.end);
-	int pixelsize = (int)pixelFile.tellg();
+	int pixelsize = static_cast<int>(pixelFile.tellg());
 	pixelFile.seekg(0, pixelFile.beg);
 
 	char* pixelbuffer = new char[pixelsize];
 	pixelFile.read(pixelbuffer, pixelsize);
 
-	m_Renderer->GetDevice()->CreatePixelShader(pixelbuffer, pixelsize, nullptr, &m_PixelShader);
+	DX::ThrowIfFailed(m_Renderer->GetDevice()->CreatePixelShader(pixelbuffer, pixelsize, nullptr, m_PixelShader.ReleaseAndGetAddressOf()));
 
 	delete[] pixelbuffer;
 	return true;

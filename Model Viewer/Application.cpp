@@ -172,12 +172,14 @@ void Application::ChangeRenderAPI()
         m_Window.reset();
         m_Renderer.reset();
         m_Model.reset();
+        m_Shader.reset();
 
         if (m_SwitchRenderAPI == RenderAPI::DIRECTX)
         {
             m_Window = std::make_unique<Window>();
             m_Renderer = std::make_unique<DxRenderer>();
             m_Model = std::make_unique<Model>(m_Renderer.get());
+            m_Shader = std::make_unique<Shader>(m_Renderer.get());
         }
         else if (m_SwitchRenderAPI == RenderAPI::OPENGL)
         {
