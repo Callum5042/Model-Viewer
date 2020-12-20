@@ -273,7 +273,7 @@ void GlRenderer::Resize(int width, int height)
 
 void GlRenderer::Clear()
 {
-	static const GLfloat blue[] = { 0.0f, 0.5f, 0.7f, 1.0f };
+	static const GLfloat blue[] = { 0.274509817f, 0.509803951f, 0.705882370f, 1.000000000f };
 	glClearBufferfv(GL_COLOR, 0, blue);
 
 	static GLfloat depth = 1.0f;
