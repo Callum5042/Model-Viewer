@@ -293,8 +293,12 @@ std::string GlRenderer::GetDescription()
 
 	const GLubyte* version = glGetString(GL_VENDOR);
 	const GLubyte* renderer = glGetString(GL_RENDERER);
+	
+	GLint totalMemory = 0;
+	glGetIntegerv(GL_GPU_MEMORY_INFO_TOTAL_AVAILABLE_MEMORY_NVX, &totalMemory);
 
-	desc += (char*)renderer;
+	desc += std::string((char*)renderer) + "\n";
+	desc += "VRAM: " + std::to_string(totalMemory / 1024) + "MB";
 
 	return desc;
 }
