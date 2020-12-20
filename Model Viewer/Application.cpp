@@ -135,7 +135,12 @@ void Application::RenderGui()
     {
         std::string fps = "FPS: " + std::to_string(m_FramesPerSecond);
         ImGui::Text(fps.c_str());
-        ImGui::Text(m_Renderer->GetDescription().c_str());
+
+        std::string device = m_Renderer->GetName();
+        ImGui::Text(device.c_str());
+
+        std::string vram = "VRAM: " + std::to_string(m_Renderer->GetVRAM() / 1024 / 1024) + "MB";
+        ImGui::Text(vram.c_str());
 
         int ram = SDL_GetSystemRAM();
         std::string ramStr = "RAM: " + std::to_string(ram) + "MB";

@@ -37,7 +37,7 @@ bool DxRenderer::Create(Window* window)
 	SetViewport(width, height);
 
 	CreateRasterStateSolid();
-
+	QueryHardwareInfo();
 	return true;
 }
 
@@ -67,7 +67,7 @@ void DxRenderer::Present()
 	DX::ThrowIfFailed(swapChain1->Present1(0, 0, &presentParameters));
 }
 
-std::string DxRenderer::GetDescription()
+void DxRenderer::QueryHardwareInfo()
 {
 	std::vector<ComPtr<IDXGIAdapter>> adapters;
 	ComPtr<IDXGIAdapter> adapter = nullptr;
@@ -79,8 +79,6 @@ std::string DxRenderer::GetDescription()
 	}
 
 	std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
-
-	std::string result;
 	for (size_t i = 0; i < adapters.size(); i++)
 	{
 		DXGI_ADAPTER_DESC adapterDescription;
@@ -89,9 +87,8 @@ std::string DxRenderer::GetDescription()
 		// Check for Microsoft Basic Render Driver
 		if (adapterDescription.VendorId != 0x1414 && adapterDescription.DeviceId != 0x8c)
 		{
-			std::string converted_str = converter.to_bytes(adapterDescription.Description);
-			result += converted_str + '\n';
-			result += "VRAM: " + std::to_string(adapterDescription.DedicatedVideoMemory / 1024 / 1024) + "MB" + '\n';
+			m_DeviceName = converter.to_bytes(adapterDescription.Description);
+			m_DeviceVideoMemory = adapterDescription.DedicatedVideoMemory;
 
 			/*int outputcount = 0;
 			ComPtr<IDXGIOutput> output = nullptr;
@@ -109,18 +106,16 @@ std::string DxRenderer::GetDescription()
 
 				for (size_t j = 0; j < numModes; j++)
 				{
-					result += "Width: " + std::to_string(modes[j].Width) + 
-						"\t- Height: " + std::to_string(modes[j].Height) + 
-						"\t- Refresh Rate: " + std::to_string(modes[j].RefreshRate.Numerator / modes[j].RefreshRate.Denominator) + 
+					result += "Width: " + std::to_string(modes[j].Width) +
+						"\t- Height: " + std::to_string(modes[j].Height) +
+						"\t- Refresh Rate: " + std::to_string(modes[j].RefreshRate.Numerator / modes[j].RefreshRate.Denominator) +
 						"\t - Format: " + std::to_string(modes[j].Format) + '\n';
 				}
 
 				delete[] modes;
 			}*/
 		}
-	} 
-
-	return result;
+	}
 }
 
 bool DxRenderer::CreateDevice()
@@ -263,6 +258,8 @@ bool GlRenderer::Create(Window* window)
 	glDepthFunc(GL_LEQUAL);
 
 	m_Window = window;
+
+	QueryHardwareInfo();
 	return true;
 }
 
@@ -286,19 +283,13 @@ void GlRenderer::Present()
 	SDL_GL_SwapWindow(m_Window->GetSdlWindow());
 }
 
-std::string GlRenderer::GetDescription()
+void GlRenderer::QueryHardwareInfo()
 {
-	std::string desc;
-
-	const GLubyte* version = glGetString(GL_VENDOR);
+	// const GLubyte* version = glGetString(GL_VENDOR);
 	const GLubyte* renderer = glGetString(GL_RENDERER);
-	
+	m_DeviceName = std::string((char*)renderer) + "\n";
+
 	// Only works for Nvidia devices
-	GLint totalMemory = 0;
-	glGetIntegerv(GL_GPU_MEMORY_INFO_TOTAL_AVAILABLE_MEMORY_NVX, &totalMemory);
-
-	desc += std::string((char*)renderer) + "\n";
-	desc += "VRAM: " + std::to_string(totalMemory / 1024) + "MB";
-
-	return desc;
+	glGetIntegerv(GL_GPU_MEMORY_INFO_TOTAL_AVAILABLE_MEMORY_NVX, &m_DeviceVideoMemory);
+	//m_DeviceVideoMemory = "VRAM: " + std::to_string(totalMemory / 1024) + "MB";
 }
