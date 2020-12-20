@@ -53,7 +53,7 @@ GlCamera::GlCamera(int width, int height)
 
 void GlCamera::Update()
 {
-	float distance = 5.0f;
+	float distance = 8.0f;
 
 	glm::vec3 direction;
 	direction.x = distance * cos(glm::radians(m_Yaw)) * cos(glm::radians(m_Pitch));
@@ -71,5 +71,5 @@ void GlCamera::Update()
 
 void GlCamera::Resize(int width, int height)
 {
-	m_Projection = glm::perspective(glm::radians(m_FOV), ((float)width / height), 0.1f, 100.0f);
+	m_Projection = glm::perspective(glm::radians(m_FOV), ((float)width / height), 0.01f, 100.0f);
 }

@@ -11,17 +11,7 @@ Application::Application()
     m_Camera = std::make_unique<Camera>(800, 600);
     m_Model = std::make_unique<DxModel>(m_Renderer.get(), m_Camera.get());
     m_Shader = std::make_unique<DxShader>(m_Renderer.get());
-
     m_GlCamera = std::make_unique<GlCamera>(800, 600);
-
-    /*m_EventDispatcher = std::make_unique<EventDispatcher>();
-
-    m_Window = std::make_unique<OpenGLWindow>();
-    m_Renderer = std::make_unique<GlRenderer>();
-
-    m_Camera = std::make_unique<GlCamera>(800, 600);
-    m_Shader = std::make_unique<GlShader>();
-    m_Model = std::make_unique<GlModel>(m_Shader.get(), m_Camera.get());*/
 }
 
 Application::~Application()

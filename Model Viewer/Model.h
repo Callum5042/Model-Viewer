@@ -9,15 +9,10 @@ struct Vertex
 {
 	Vertex() {}
 	Vertex(float x, float y, float z) : x(x), y(y), z(z) {}
-	Vertex(float x, float y, float z, float r, float g, float b) : x(x), y(y), z(z), r(r), g(g), b(b) {}
 
 	float x = 0;
 	float y = 0;
 	float z = 0;
-
-	float r;
-	float g;
-	float b;
 };
 
 struct MeshData

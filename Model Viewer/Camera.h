@@ -50,7 +50,7 @@ private:
 	glm::mat4 m_View = glm::mat4(1.0f);
 	glm::mat4 m_Projection = glm::mat4(1.0f);
 
-	float m_FOV = 85.0f;
+	float m_FOV = 50.0f;
 
 	float m_Pitch = 30.0f;
 	float m_Yaw = 90.0f;

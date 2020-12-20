@@ -170,59 +170,8 @@ GlModel::~GlModel()
 
 bool GlModel::Load()
 {
-	Vertex vertices[] =
-	{
-		{ -1.0f, -1.0f, -1.0f, 1.0f, 0.0f, 0.0f },
-		{ -1.0f, +1.0f, -1.0f, 0.0f, 1.0f, 0.0f },
-		{ +1.0f, +1.0f, -1.0f, 0.0f, 0.0f, 1.0f },
-		{ +1.0f, -1.0f, -1.0f, 1.0f, 1.0f, 0.0f },
-
-		{ -1.0f, -1.0f, +1.0f, 1.0f, 0.0f, 0.0f },
-		{ +1.0f, -1.0f, +1.0f, 0.0f, 1.0f, 0.0f },
-		{ +1.0f, +1.0f, +1.0f, 0.0f, 0.0f, 1.0f },
-		{ -1.0f, +1.0f, +1.0f, 1.0f, 1.0f, 0.0f },
-
-		{ -1.0f, +1.0f, -1.0f, 1.0f, 0.0f, 0.0f },
-		{ -1.0f, +1.0f, +1.0f, 0.0f, 1.0f, 0.0f },
-		{ +1.0f, +1.0f, +1.0f, 0.0f, 0.0f, 1.0f },
-		{ +1.0f, +1.0f, -1.0f, 1.0f, 1.0f, 0.0f },
-
-		{ -1.0f, -1.0f, -1.0f, 1.0f, 0.0f, 0.0f },
-		{ +1.0f, -1.0f, -1.0f, 0.0f, 1.0f, 0.0f },
-		{ +1.0f, -1.0f, +1.0f, 0.0f, 0.0f, 1.0f },
-		{ -1.0f, -1.0f, +1.0f, 1.0f, 1.0f, 0.0f },
-
-		{ -1.0f, -1.0f, +1.0f, 1.0f, 0.0f, 0.0f },
-		{ -1.0f, +1.0f, +1.0f, 0.0f, 1.0f, 0.0f },
-		{ -1.0f, +1.0f, -1.0f, 0.0f, 0.0f, 1.0f },
-		{ -1.0f, -1.0f, -1.0f, 1.0f, 1.0f, 0.0f },
-
-		{ +1.0f, -1.0f, -1.0f, 1.0f, 0.0f, 0.0f },
-		{ +1.0f, +1.0f, -1.0f, 0.0f, 1.0f, 0.0f },
-		{ +1.0f, +1.0f, +1.0f, 0.0f, 0.0f, 1.0f },
-		{ +1.0f, -1.0f, +1.0f, 1.0f, 1.0f, 0.0f }
-	};
-
-	GLuint indices[] =
-	{
-		0, 1, 2,
-		0, 2, 3,
-
-		4, 5, 6,
-		4, 6, 7,
-
-		8, 9, 10,
-		8, 10, 11,
-
-		12, 13, 14,
-		12, 14, 15,
-
-		16, 17, 18,
-		16, 18, 19,
-
-		20, 21, 22,
-		20, 22, 23,
-	};
+	m_MeshData = std::make_unique<MeshData>();
+	Geometry::CreateBox(1.0f, 1.0f, 1.0f, m_MeshData.get());
 
 	// Vertex Array Object
 	glCreateVertexArrays(1, &m_VertexArrayObject);
@@ -232,20 +181,17 @@ bool GlModel::Load()
 	glCreateBuffers(1, &m_VertexBuffer);
 	glBindBuffer(GL_ARRAY_BUFFER, m_VertexBuffer);
 
-	glNamedBufferStorage(m_VertexBuffer, sizeof(vertices), nullptr, GL_DYNAMIC_STORAGE_BIT);
-	glNamedBufferSubData(m_VertexBuffer, 0, sizeof(vertices), vertices);
+	glNamedBufferStorage(m_VertexBuffer, sizeof(Vertex) * m_MeshData->vertices.size(), nullptr, GL_DYNAMIC_STORAGE_BIT);
+	glNamedBufferSubData(m_VertexBuffer, 0, sizeof(Vertex) * m_MeshData->vertices.size(), &m_MeshData->vertices[0]);
 
 	// Index Buffer
 	glCreateBuffers(1, &m_IndexBuffer);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_IndexBuffer);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(GLuint) * m_MeshData->indices.size(), &m_MeshData->indices[0], GL_STATIC_DRAW);
 
 	// Something pipeline
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), 0);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), 0);
 	glEnableVertexAttribArray(0);
-
-	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GL_FLOAT), (GLvoid*)(3 * sizeof(GL_FLOAT)));
-	glEnableVertexAttribArray(1);
 
 	return true;
 }
