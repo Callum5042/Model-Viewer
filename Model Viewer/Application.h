@@ -50,6 +50,13 @@ private:
 	// Wireframe state
 	bool m_Wireframe = false;
 
+	// Query system info
+	void QueryHardwareInfo();
+	std::string m_CpuName;
+	std::string m_GpuName;
+	std::string m_RamAmount;
+	std::string m_VideoRamAmount;
+
 	// Inherited via QuitListener
 	virtual void OnQuit() override;
 

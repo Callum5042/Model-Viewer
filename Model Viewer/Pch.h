@@ -18,6 +18,8 @@
 #include <locale>
 #include <codecvt>        // std::codecvt_utf8
 #include <cstdint>
+#include <array>
+#include <bitset>
 
 #include <SDL.h>
 #include <SDL_syswm.h>

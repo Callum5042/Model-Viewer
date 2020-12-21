@@ -21,7 +21,6 @@ DxRenderer::~DxRenderer()
 
 bool DxRenderer::Create(Window* window)
 {
-	
 	int width = window->GetWidth();
 	int height = window->GetHeight();
 

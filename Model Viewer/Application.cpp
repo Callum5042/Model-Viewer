@@ -110,6 +110,7 @@ bool Application::Init()
 		return false;
 	}
 
+	QueryHardwareInfo();
 	return true;
 }
 
@@ -141,18 +142,17 @@ void Application::RenderGui()
 		std::string fps = "FPS: " + std::to_string(m_FramesPerSecond);
 		ImGui::Text(fps.c_str());
 
-		// Display device name
-		std::string device = m_Renderer->GetName();
-		ImGui::Text(device.c_str());
+		// Display CPU name
+		ImGui::Text(m_CpuName.c_str());
 
-		// Display video RAM
-		std::string vram = "VRAM: " + std::to_string(m_Renderer->GetVRAM() / 1024 / 1024) + "MB";
-		ImGui::Text(vram.c_str());
+		// Display device name
+		ImGui::Text(m_GpuName.c_str());
 
 		// Display system RAM
-		int ram = SDL_GetSystemRAM();
-		std::string ramStr = "RAM: " + std::to_string(ram) + "MB";
-		ImGui::Text(ramStr.c_str());
+		ImGui::Text(m_RamAmount.c_str());
+
+		// Display video RAM
+		ImGui::Text(m_VideoRamAmount.c_str());
 	}
 
 	ImGui::End();
@@ -220,6 +220,91 @@ void Application::ChangeRenderAPI()
 		Init();
 		m_SwitchRenderAPI = RenderAPI::NONE;
 	}
+}
+
+void Application::QueryHardwareInfo()
+{
+	std::array<int, 4> cpui;
+	__cpuid(cpui.data(), 0);
+	auto nIds_ = cpui[0];
+	auto nExIds_ = cpui[0];
+
+	std::bitset<32> f_1_ECX_;
+	std::bitset<32> f_1_EDX_;
+	std::bitset<32> f_7_EBX_;
+	std::bitset<32> f_7_ECX_;
+	std::bitset<32> f_81_ECX_;
+	std::bitset<32> f_81_EDX_;
+
+	std::vector<std::array<int, 4>> data_;
+	std::vector<std::array<int, 4>> extdata_;
+	for (int i = 0; i <= nIds_; ++i)
+	{
+		__cpuidex(cpui.data(), i, 0);
+		data_.push_back(cpui);
+	}
+
+	// Vendor
+	char vendor[0x20];
+	memset(vendor, 0, sizeof(vendor));
+	*reinterpret_cast<int*>(vendor) = data_[0][1];
+	*reinterpret_cast<int*>(vendor + 4) = data_[0][3];
+	*reinterpret_cast<int*>(vendor + 8) = data_[0][2];
+
+	// load bitset with flags for function 0x00000001
+	if (nIds_ >= 1)
+	{
+		f_1_ECX_ = data_[1][2];
+		f_1_EDX_ = data_[1][3];
+	}
+
+	// load bitset with flags for function 0x00000007
+	if (nIds_ >= 7)
+	{
+		f_7_EBX_ = data_[7][1];
+		f_7_ECX_ = data_[7][2];
+	}
+
+	// Calling __cpuid with 0x80000000 as the function_id argument
+	// gets the number of the highest valid extended ID.
+	__cpuid(cpui.data(), 0x80000000);
+	nExIds_ = cpui[0];
+
+	char brand[0x40];
+	memset(brand, 0, sizeof(brand));
+
+	for (int i = 0x80000000; i <= nExIds_; ++i)
+	{
+		__cpuidex(cpui.data(), i, 0);
+		extdata_.push_back(cpui);
+	}
+
+	// load bitset with flags for function 0x80000001
+	if (nExIds_ >= 0x80000001)
+	{
+		f_81_ECX_ = extdata_[1][2];
+		f_81_EDX_ = extdata_[1][3];
+	}
+
+	// CPU brand
+	memset(brand, 0, sizeof(brand));
+	if (nExIds_ >= 0x80000004)
+	{
+		memcpy(brand, extdata_[2].data(), sizeof(cpui));
+		memcpy(brand + 16, extdata_[3].data(), sizeof(cpui));
+		memcpy(brand + 32, extdata_[4].data(), sizeof(cpui));
+		m_CpuName = brand;
+	}
+
+
+	// Display device name
+	m_GpuName = m_Renderer->GetName();
+
+	// Display system RAM
+	m_RamAmount = "RAM: " + std::to_string(SDL_GetSystemRAM()) + "MB";
+
+	// Display video RAM
+	m_VideoRamAmount = "VRAM: " + std::to_string(m_Renderer->GetVRAM() / 1024 / 1024) + "MB";
 }
 
 void Application::OnQuit()
