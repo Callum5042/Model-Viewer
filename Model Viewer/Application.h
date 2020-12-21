@@ -50,6 +50,11 @@ private:
 	// Wireframe state
 	bool m_Wireframe = false;
 
+	// Camera settings
+	float m_Pitch = 30.0f;
+	float m_Yaw = 0.0f;
+	int m_CameraRotationSpeed = 20;
+
 	// Query system info
 	void QueryHardwareInfo();
 	std::string m_CpuName;

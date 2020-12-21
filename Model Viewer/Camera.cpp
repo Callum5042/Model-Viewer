@@ -6,7 +6,6 @@ Camera::Camera(int width, int height)
 {
 	m_Position = DirectX::XMFLOAT3(0.0f, 0.0f, -8.0f);
 
-	Update(0, 0);
 	Resize(width, height);
 }
 
@@ -20,15 +19,10 @@ void Camera::Resize(int width, int height)
 	m_WindowHeight = height;
 }
 
-void Camera::Update(float yaw, float pitch)
+void Camera::SetPitchAndYaw(float pitch, float yaw)
 {
-	m_Yaw += (yaw * 0.25f);
-	m_Pitch += (pitch * 0.25f);
-
-	m_Pitch = std::clamp<float>(m_Pitch, -89, 89);
-
 	DirectX::XMVECTOR position = DirectX::XMLoadFloat3(&m_Position);
-	DirectX::XMMATRIX camRotationMatrix = DirectX::XMMatrixRotationRollPitchYaw(DirectX::XMConvertToRadians(m_Pitch), DirectX::XMConvertToRadians(m_Yaw), 0);
+	DirectX::XMMATRIX camRotationMatrix = DirectX::XMMatrixRotationRollPitchYaw(DirectX::XMConvertToRadians(pitch), DirectX::XMConvertToRadians(yaw), 0);
 	position = XMVector3TransformCoord(position, camRotationMatrix);
 
 	DirectX::XMVECTOR eye = position;
@@ -47,18 +41,22 @@ void Camera::UpdateFov(float fov)
 
 GlCamera::GlCamera(int width, int height)
 {
-	Update();
 	Resize(width, height);
 }
 
-void GlCamera::Update()
+void GlCamera::Resize(int width, int height)
+{
+	m_Projection = glm::perspective(glm::radians(m_FOV), ((float)width / height), 0.01f, 100.0f);
+}
+
+void GlCamera::SetPitchAndYaw(float pitch, float yaw)
 {
 	float distance = 8.0f;
 
 	glm::vec3 direction;
-	direction.x = distance * cos(glm::radians(m_Yaw)) * cos(glm::radians(m_Pitch));
-	direction.y = distance * sin(glm::radians(m_Pitch));
-	direction.z = distance * sin(glm::radians(m_Yaw)) * cos(glm::radians(m_Pitch));
+	direction.x = distance * cos(glm::radians(yaw)) * cos(glm::radians(pitch));
+	direction.y = distance * sin(glm::radians(pitch));
+	direction.z = distance * sin(glm::radians(yaw)) * cos(glm::radians(pitch));
 
 	m_Position = direction;
 
@@ -67,9 +65,4 @@ void GlCamera::Update()
 	glm::vec3 up(0, 1, 0);
 
 	m_View = glm::lookAt(eye, at, up);
-}
-
-void GlCamera::Resize(int width, int height)
-{
-	m_Projection = glm::perspective(glm::radians(m_FOV), ((float)width / height), 0.01f, 100.0f);
 }

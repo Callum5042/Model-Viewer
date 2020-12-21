@@ -111,6 +111,7 @@ bool Application::Init()
 	}
 
 	QueryHardwareInfo();
+	m_Camera->SetPitchAndYaw(m_Pitch, m_Yaw);
 	return true;
 }
 
@@ -183,6 +184,8 @@ void Application::RenderGui()
 	{
 		m_Renderer->ToggleWireframe(m_Wireframe);
 	}
+
+	ImGui::SliderInt("Camera Speed", &m_CameraRotationSpeed, 1, 100);
 
 	ImGui::End();
 	Gui::Render(m_Renderer.get());
@@ -333,6 +336,12 @@ void Application::OnMouseMove(MouseData&& mouse)
 {
 	if (mouse.state == SDL_BUTTON_LMASK)
 	{
+		float dt = static_cast<float>(m_Timer.DeltaTime());
 
+		m_Yaw += (static_cast<float>(mouse.xrel) * dt * m_CameraRotationSpeed * 100);
+		m_Pitch += (static_cast<float>(mouse.yrel) * dt * m_CameraRotationSpeed * 100);
+		m_Pitch = std::clamp<float>(m_Pitch, -89, 89);
+
+		m_Camera->SetPitchAndYaw(m_Pitch, m_Yaw);
 	}
 }
