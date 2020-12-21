@@ -179,7 +179,7 @@ void Application::RenderGui()
 		m_SwitchRenderAPI = RenderAPI::DIRECTX;
 	}
 
-	if (ImGui::Checkbox("Wireframe", &m_Wireframe))
+	if (ImGui::Checkbox("Wireframe (Press 1)", &m_Wireframe))
 	{
 		m_Renderer->ToggleWireframe(m_Wireframe);
 	}
