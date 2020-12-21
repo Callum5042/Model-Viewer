@@ -35,9 +35,12 @@ bool DxRenderer::Create(Window* window)
 		return false;
 
 	SetViewport(width, height);
+	QueryHardwareInfo();
 
 	CreateRasterStateSolid();
-	QueryHardwareInfo();
+	CreateRasterStateWireframe();
+	m_DeviceContext->RSSetState(m_RasterStateSolid.Get());
+
 	return true;
 }
 
@@ -65,6 +68,19 @@ void DxRenderer::Present()
 
 	DXGI_PRESENT_PARAMETERS presentParameters = {};
 	DX::ThrowIfFailed(swapChain1->Present1(0, 0, &presentParameters));
+}
+
+void DxRenderer::ToggleWireframe()
+{
+	m_IsWireframe = !m_IsWireframe;
+	if (m_IsWireframe)
+	{
+		m_DeviceContext->RSSetState(m_RasterStateWireframe.Get());
+	}
+	else
+	{
+		m_DeviceContext->RSSetState(m_RasterStateSolid.Get());
+	}
 }
 
 void DxRenderer::QueryHardwareInfo()
@@ -236,7 +252,36 @@ void DxRenderer::SetViewport(int width, int height)
 
 void DxRenderer::CreateRasterStateSolid()
 {
+	D3D11_RASTERIZER_DESC rasterizerState = {};
+	rasterizerState.AntialiasedLineEnable = true;
+	rasterizerState.CullMode = D3D11_CULL_FRONT;
+	rasterizerState.FillMode = D3D11_FILL_SOLID;
+	rasterizerState.DepthClipEnable = true;
+	rasterizerState.FrontCounterClockwise = true;
+	rasterizerState.MultisampleEnable = true;
 
+	rasterizerState.DepthBias = 0;
+	rasterizerState.DepthBiasClamp = 1.0f;
+	rasterizerState.SlopeScaledDepthBias = 1.0f;
+
+	DX::ThrowIfFailed(m_Device->CreateRasterizerState(&rasterizerState, m_RasterStateSolid.ReleaseAndGetAddressOf()));
+}
+
+void DxRenderer::CreateRasterStateWireframe()
+{
+	D3D11_RASTERIZER_DESC rasterizerState = {};
+	rasterizerState.AntialiasedLineEnable = true;
+	rasterizerState.CullMode = D3D11_CULL_NONE;
+	rasterizerState.FillMode = D3D11_FILL_WIREFRAME;
+	rasterizerState.DepthClipEnable = true;
+	rasterizerState.FrontCounterClockwise = true;
+	rasterizerState.MultisampleEnable = true;
+
+	rasterizerState.DepthBias = 0;
+	rasterizerState.DepthBiasClamp = 1.0f;
+	rasterizerState.SlopeScaledDepthBias = 1.0f;
+
+	DX::ThrowIfFailed(m_Device->CreateRasterizerState(&rasterizerState, m_RasterStateWireframe.ReleaseAndGetAddressOf()));
 }
 
 bool GlRenderer::Create(Window* window)
@@ -281,6 +326,19 @@ void GlRenderer::Present()
 {
 	SDL_GL_SetSwapInterval(0);
 	SDL_GL_SwapWindow(m_Window->GetSdlWindow());
+}
+
+void GlRenderer::ToggleWireframe()
+{
+	m_IsWireframe = !m_IsWireframe;
+	if (m_IsWireframe)
+	{
+		glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+	}
+	else
+	{
+		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+	}
 }
 
 void GlRenderer::QueryHardwareInfo()

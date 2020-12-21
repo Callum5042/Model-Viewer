@@ -11,6 +11,8 @@ class ICamera
 public:
 	ICamera() = default;
 	virtual ~ICamera() = default;
+
+	virtual void Resize(int width, int height) = 0;
 };
 
 class Camera : public ICamera

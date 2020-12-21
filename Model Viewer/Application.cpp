@@ -36,6 +36,7 @@ int Application::Execute()
 
 	m_EventDispatcher->Attach(static_cast<QuitListener*>(this));
 	m_EventDispatcher->Attach(static_cast<WindowListener*>(this));
+	m_EventDispatcher->Attach(static_cast<KeyboardListener*>(this));
 
 	RenderAPI switchApi = RenderAPI::NONE;
 
@@ -221,4 +222,16 @@ void Application::OnQuit()
 void Application::OnResize(int width, int height)
 {
 	m_Renderer->Resize(width, height);
+	m_Camera->Resize(width, height);
 }
+
+#pragma warning(push)
+#pragma warning(disable : 26812)
+void Application::OnKeyPressed(SDL_Scancode scancode)
+{
+	if (scancode == SDL_SCANCODE_1)
+	{
+		m_Renderer->ToggleWireframe();
+	}
+}
+#pragma warning(pop)

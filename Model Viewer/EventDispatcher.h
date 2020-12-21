@@ -18,6 +18,15 @@ public:
 	virtual void OnQuit() = 0;
 };
 
+class KeyboardListener
+{
+public:
+	KeyboardListener() = default;
+	virtual ~KeyboardListener() = default;
+
+	virtual void OnKeyPressed(SDL_Scancode scancode) = 0;
+};
+
 class EventDispatcher
 {
 public:
@@ -26,13 +35,20 @@ public:
 
 	void Poll();
 
-	void Attach(WindowListener* listener);
-	void Attach(QuitListener* listener);
+	void Attach(WindowListener* listener) { m_WindowListeners.push_back(listener); }
+	void Attach(QuitListener* listener) { m_QuitListener.push_back(listener); }
+	void Attach(KeyboardListener* listener) { m_KeyboardListener.push_back(listener); }
 
 private:
+	// Window events
 	std::vector<WindowListener*> m_WindowListeners;
-	void PollWindowEvents(SDL_Event& e);
+	void PollWindowEvents(const SDL_Event& e);
 
+	// Quit events
 	std::vector<QuitListener*> m_QuitListener;
 	void PollQuitEvents();
+
+	// Keyboard events
+	std::vector<KeyboardListener*> m_KeyboardListener;
+	void PollKeyboardEvents(const SDL_Event& e);
 };

@@ -40,6 +40,8 @@ public:
 
 	virtual const std::string& GetName() = 0;
 	virtual SIZE_T GetVRAM() = 0;
+
+	virtual void ToggleWireframe() = 0;
 };
 
 class DxRenderer : public IRenderer
@@ -62,6 +64,8 @@ public:
 	const std::string& GetName() override { return m_DeviceName; }
 	SIZE_T GetVRAM() override { return m_DeviceVideoMemoryMb; }
 
+	void ToggleWireframe() override;
+
 private:
 	ComPtr<ID3D11Device> m_Device = nullptr;
 	ComPtr<ID3D11DeviceContext> m_DeviceContext = nullptr;
@@ -82,6 +86,9 @@ private:
 	ComPtr<ID3D11RasterizerState> m_RasterStateSolid = nullptr;
 	void CreateRasterStateSolid();
 
+	ComPtr<ID3D11RasterizerState> m_RasterStateWireframe = nullptr;
+	void CreateRasterStateWireframe();
+
 	// Query device hardware information
 	void QueryHardwareInfo();
 
@@ -90,6 +97,9 @@ private:
 
 	// Device video memory
 	SIZE_T m_DeviceVideoMemoryMb = 0;
+
+	// Wireframe
+	bool m_IsWireframe = false;
 };
 
 class GlRenderer : public IRenderer
@@ -109,6 +119,8 @@ public:
 	const std::string& GetName() override { return m_DeviceName; }
 	SIZE_T GetVRAM() override { return m_DeviceVideoMemoryMb; }
 
+	void ToggleWireframe() override;
+
 private:
 	Window* m_Window = nullptr;
 
@@ -120,4 +132,7 @@ private:
 
 	// Device video memory
 	SIZE_T m_DeviceVideoMemoryMb = 0;
+
+	// Wireframe
+	bool m_IsWireframe = false;
 };

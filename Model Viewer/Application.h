@@ -8,7 +8,7 @@
 #include "Camera.h"
 #include "Shader.h"
 
-class Application : public QuitListener, public WindowListener
+class Application : public QuitListener, public WindowListener, public KeyboardListener
 {
 public:
 	Application();
@@ -52,4 +52,7 @@ private:
 
 	// Inherited via WindowListener
 	virtual void OnResize(int width, int height) override;
+
+	// Inherited via KeyboardListener
+	virtual void OnKeyPressed(SDL_Scancode scancode) override;
 };
