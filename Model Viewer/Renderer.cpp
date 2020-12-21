@@ -2,27 +2,12 @@
 #include "Renderer.h"
 #include <DirectXColors.h>
 
-#include <SDL_syswm.h>
-
-namespace DX
+HWND DX::GetHwnd(Window* window)
 {
-	void ThrowIfFailed(HRESULT hr)
-	{
-#ifdef _DEBUG
-		if (FAILED(hr))
-		{
-			throw std::exception();
-		}
-#endif
-	}
-
-	HWND GetHwnd(Window* window)
-	{
-		SDL_SysWMinfo wmInfo = {};
-		SDL_GetVersion(&wmInfo.version);
-		SDL_GetWindowWMInfo(window->GetSdlWindow(), &wmInfo);
-		return wmInfo.info.win.window;
-	}
+	SDL_SysWMinfo wmInfo = {};
+	SDL_GetVersion(&wmInfo.version);
+	SDL_GetWindowWMInfo(window->GetSdlWindow(), &wmInfo);
+	return wmInfo.info.win.window;
 }
 
 DxRenderer::~DxRenderer()
@@ -36,7 +21,6 @@ DxRenderer::~DxRenderer()
 
 bool DxRenderer::Create(Window* window)
 {
-	
 	int width = window->GetWidth();
 	int height = window->GetHeight();
 
@@ -50,6 +34,12 @@ bool DxRenderer::Create(Window* window)
 		return false;
 
 	SetViewport(width, height);
+	QueryHardwareInfo();
+
+	CreateRasterStateSolid();
+	CreateRasterStateWireframe();
+	m_DeviceContext->RSSetState(m_RasterStateSolid.Get());
+
 	return true;
 }
 
@@ -79,7 +69,19 @@ void DxRenderer::Present()
 	DX::ThrowIfFailed(swapChain1->Present1(0, 0, &presentParameters));
 }
 
-std::string DxRenderer::GetDescription()
+void DxRenderer::ToggleWireframe(bool wireframe)
+{
+	if (wireframe)
+	{
+		m_DeviceContext->RSSetState(m_RasterStateWireframe.Get());
+	}
+	else
+	{
+		m_DeviceContext->RSSetState(m_RasterStateSolid.Get());
+	}
+}
+
+void DxRenderer::QueryHardwareInfo()
 {
 	std::vector<ComPtr<IDXGIAdapter>> adapters;
 	ComPtr<IDXGIAdapter> adapter = nullptr;
@@ -91,8 +93,6 @@ std::string DxRenderer::GetDescription()
 	}
 
 	std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
-
-	std::string result;
 	for (size_t i = 0; i < adapters.size(); i++)
 	{
 		DXGI_ADAPTER_DESC adapterDescription;
@@ -101,10 +101,8 @@ std::string DxRenderer::GetDescription()
 		// Check for Microsoft Basic Render Driver
 		if (adapterDescription.VendorId != 0x1414 && adapterDescription.DeviceId != 0x8c)
 		{
-			std::string converted_str = converter.to_bytes(adapterDescription.Description);
-			result += converted_str + '\n';
-			//result += "RAM: " + std::to_string(adapterDescription.SharedSystemMemory / 1024 / 1024) + "MB" + '\n';
-			result += "VRAM: " + std::to_string(adapterDescription.DedicatedVideoMemory / 1024 / 1024) + "MB" + '\n';
+			m_DeviceName = converter.to_bytes(adapterDescription.Description);
+			m_DeviceVideoMemoryMb = adapterDescription.DedicatedVideoMemory;
 
 			/*int outputcount = 0;
 			ComPtr<IDXGIOutput> output = nullptr;
@@ -122,18 +120,16 @@ std::string DxRenderer::GetDescription()
 
 				for (size_t j = 0; j < numModes; j++)
 				{
-					result += "Width: " + std::to_string(modes[j].Width) + 
-						"\t- Height: " + std::to_string(modes[j].Height) + 
-						"\t- Refresh Rate: " + std::to_string(modes[j].RefreshRate.Numerator / modes[j].RefreshRate.Denominator) + 
+					result += "Width: " + std::to_string(modes[j].Width) +
+						"\t- Height: " + std::to_string(modes[j].Height) +
+						"\t- Refresh Rate: " + std::to_string(modes[j].RefreshRate.Numerator / modes[j].RefreshRate.Denominator) +
 						"\t - Format: " + std::to_string(modes[j].Format) + '\n';
 				}
 
 				delete[] modes;
 			}*/
 		}
-	} 
-
-	return result;
+	}
 }
 
 bool DxRenderer::CreateDevice()
@@ -252,6 +248,40 @@ void DxRenderer::SetViewport(int width, int height)
 	m_DeviceContext->RSSetViewports(1, &m_Viewport);
 }
 
+void DxRenderer::CreateRasterStateSolid()
+{
+	D3D11_RASTERIZER_DESC rasterizerState = {};
+	rasterizerState.AntialiasedLineEnable = true;
+	rasterizerState.CullMode = D3D11_CULL_FRONT;
+	rasterizerState.FillMode = D3D11_FILL_SOLID;
+	rasterizerState.DepthClipEnable = true;
+	rasterizerState.FrontCounterClockwise = true;
+	rasterizerState.MultisampleEnable = true;
+
+	rasterizerState.DepthBias = 0;
+	rasterizerState.DepthBiasClamp = 1.0f;
+	rasterizerState.SlopeScaledDepthBias = 1.0f;
+
+	DX::ThrowIfFailed(m_Device->CreateRasterizerState(&rasterizerState, m_RasterStateSolid.ReleaseAndGetAddressOf()));
+}
+
+void DxRenderer::CreateRasterStateWireframe()
+{
+	D3D11_RASTERIZER_DESC rasterizerState = {};
+	rasterizerState.AntialiasedLineEnable = true;
+	rasterizerState.CullMode = D3D11_CULL_NONE;
+	rasterizerState.FillMode = D3D11_FILL_WIREFRAME;
+	rasterizerState.DepthClipEnable = true;
+	rasterizerState.FrontCounterClockwise = true;
+	rasterizerState.MultisampleEnable = true;
+
+	rasterizerState.DepthBias = 0;
+	rasterizerState.DepthBiasClamp = 1.0f;
+	rasterizerState.SlopeScaledDepthBias = 1.0f;
+
+	DX::ThrowIfFailed(m_Device->CreateRasterizerState(&rasterizerState, m_RasterStateWireframe.ReleaseAndGetAddressOf()));
+}
+
 bool GlRenderer::Create(Window* window)
 {
 	// Glew
@@ -267,18 +297,27 @@ bool GlRenderer::Create(Window* window)
 	//std::cout << "Glew: " << glewVersion << '\n';
 #endif
 
+	glEnable(GL_DEPTH_TEST);
+	glDepthFunc(GL_LEQUAL);
+
 	m_Window = window;
+
+	QueryHardwareInfo();
 	return true;
 }
 
 void GlRenderer::Resize(int width, int height)
 {
+	glViewport(0, 0, width, height);
 }
 
 void GlRenderer::Clear()
 {
-	static const GLfloat blue[] = { 0.0f, 0.5f, 0.7f, 1.0f };
+	static const GLfloat blue[] = { 0.274509817f, 0.509803951f, 0.705882370f, 1.000000000f };
 	glClearBufferfv(GL_COLOR, 0, blue);
+
+	static GLfloat depth = 1.0f;
+	glClearBufferfv(GL_DEPTH, 0, &depth);
 }
 
 void GlRenderer::Present()
@@ -287,14 +326,35 @@ void GlRenderer::Present()
 	SDL_GL_SwapWindow(m_Window->GetSdlWindow());
 }
 
-std::string GlRenderer::GetDescription()
+void GlRenderer::ToggleWireframe(bool wireframe)
 {
-	std::string desc;
+	if (wireframe)
+	{
+		glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+	}
+	else
+	{
+		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+	}
+}
 
-	const GLubyte* version = glGetString(GL_VENDOR);
-	const GLubyte* renderer = glGetString(GL_RENDERER);
+void GlRenderer::QueryHardwareInfo()
+{
+	std::string vendor = (char*)glGetString(GL_VENDOR);
+	m_DeviceName = (char*)glGetString(GL_RENDERER);
 
-	desc += (char*)renderer;
+	if (vendor == "NVIDIA Corporation")
+	{
+		GLint videoMemoryKb = 0;
+		glGetIntegerv(GL_GPU_MEMORY_INFO_TOTAL_AVAILABLE_MEMORY_NVX, &videoMemoryKb);
+		m_DeviceVideoMemoryMb = static_cast<SIZE_T>(videoMemoryKb) * 1024;
+	}
+	else if (vendor == "ATI Technologies Inc.")
+	{
+		auto n = wglGetGPUIDsAMD(0, 0);
+		auto ids = std::make_unique<UINT[]>(n);
 
-	return desc;
+		wglGetGPUIDsAMD(n, ids.get());
+		wglGetGPUInfoAMD(ids[0], WGL_GPU_RAM_AMD, GL_UNSIGNED_INT, sizeof(size_t), &m_DeviceVideoMemoryMb);
+	}
 }

@@ -36,7 +36,7 @@ public:
 	OpenGLWindow() = default;
 	virtual ~OpenGLWindow();
 
-	bool Create(std::string&& title, int width, int height, WindowMode windowMode);
+	bool Create(std::string&& title, int width, int height, WindowMode windowMode) override;
 
 	constexpr SDL_GLContext GetOpenGLContext() { return m_OpenGlContext; }
 

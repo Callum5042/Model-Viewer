@@ -1730,6 +1730,9 @@ struct ImGuiTextBuffer
 // Types are NOT stored, so it is up to you to make sure your Key don't collide with different types.
 struct ImGuiStorage
 {
+#pragma warning( push )
+#pragma warning( disable : 26495 )
+
     // [Internal]
     struct ImGuiStoragePair
     {
@@ -1739,6 +1742,8 @@ struct ImGuiStorage
         ImGuiStoragePair(ImGuiID _key, float _val_f)    { key = _key; val_f = _val_f; }
         ImGuiStoragePair(ImGuiID _key, void* _val_p)    { key = _key; val_p = _val_p; }
     };
+
+#pragma warning( pop )
 
     ImVector<ImGuiStoragePair>      Data;
 

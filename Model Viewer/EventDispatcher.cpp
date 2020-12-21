@@ -18,21 +18,19 @@ void EventDispatcher::Poll()
 		case SDL_WINDOWEVENT:
 			PollWindowEvents(e);
 			break;
+
+		case SDL_KEYDOWN:
+			PollKeyboardEvents(e);
+			break;
+
+		case SDL_MOUSEMOTION:
+			PollMouseEvents(e);
+			break;
 		}
 	}
 }
 
-void EventDispatcher::Attach(WindowListener* listener)
-{
-	m_WindowListeners.push_back(listener);
-}
-
-void EventDispatcher::Attach(QuitListener* listener)
-{
-	m_QuitListener.push_back(listener);
-}
-
-void EventDispatcher::PollWindowEvents(SDL_Event& e)
+void EventDispatcher::PollWindowEvents(const SDL_Event& e)
 {
 	if (e.type == SDL_WINDOWEVENT)
 	{
@@ -56,6 +54,44 @@ void EventDispatcher::PollQuitEvents()
 		if (listener != nullptr)
 		{
 			listener->OnQuit();
+		}
+	}
+}
+
+void EventDispatcher::PollKeyboardEvents(const SDL_Event& e)
+{
+	if (e.type == SDL_KEYDOWN)
+	{
+		if (e.key.repeat == 0)
+		{
+			for (auto& listener : m_KeyboardListener)
+			{
+				if (listener != nullptr)
+				{
+					listener->OnKeyPressed(e.key.keysym.scancode);
+				}
+			}
+		}
+	}
+}
+
+void EventDispatcher::PollMouseEvents(const SDL_Event& e)
+{
+	MouseData data;
+	data.x = e.motion.x;
+	data.y = e.motion.y;
+	data.xrel = e.motion.xrel;
+	data.yrel = e.motion.yrel;
+	data.state = e.motion.state;
+
+	if (e.type == SDL_MOUSEMOTION)
+	{
+		for (auto& listener : m_MouseListener)
+		{
+			if (listener != nullptr)
+			{
+				listener->OnMouseMove(std::move(data));
+			}
 		}
 	}
 }

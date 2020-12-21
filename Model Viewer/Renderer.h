@@ -1,9 +1,21 @@
 #pragma once
 
 #include "Window.h"
-#include <d3d11_4.h>
-#include <wrl\client.h>
-using Microsoft::WRL::ComPtr;
+
+namespace DX
+{
+	inline void ThrowIfFailed(HRESULT hr)
+	{
+#ifdef _DEBUG
+		if (FAILED(hr))
+		{
+			throw std::exception();
+		}
+#endif
+	}
+
+	HWND GetHwnd(Window* window);
+}
 
 enum class RenderAPI
 {
@@ -24,9 +36,12 @@ public:
 	virtual void Clear() = 0;
 	virtual void Present() = 0;
 
-	virtual std::string GetDescription() = 0;
-
 	virtual RenderAPI GetRenderAPI() = 0;
+
+	virtual const std::string& GetName() = 0;
+	virtual SIZE_T GetVRAM() = 0;
+
+	virtual void ToggleWireframe(bool wireframe) = 0;
 };
 
 class DxRenderer : public IRenderer
@@ -44,9 +59,12 @@ public:
 	constexpr ComPtr<ID3D11Device>& GetDevice() { return m_Device; }
 	constexpr ComPtr<ID3D11DeviceContext>& GetDeviceContext() { return m_DeviceContext; }
 
-	std::string GetDescription() override;
-
 	RenderAPI GetRenderAPI() { return RenderAPI::DIRECTX; }
+
+	const std::string& GetName() override { return m_DeviceName; }
+	SIZE_T GetVRAM() override { return m_DeviceVideoMemoryMb; }
+
+	void ToggleWireframe(bool wireframe) override;
 
 private:
 	ComPtr<ID3D11Device> m_Device = nullptr;
@@ -63,6 +81,22 @@ private:
 	bool CreateSwapChain(Window* window, int width, int height);
 	bool CreateRenderTargetAndDepthStencilView(int width, int height);
 	void SetViewport(int width, int height);
+
+	// Raster states
+	ComPtr<ID3D11RasterizerState> m_RasterStateSolid = nullptr;
+	void CreateRasterStateSolid();
+
+	ComPtr<ID3D11RasterizerState> m_RasterStateWireframe = nullptr;
+	void CreateRasterStateWireframe();
+
+	// Query device hardware information
+	void QueryHardwareInfo();
+
+	// Device name
+	std::string m_DeviceName;
+
+	// Device video memory
+	SIZE_T m_DeviceVideoMemoryMb = 0;
 };
 
 class GlRenderer : public IRenderer
@@ -77,10 +111,22 @@ public:
 	void Clear() override;
 	void Present() override;
 
-	std::string GetDescription() override;
-
 	RenderAPI GetRenderAPI() { return RenderAPI::OPENGL; }
+
+	const std::string& GetName() override { return m_DeviceName; }
+	SIZE_T GetVRAM() override { return m_DeviceVideoMemoryMb; }
+
+	void ToggleWireframe(bool wireframe) override;
 
 private:
 	Window* m_Window = nullptr;
+
+	// Query device hardware information
+	void QueryHardwareInfo();
+
+	// Device name
+	std::string m_DeviceName;
+
+	// Device video memory
+	SIZE_T m_DeviceVideoMemoryMb = 0;
 };
