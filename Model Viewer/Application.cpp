@@ -139,7 +139,7 @@ void Application::RenderGui()
 	if (ImGui::Begin("FPS Display", &open, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoFocusOnAppearing | ImGuiWindowFlags_NoNav))
 	{
 		// Display FPS
-		std::string fps = "FPS: " + std::to_string(m_FramesPerSecond);
+		std::string fps = "FPS: " + std::to_string(m_FramesPerSecond) + " - " + std::to_string(1000.0f / m_FramesPerSecond) + " ms";
 		ImGui::Text(fps.c_str());
 
 		// Display CPU name
@@ -295,7 +295,6 @@ void Application::QueryHardwareInfo()
 		memcpy(brand + 32, extdata_[4].data(), sizeof(cpui));
 		m_CpuName = brand;
 	}
-
 
 	// Display device name
 	m_GpuName = m_Renderer->GetName();
