@@ -2,12 +2,21 @@
 
 #include "Pch.h"
 
+struct MouseData
+{
+	int x = 0;
+	int y = 0;
+	int xrel = 0;
+	int yrel = 0;
+	Uint32 state = 0;
+};
+
 class WindowListener
 {
 public:
 	WindowListener() = default;
 	virtual ~WindowListener() = default;
-	virtual void OnResize(int width, int height) = 0;
+	virtual void OnResize(int width, int height) {}
 };
 
 class QuitListener
@@ -15,7 +24,7 @@ class QuitListener
 public:
 	QuitListener() = default;
 	virtual ~QuitListener() = default;
-	virtual void OnQuit() = 0;
+	virtual void OnQuit() {};
 };
 
 class KeyboardListener
@@ -24,7 +33,17 @@ public:
 	KeyboardListener() = default;
 	virtual ~KeyboardListener() = default;
 
-	virtual void OnKeyPressed(SDL_Scancode scancode) = 0;
+#pragma warning(disable : 26812)
+	virtual void OnKeyPressed(SDL_Scancode scancode) {};
+};
+
+class MouseListener
+{
+public:
+	MouseListener() = default;
+	virtual ~MouseListener() = default;
+
+	virtual void OnMouseMove(MouseData&& mouse) {};
 };
 
 class EventDispatcher
@@ -38,6 +57,7 @@ public:
 	void Attach(WindowListener* listener) { m_WindowListeners.push_back(listener); }
 	void Attach(QuitListener* listener) { m_QuitListener.push_back(listener); }
 	void Attach(KeyboardListener* listener) { m_KeyboardListener.push_back(listener); }
+	void Attach(MouseListener* listener) { m_MouseListener.push_back(listener); }
 
 private:
 	// Window events
@@ -51,4 +71,8 @@ private:
 	// Keyboard events
 	std::vector<KeyboardListener*> m_KeyboardListener;
 	void PollKeyboardEvents(const SDL_Event& e);
+
+	// Mouse events
+	std::vector<MouseListener*> m_MouseListener;
+	void PollMouseEvents(const SDL_Event& e);
 };

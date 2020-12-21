@@ -70,10 +70,9 @@ void DxRenderer::Present()
 	DX::ThrowIfFailed(swapChain1->Present1(0, 0, &presentParameters));
 }
 
-void DxRenderer::ToggleWireframe()
+void DxRenderer::ToggleWireframe(bool wireframe)
 {
-	m_IsWireframe = !m_IsWireframe;
-	if (m_IsWireframe)
+	if (wireframe)
 	{
 		m_DeviceContext->RSSetState(m_RasterStateWireframe.Get());
 	}
@@ -328,10 +327,9 @@ void GlRenderer::Present()
 	SDL_GL_SwapWindow(m_Window->GetSdlWindow());
 }
 
-void GlRenderer::ToggleWireframe()
+void GlRenderer::ToggleWireframe(bool wireframe)
 {
-	m_IsWireframe = !m_IsWireframe;
-	if (m_IsWireframe)
+	if (wireframe)
 	{
 		glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 	}

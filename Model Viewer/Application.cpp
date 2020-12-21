@@ -37,6 +37,7 @@ int Application::Execute()
 	m_EventDispatcher->Attach(static_cast<QuitListener*>(this));
 	m_EventDispatcher->Attach(static_cast<WindowListener*>(this));
 	m_EventDispatcher->Attach(static_cast<KeyboardListener*>(this));
+	m_EventDispatcher->Attach(static_cast<MouseListener*>(this));
 
 	RenderAPI switchApi = RenderAPI::NONE;
 
@@ -85,6 +86,8 @@ bool Application::Init()
 		SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", "Renderer::Create failed!", nullptr);
 		return false;
 	}
+
+	m_Renderer->ToggleWireframe(m_Wireframe);
 
 	// Setup ImGui
 	if (!Gui::Init(m_Window.get(), m_Renderer.get()))
@@ -176,6 +179,11 @@ void Application::RenderGui()
 		m_SwitchRenderAPI = RenderAPI::DIRECTX;
 	}
 
+	if (ImGui::Checkbox("Wireframe", &m_Wireframe))
+	{
+		m_Renderer->ToggleWireframe(m_Wireframe);
+	}
+
 	ImGui::End();
 	Gui::Render(m_Renderer.get());
 }
@@ -229,9 +237,18 @@ void Application::OnResize(int width, int height)
 #pragma warning(disable : 26812)
 void Application::OnKeyPressed(SDL_Scancode scancode)
 {
+#pragma warning(pop)
 	if (scancode == SDL_SCANCODE_1)
 	{
-		m_Renderer->ToggleWireframe();
+		m_Wireframe = !m_Wireframe;
+		m_Renderer->ToggleWireframe(m_Wireframe);
 	}
 }
-#pragma warning(pop)
+
+void Application::OnMouseMove(MouseData&& mouse)
+{
+	if (mouse.state == SDL_BUTTON_LMASK)
+	{
+
+	}
+}

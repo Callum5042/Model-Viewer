@@ -22,6 +22,10 @@ void EventDispatcher::Poll()
 		case SDL_KEYDOWN:
 			PollKeyboardEvents(e);
 			break;
+
+		case SDL_MOUSEMOTION:
+			PollMouseEvents(e);
+			break;
 		}
 	}
 }
@@ -66,6 +70,27 @@ void EventDispatcher::PollKeyboardEvents(const SDL_Event& e)
 				{
 					listener->OnKeyPressed(e.key.keysym.scancode);
 				}
+			}
+		}
+	}
+}
+
+void EventDispatcher::PollMouseEvents(const SDL_Event& e)
+{
+	MouseData data;
+	data.x = e.motion.x;
+	data.y = e.motion.y;
+	data.xrel = e.motion.xrel;
+	data.yrel = e.motion.yrel;
+	data.state = e.motion.state;
+
+	if (e.type == SDL_MOUSEMOTION)
+	{
+		for (auto& listener : m_MouseListener)
+		{
+			if (listener != nullptr)
+			{
+				listener->OnMouseMove(std::move(data));
 			}
 		}
 	}

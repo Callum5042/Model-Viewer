@@ -8,7 +8,7 @@
 #include "Camera.h"
 #include "Shader.h"
 
-class Application : public QuitListener, public WindowListener, public KeyboardListener
+class Application : public QuitListener, public WindowListener, public KeyboardListener, public MouseListener
 {
 public:
 	Application();
@@ -47,6 +47,9 @@ private:
 	void ChangeRenderAPI();
 	RenderAPI m_SwitchRenderAPI = RenderAPI::NONE;
 
+	// Wireframe state
+	bool m_Wireframe = false;
+
 	// Inherited via QuitListener
 	virtual void OnQuit() override;
 
@@ -55,4 +58,7 @@ private:
 
 	// Inherited via KeyboardListener
 	virtual void OnKeyPressed(SDL_Scancode scancode) override;
+
+	// Inherited via MouseListener
+	virtual void OnMouseMove(MouseData&& mouse) override;
 };
