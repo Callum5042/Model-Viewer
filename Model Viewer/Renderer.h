@@ -60,7 +60,7 @@ public:
 	RenderAPI GetRenderAPI() { return RenderAPI::DIRECTX; }
 
 	const std::string& GetName() override { return m_DeviceName; }
-	SIZE_T GetVRAM() override { return m_DeviceVideoMemory; }
+	SIZE_T GetVRAM() override { return m_DeviceVideoMemoryMb; }
 
 private:
 	ComPtr<ID3D11Device> m_Device = nullptr;
@@ -89,7 +89,7 @@ private:
 	std::string m_DeviceName;
 
 	// Device video memory
-	SIZE_T m_DeviceVideoMemory = 0;
+	SIZE_T m_DeviceVideoMemoryMb = 0;
 };
 
 class GlRenderer : public IRenderer
@@ -107,7 +107,7 @@ public:
 	RenderAPI GetRenderAPI() { return RenderAPI::OPENGL; }
 
 	const std::string& GetName() override { return m_DeviceName; }
-	SIZE_T GetVRAM() override { return (SIZE_T)m_DeviceVideoMemory; }
+	SIZE_T GetVRAM() override { return m_DeviceVideoMemoryMb; }
 
 private:
 	Window* m_Window = nullptr;
@@ -119,5 +119,5 @@ private:
 	std::string m_DeviceName;
 
 	// Device video memory
-	GLint m_DeviceVideoMemory = 0;
+	SIZE_T m_DeviceVideoMemoryMb = 0;
 };

@@ -2,6 +2,7 @@
 
 #define GLEW_STATIC
 #include <gl/glew.h>
+#include <gl/wglew.h>
 
 #ifdef _WIN32
 	#include <d3d11_4.h>

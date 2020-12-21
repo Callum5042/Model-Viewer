@@ -88,7 +88,7 @@ void DxRenderer::QueryHardwareInfo()
 		if (adapterDescription.VendorId != 0x1414 && adapterDescription.DeviceId != 0x8c)
 		{
 			m_DeviceName = converter.to_bytes(adapterDescription.Description);
-			m_DeviceVideoMemory = adapterDescription.DedicatedVideoMemory;
+			m_DeviceVideoMemoryMb = adapterDescription.DedicatedVideoMemory;
 
 			/*int outputcount = 0;
 			ComPtr<IDXGIOutput> output = nullptr;
@@ -285,11 +285,21 @@ void GlRenderer::Present()
 
 void GlRenderer::QueryHardwareInfo()
 {
-	// const GLubyte* version = glGetString(GL_VENDOR);
-	const GLubyte* renderer = glGetString(GL_RENDERER);
-	m_DeviceName = std::string((char*)renderer) + "\n";
+	std::string vendor = (char*)glGetString(GL_VENDOR);
+	m_DeviceName = (char*)glGetString(GL_RENDERER);
 
-	// Only works for Nvidia devices
-	glGetIntegerv(GL_GPU_MEMORY_INFO_TOTAL_AVAILABLE_MEMORY_NVX, &m_DeviceVideoMemory);
-	//m_DeviceVideoMemory = "VRAM: " + std::to_string(totalMemory / 1024) + "MB";
+	if (vendor == "NVIDIA Corporation")
+	{
+		GLint videoMemoryKb = 0;
+		glGetIntegerv(GL_GPU_MEMORY_INFO_TOTAL_AVAILABLE_MEMORY_NVX, &videoMemoryKb);
+		m_DeviceVideoMemoryMb = static_cast<SIZE_T>(videoMemoryKb) * 1024;
+	}
+	else if (vendor == "ATI Technologies Inc.")
+	{
+		auto n = wglGetGPUIDsAMD(0, 0);
+		auto ids = std::make_unique<UINT[]>(n);
+
+		wglGetGPUIDsAMD(n, ids.get());
+		wglGetGPUInfoAMD(ids[0], WGL_GPU_RAM_AMD, GL_UNSIGNED_INT, sizeof(size_t), &m_DeviceVideoMemoryMb);
+	}
 }
