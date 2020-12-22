@@ -93,6 +93,44 @@ bool DxModel::Load()
 	m_MeshData = std::make_unique<MeshData>();
 	Geometry::CreateBox(1.0f, 1.0f, 1.0f, m_MeshData.get());
 
+	std::ifstream file("D:\\test.bin", std::ios::binary);
+	if (!file.is_open())
+	{
+		std::cerr << "Big error\n";
+	}
+
+	// Parse header
+	char magic_number[3];
+	file.read(magic_number, 3);
+
+	// Get vertex count
+	auto vertex_count = 0;
+	file.read((char*)&vertex_count, sizeof(vertex_count));
+
+	// Get index count
+	auto index_count = 0;
+	file.read((char*)&index_count, sizeof(index_count));
+
+	// Get vertices
+	int vertex_stride = sizeof(Vertex) * vertex_count;
+	auto vertices = new Vertex[vertex_count];
+	file.read((char*)vertices, vertex_stride);
+
+	// Get indices
+	int index_stride = sizeof(UINT) * index_count;
+	auto indices = new UINT[index_count];
+	file.read((char*)indices, index_stride);
+
+	// Copy to MeshData vectors
+	//m_MeshData->vertices.assign(&vertices[0], &vertices[vertex_count]);
+	//m_MeshData->indices.assign(&indices[0], &indices[index_count]);
+
+	delete[] vertices;
+	delete[] indices;
+
+
+	//////////////////////////////////////////////////////////////////////////////////////////////////////
+
 	// Create vertex buffer
 	D3D11_BUFFER_DESC vbd = {};
 	vbd.Usage = D3D11_USAGE_DEFAULT;

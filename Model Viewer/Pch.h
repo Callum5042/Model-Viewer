@@ -21,6 +21,7 @@
 #include <array>
 #include <bitset>
 #include <algorithm>
+#include <fstream>
 
 #include <SDL.h>
 #include <SDL_syswm.h>

@@ -162,8 +162,6 @@ void Application::RenderGui()
 	static bool rendererOpen = true;
 	ImGui::Begin("Renderer", &rendererOpen);
 
-	m_CanRotateCamera = !ImGui::IsWindowHovered();
-
 	if (m_Renderer->GetRenderAPI() == RenderAPI::DIRECTX)
 	{
 		ImGui::Text("DirectX");
@@ -188,8 +186,10 @@ void Application::RenderGui()
 	}
 
 	ImGui::SliderInt("Camera Speed", &m_CameraRotationSpeed, 1, 100);
+	m_MouseOverWidget = ImGui::IsMouseHoveringRect(ImVec2(0, 0), ImVec2(800, 600), true);
 
 	ImGui::End();
+
 	Gui::Render(m_Renderer.get());
 }
 
@@ -336,7 +336,7 @@ void Application::OnKeyPressed(SDL_Scancode scancode)
 
 void Application::OnMouseMove(const MouseData& mouse)
 {
-	if (mouse.state == SDL_BUTTON_LMASK && m_CanRotateCamera)
+	if (mouse.state == SDL_BUTTON_LMASK && m_IsRotatingCamera)
 	{
 		float dt = static_cast<float>(m_Timer.DeltaTime());
 
@@ -350,8 +350,9 @@ void Application::OnMouseMove(const MouseData& mouse)
 
 void Application::OnMousePressed(const MouseData& mouse)
 {
-	if (mouse.state == SDL_BUTTON_LMASK && m_CanRotateCamera)
+	if (mouse.state == SDL_BUTTON_LMASK && m_CanRotateCamera && !m_MouseOverWidget)
 	{
+		m_IsRotatingCamera = true;
 		m_LastMousePosition.first = mouse.x;
 		m_LastMousePosition.second = mouse.y;
 
@@ -361,8 +362,11 @@ void Application::OnMousePressed(const MouseData& mouse)
 
 void Application::OnMouseReleased(const MouseData& mouse)
 {
-	if (m_CanRotateCamera)
+	m_CanRotateCamera = true;
+
+	if (m_IsRotatingCamera)
 	{
+		m_IsRotatingCamera = false;
 		SDL_SetRelativeMouseMode(SDL_FALSE);
 		SDL_WarpMouseInWindow(m_Window->GetSdlWindow(), m_LastMousePosition.first, m_LastMousePosition.second);
 	}

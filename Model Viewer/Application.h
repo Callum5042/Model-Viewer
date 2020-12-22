@@ -54,7 +54,9 @@ private:
 	float m_Pitch = 30.0f;
 	float m_Yaw = 0.0f;
 	int m_CameraRotationSpeed = 20;
-	bool m_CanRotateCamera = false;
+	bool m_CanRotateCamera = true;
+	bool m_IsRotatingCamera = false;
+	bool m_MouseOverWidget = false;
 	std::pair<int, int> m_LastMousePosition;
 
 	// Query system info
