@@ -12,5 +12,8 @@ PixelInput main(VertexInput input)
 	// Transform to world space.
 	output.Position = mul(float4(input.Position, 1.0f), World).xyz;
 
+	// Pass colour to pixel shader
+	output.Colour = input.Colour;
+
 	return output;
 }

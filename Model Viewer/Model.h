@@ -9,6 +9,14 @@ class GlShader;
 class IShader;
 class GlCamera;
 
+struct Colour
+{
+	float r = 0.0f;
+	float g = 0.0f;
+	float b = 0.0f;
+	float a = 0.0f;
+};
+
 struct Vertex
 {
 	Vertex() {}
@@ -17,6 +25,7 @@ struct Vertex
 	float x = 0;
 	float y = 0;
 	float z = 0;
+	Colour colour = {};
 };
 
 struct MeshData

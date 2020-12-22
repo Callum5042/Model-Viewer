@@ -340,8 +340,8 @@ void Application::OnMouseMove(const MouseData& mouse)
 	{
 		float dt = static_cast<float>(m_Timer.DeltaTime());
 
-		m_Yaw += (static_cast<float>(mouse.xrel) * dt * m_CameraRotationSpeed * 100);
-		m_Pitch += (static_cast<float>(mouse.yrel) * dt * m_CameraRotationSpeed * 100);
+		m_Yaw += (static_cast<float>(mouse.xrel) * m_CameraRotationSpeed / 100);// *dt * m_CameraRotationSpeed * 100);
+		m_Pitch += (static_cast<float>(mouse.yrel) * m_CameraRotationSpeed / 100);// *dt * m_CameraRotationSpeed * 100);
 		m_Pitch = std::clamp<float>(m_Pitch, -89, 89);
 
 		m_Camera->SetPitchAndYaw(m_Pitch, m_Yaw);

@@ -58,7 +58,7 @@ void GlCamera::SetPitchAndYaw(float pitch, float yaw)
 	direction.y = distance * sin(glm::radians(pitch));
 	direction.z = distance * sin(glm::radians(yaw)) * cos(glm::radians(pitch));
 
-	m_Position = direction;
+	m_Position = glm::vec3(0, 0, -8.0f);
 
 	glm::vec3 eye = m_Position = direction;
 	glm::vec3 at(0, 0, 0);

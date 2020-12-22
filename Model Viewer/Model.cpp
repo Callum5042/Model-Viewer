@@ -91,7 +91,7 @@ DxModel::~DxModel()
 bool DxModel::Load()
 {
 	m_MeshData = std::make_unique<MeshData>();
-	Geometry::CreateBox(1.0f, 1.0f, 1.0f, m_MeshData.get());
+	//Geometry::CreateBox(1.0f, 1.0f, 1.0f, m_MeshData.get());
 
 	std::ifstream file("D:\\test.bin", std::ios::binary);
 	if (!file.is_open())
@@ -122,8 +122,8 @@ bool DxModel::Load()
 	file.read((char*)indices, index_stride);
 
 	// Copy to MeshData vectors
-	//m_MeshData->vertices.assign(&vertices[0], &vertices[vertex_count]);
-	//m_MeshData->indices.assign(&indices[0], &indices[index_count]);
+	m_MeshData->vertices.assign(&vertices[0], &vertices[vertex_count]);
+	m_MeshData->indices.assign(&indices[0], &indices[index_count]);
 
 	delete[] vertices;
 	delete[] indices;
@@ -211,7 +211,42 @@ GlModel::~GlModel()
 bool GlModel::Load()
 {
 	m_MeshData = std::make_unique<MeshData>();
-	Geometry::CreateBox(1.0f, 1.0f, 1.0f, m_MeshData.get());
+	//Geometry::CreateBox(1.0f, 1.0f, 1.0f, m_MeshData.get());
+
+	std::ifstream file("D:\\test.bin", std::ios::binary);
+	if (!file.is_open())
+	{
+		std::cerr << "Big error\n";
+	}
+
+	// Parse header
+	char magic_number[3];
+	file.read(magic_number, 3);
+
+	// Get vertex count
+	auto vertex_count = 0;
+	file.read((char*)&vertex_count, sizeof(vertex_count));
+
+	// Get index count
+	auto index_count = 0;
+	file.read((char*)&index_count, sizeof(index_count));
+
+	// Get vertices
+	int vertex_stride = sizeof(Vertex) * vertex_count;
+	auto vertices = new Vertex[vertex_count];
+	file.read((char*)vertices, vertex_stride);
+
+	// Get indices
+	int index_stride = sizeof(UINT) * index_count;
+	auto indices = new UINT[index_count];
+	file.read((char*)indices, index_stride);
+
+	// Copy to MeshData vectors
+	m_MeshData->vertices.assign(&vertices[0], &vertices[vertex_count]);
+	m_MeshData->indices.assign(&indices[0], &indices[index_count]);
+
+	delete[] vertices;
+	delete[] indices;
 
 	// Vertex Array Object
 	glCreateVertexArrays(1, &m_VertexArrayObject);
@@ -230,8 +265,11 @@ bool GlModel::Load()
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(GLuint) * m_MeshData->indices.size(), &m_MeshData->indices[0], GL_STATIC_DRAW);
 
 	// Something pipeline
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), 0);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 7 * sizeof(GLfloat), 0);
 	glEnableVertexAttribArray(0);
+
+	glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, 7 * sizeof(GL_FLOAT), (GLvoid*)(3 * sizeof(GL_FLOAT)));
+	glEnableVertexAttribArray(1);
 
 	return true;
 }
