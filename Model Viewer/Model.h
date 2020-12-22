@@ -21,6 +21,9 @@ struct Vertex
 
 struct MeshData
 {
+	MeshData() = default;
+	virtual ~MeshData() = default;
+
 	std::vector<Vertex> vertices;
 	std::vector<UINT> indices;
 };

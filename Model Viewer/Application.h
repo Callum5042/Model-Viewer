@@ -54,6 +54,8 @@ private:
 	float m_Pitch = 30.0f;
 	float m_Yaw = 0.0f;
 	int m_CameraRotationSpeed = 20;
+	bool m_CanRotateCamera = false;
+	std::pair<int, int> m_LastMousePosition;
 
 	// Query system info
 	void QueryHardwareInfo();
@@ -72,5 +74,7 @@ private:
 	virtual void OnKeyPressed(SDL_Scancode scancode) override;
 
 	// Inherited via MouseListener
-	virtual void OnMouseMove(MouseData&& mouse) override;
+	virtual void OnMouseMove(const MouseData& mouse) override;
+	virtual void OnMousePressed(const MouseData& mouse) override;
+	virtual void OnMouseReleased(const MouseData& mouse) override;
 };

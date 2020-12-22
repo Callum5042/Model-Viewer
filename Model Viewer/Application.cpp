@@ -162,6 +162,8 @@ void Application::RenderGui()
 	static bool rendererOpen = true;
 	ImGui::Begin("Renderer", &rendererOpen);
 
+	m_CanRotateCamera = !ImGui::IsWindowHovered();
+
 	if (m_Renderer->GetRenderAPI() == RenderAPI::DIRECTX)
 	{
 		ImGui::Text("DirectX");
@@ -332,9 +334,9 @@ void Application::OnKeyPressed(SDL_Scancode scancode)
 	}
 }
 
-void Application::OnMouseMove(MouseData&& mouse)
+void Application::OnMouseMove(const MouseData& mouse)
 {
-	if (mouse.state == SDL_BUTTON_LMASK)
+	if (mouse.state == SDL_BUTTON_LMASK && m_CanRotateCamera)
 	{
 		float dt = static_cast<float>(m_Timer.DeltaTime());
 
@@ -343,5 +345,25 @@ void Application::OnMouseMove(MouseData&& mouse)
 		m_Pitch = std::clamp<float>(m_Pitch, -89, 89);
 
 		m_Camera->SetPitchAndYaw(m_Pitch, m_Yaw);
+	}
+}
+
+void Application::OnMousePressed(const MouseData& mouse)
+{
+	if (mouse.state == SDL_BUTTON_LMASK && m_CanRotateCamera)
+	{
+		m_LastMousePosition.first = mouse.x;
+		m_LastMousePosition.second = mouse.y;
+
+		SDL_SetRelativeMouseMode(SDL_TRUE);
+	}
+}
+
+void Application::OnMouseReleased(const MouseData& mouse)
+{
+	if (m_CanRotateCamera)
+	{
+		SDL_SetRelativeMouseMode(SDL_FALSE);
+		SDL_WarpMouseInWindow(m_Window->GetSdlWindow(), m_LastMousePosition.first, m_LastMousePosition.second);
 	}
 }

@@ -23,6 +23,8 @@ void EventDispatcher::Poll()
 			PollKeyboardEvents(e);
 			break;
 
+		case SDL_MOUSEBUTTONDOWN:
+		case SDL_MOUSEBUTTONUP:
 		case SDL_MOUSEMOTION:
 			PollMouseEvents(e);
 			break;
@@ -77,20 +79,50 @@ void EventDispatcher::PollKeyboardEvents(const SDL_Event& e)
 
 void EventDispatcher::PollMouseEvents(const SDL_Event& e)
 {
-	MouseData data;
-	data.x = e.motion.x;
-	data.y = e.motion.y;
-	data.xrel = e.motion.xrel;
-	data.yrel = e.motion.yrel;
-	data.state = e.motion.state;
-
 	if (e.type == SDL_MOUSEMOTION)
 	{
+		MouseData data;
+		data.x = e.motion.x;
+		data.y = e.motion.y;
+		data.xrel = e.motion.xrel;
+		data.yrel = e.motion.yrel;
+		data.state = e.motion.state;
+
 		for (auto& listener : m_MouseListener)
 		{
 			if (listener != nullptr)
 			{
-				listener->OnMouseMove(std::move(data));
+				listener->OnMouseMove(data);
+			}
+		}
+	}
+	else if (e.type == SDL_MOUSEBUTTONDOWN)
+	{
+		MouseData data;
+		data.x = e.button.x;
+		data.y = e.button.y;
+		data.state = e.button.button;
+
+		for (auto& listener : m_MouseListener)
+		{
+			if (listener != nullptr)
+			{
+				listener->OnMousePressed(data);
+			}
+		}
+	}
+	else if (e.type == SDL_MOUSEBUTTONUP)
+	{
+		MouseData data;
+		data.x = e.button.x;
+		data.y = e.button.y;
+		data.state = e.button.button;
+
+		for (auto& listener : m_MouseListener)
+		{
+			if (listener != nullptr)
+			{
+				listener->OnMouseReleased(data);
 			}
 		}
 	}
