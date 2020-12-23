@@ -8,7 +8,7 @@ Window::~Window()
 
 bool Window::Create(std::string&& title, int width, int height, WindowMode windowMode)
 {
-    Uint32 windowFlags = SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE | SDL_WINDOW_ALLOW_HIGHDPI;
+    auto windowFlags = SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE | SDL_WINDOW_ALLOW_HIGHDPI;
     if (windowMode == WindowMode::BORDERLESS_FULLSCREEN)
     {
         windowFlags |= SDL_WINDOW_MAXIMIZED | SDL_WINDOW_BORDERLESS;
@@ -30,16 +30,54 @@ void Window::Destroy()
 
 int Window::GetWidth() const
 {
-    int width = 0;
+    auto width = 0;
     SDL_GetWindowSize(m_Window, &width, nullptr);
     return width;
 }
 
 int Window::GetHeight() const
 {
-    int height = 0;
+    auto height = 0;
     SDL_GetWindowSize(m_Window, nullptr, &height);
     return height;
+}
+
+Window& Window::SetWidth(int width)
+{
+    SDL_SetWindowSize(m_Window, width, GetHeight());
+    return *this;
+}
+
+Window& Window::SetHeight(int height)
+{
+    SDL_SetWindowSize(m_Window, GetWidth(), height);
+    return *this;
+}
+
+void Window::SetPosition(int x, int y)
+{
+    SDL_SetWindowPosition(m_Window, x, y);
+}
+
+void Window::GetPosition(int* x, int* y)
+{
+    SDL_GetWindowPosition(m_Window, x, y);
+}
+
+bool Window::IsMaximised() const
+{
+    auto flags = SDL_GetWindowFlags(m_Window);
+    if (flags & SDL_WINDOW_MAXIMIZED)
+    {
+        return true;
+    }
+
+    return false;
+}
+
+void Window::Maximise()
+{
+    SDL_MaximizeWindow(m_Window);
 }
 
 OpenGLWindow::~OpenGLWindow()
@@ -54,10 +92,10 @@ bool OpenGLWindow::Create(std::string&& title, int width, int height, WindowMode
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 4);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 6);
 
-    SDL_GL_SetAttribute(SDL_GL_MULTISAMPLEBUFFERS, 1);
-    SDL_GL_SetAttribute(SDL_GL_MULTISAMPLESAMPLES, 4);
+    /*SDL_GL_SetAttribute(SDL_GL_MULTISAMPLEBUFFERS, 1);
+    SDL_GL_SetAttribute(SDL_GL_MULTISAMPLESAMPLES, 4);*/
 
-    Uint32 windowFlags = SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE | SDL_WINDOW_ALLOW_HIGHDPI | SDL_WINDOW_OPENGL;
+    auto windowFlags = SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE | SDL_WINDOW_ALLOW_HIGHDPI | SDL_WINDOW_OPENGL;
     if (windowMode == WindowMode::BORDERLESS_FULLSCREEN)
     {
         windowFlags |= SDL_WINDOW_MAXIMIZED | SDL_WINDOW_BORDERLESS;

@@ -293,5 +293,5 @@ void GlModel::Render(ICamera* camera)
 
 	// Draw
 	glBindVertexArray(m_VertexArrayObject);
-	glDrawElements(GL_TRIANGLES, m_MeshData->indices.size(), GL_UNSIGNED_INT, nullptr);
+	glDrawElements(GL_TRIANGLES, static_cast<GLsizei>(m_MeshData->indices.size()), GL_UNSIGNED_INT, nullptr);
 }

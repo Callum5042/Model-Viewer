@@ -207,12 +207,22 @@ void Application::ChangeRenderAPI()
 	{
 		Gui::Destroy(m_Renderer.get());
 
+		// Get window state
+		std::pair<int, int> window_position;
+		m_Window->GetPosition(&window_position.first, &window_position.second);
+
+		auto window_width = m_Window->GetWidth();
+		auto window_height = m_Window->GetHeight();
+		auto maximised = m_Window->IsMaximised();
+
+		// Release memory
 		m_Window.reset();
 		m_Renderer.reset();
 		m_Model.reset();
 		m_Shader.reset();
 		m_Camera.reset();
 
+		// Switch Rendering API
 		if (m_SwitchRenderAPI == RenderAPI::DIRECTX)
 		{
 			m_Window = std::make_unique<Window>();
@@ -231,13 +241,29 @@ void Application::ChangeRenderAPI()
 		}
 
 		Init();
+
+		// Restore window state
+		m_Window->SetPosition(window_position.first, window_position.second);
+		m_Renderer->Resize(window_width, window_height);
+		m_Camera->Resize(window_width, window_height);
+
+		if (maximised)
+		{
+			m_Window->Maximise();
+		}
+		else
+		{
+			m_Window->SetWidth(window_width).SetHeight(window_height);
+		}
+
+		// Reset switch flag
 		m_SwitchRenderAPI = RenderAPI::NONE;
 	}
 }
 
 void Application::QueryHardwareInfo()
 {
-	std::array<int, 4> cpui;
+	std::array<int, 4> cpui{};
 	__cpuid(cpui.data(), 0);
 	auto nIds_ = cpui[0];
 	auto nExIds_ = cpui[0];
