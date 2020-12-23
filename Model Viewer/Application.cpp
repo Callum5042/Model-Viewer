@@ -112,6 +112,7 @@ bool Application::Init()
 
 	QueryHardwareInfo();
 	m_Camera->SetPitchAndYaw(m_Pitch, m_Yaw);
+
 	return true;
 }
 
@@ -154,6 +155,13 @@ void Application::RenderGui()
 
 		// Display video RAM
 		ImGui::Text(m_VideoRamAmount.c_str());
+
+		// Camera
+		auto pitch = "Pitch: " + std::to_string(m_Pitch);
+		ImGui::Text(pitch.c_str());
+
+		auto yaw = "Yaw: " + std::to_string(m_Yaw);
+		ImGui::Text(yaw.c_str());
 	}
 
 	ImGui::End();
@@ -342,6 +350,9 @@ void Application::OnMouseMove(const MouseData& mouse)
 
 		m_Yaw += (static_cast<float>(mouse.xrel) * m_CameraRotationSpeed / 100);// *dt * m_CameraRotationSpeed * 100);
 		m_Pitch += (static_cast<float>(mouse.yrel) * m_CameraRotationSpeed / 100);// *dt * m_CameraRotationSpeed * 100);
+
+		/*m_Yaw = (m_Yaw > 360.0f ? 0.0f : m_Yaw);
+		m_Yaw = (m_Yaw < 0.0f ? 360.0f : m_Yaw);*/
 		m_Pitch = std::clamp<float>(m_Pitch, -89, 89);
 
 		m_Camera->SetPitchAndYaw(m_Pitch, m_Yaw);

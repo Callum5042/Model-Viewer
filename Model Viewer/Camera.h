@@ -6,6 +6,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/gtx/rotate_vector.hpp>
+#include <glm/gtx/euler_angles.hpp>
 
 class ICamera
 {
@@ -37,7 +38,6 @@ public:
 private:
 	DirectX::XMMATRIX m_View;
 	DirectX::XMMATRIX m_Projection;
-	DirectX::XMFLOAT3 m_Position;
 
 	float m_FOV = 50.0;
 

@@ -279,19 +279,19 @@ void GlModel::Render(ICamera* camera)
 	auto glCamera = reinterpret_cast<GlCamera*>(camera);
 
 	// Update shader transform
-	glm::mat4 transform = glm::mat4(1.0f);
-	unsigned int transformLoc = glGetUniformLocation(m_Shader->GetShaderId(), "transform");
+	auto transform = glm::mat4(1.0f);
+	auto transformLoc = glGetUniformLocation(m_Shader->GetShaderId(), "transform");
 	glUniformMatrix4fv(transformLoc, 1, GL_FALSE, glm::value_ptr(transform));
 
 	// Update shader view
-	unsigned int viewLoc = glGetUniformLocation(m_Shader->GetShaderId(), "view");
+	auto viewLoc = glGetUniformLocation(m_Shader->GetShaderId(), "view");
 	glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(glCamera->GetView()));
 
 	// Update shader projection
-	unsigned int projLoc = glGetUniformLocation(m_Shader->GetShaderId(), "projection");
+	auto projLoc = glGetUniformLocation(m_Shader->GetShaderId(), "projection");
 	glUniformMatrix4fv(projLoc, 1, GL_FALSE, glm::value_ptr(glCamera->GetProjection()));
 
 	// Draw
 	glBindVertexArray(m_VertexArrayObject);
-	glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, nullptr);
+	glDrawElements(GL_TRIANGLES, m_MeshData->indices.size(), GL_UNSIGNED_INT, nullptr);
 }
