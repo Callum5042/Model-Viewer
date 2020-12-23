@@ -166,42 +166,40 @@ void Application::RenderGui()
 
 	ImGui::End();
 
-	// Button
-	static bool rendererOpen = true;
-	ImGui::Begin("Renderer", &rendererOpen);
-
-	if (m_Renderer->GetRenderAPI() == RenderAPI::DIRECTX)
+	// Options
 	{
-		ImGui::Text("DirectX");
-	}
-	else if (m_Renderer->GetRenderAPI() == RenderAPI::OPENGL)
-	{
-		ImGui::Text("OpenGL");
-	}
+		static bool rendererOpen = true;
+		ImGui::Begin("Renderer", &rendererOpen);
 
-	if (ImGui::Button("OpenGL"))
-	{
-		m_SwitchRenderAPI = RenderAPI::OPENGL;
-	}
-	else if (ImGui::Button("DirectX"))
-	{
-		m_SwitchRenderAPI = RenderAPI::DIRECTX;
-	}
+		// Display rendering API
+		static int current_combo_render_api = static_cast<int>(m_Renderer->GetRenderAPI()) - 1;
+		const char* combo_render_api_items[] = { "DirectX", "OpenGL" };
+		if (ImGui::Combo("##RenderAPI", &current_combo_render_api, combo_render_api_items, IM_ARRAYSIZE(combo_render_api_items)))
+		{
+			m_SwitchRenderAPI = static_cast<RenderAPI>(current_combo_render_api + 1);
+		}
 
-	if (ImGui::Checkbox("Wireframe (Press 1)", &m_Wireframe))
-	{
-		m_Renderer->ToggleWireframe(m_Wireframe);
+		// Anti-aliasing
+		//ImGui::Combo("Anti-aliasing", )
+
+		// Wireframe
+		if (ImGui::Checkbox("Wireframe (Press 1)", &m_Wireframe))
+		{
+			m_Renderer->ToggleWireframe(m_Wireframe);
+		}
+
+		// Camera
+		ImGui::SliderInt("Camera Speed", &m_CameraRotationSpeed, 1, 100);
+
+		// Camera GUI detecting thing
+		{
+			auto window_width = static_cast<float>(m_Window->GetWidth());
+			auto window_height = static_cast<float>(m_Window->GetHeight());
+			m_MouseOverWidget = ImGui::IsMouseHoveringRect(ImVec2(0, 0), ImVec2(window_width, window_height), true);
+		}
+
+		ImGui::End();
 	}
-
-	ImGui::SliderInt("Camera Speed", &m_CameraRotationSpeed, 1, 100);
-
-	{
-		auto window_width = m_Window->GetWidth();
-		auto window_height = m_Window->GetHeight();
-		m_MouseOverWidget = ImGui::IsMouseHoveringRect(ImVec2(0, 0), ImVec2(window_width, window_height), true);
-	}
-
-	ImGui::End();
 
 	Gui::Render(m_Renderer.get());
 }
