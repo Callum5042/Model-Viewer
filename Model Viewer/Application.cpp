@@ -194,7 +194,12 @@ void Application::RenderGui()
 	}
 
 	ImGui::SliderInt("Camera Speed", &m_CameraRotationSpeed, 1, 100);
-	m_MouseOverWidget = ImGui::IsMouseHoveringRect(ImVec2(0, 0), ImVec2(800, 600), true);
+
+	{
+		auto window_width = m_Window->GetWidth();
+		auto window_height = m_Window->GetHeight();
+		m_MouseOverWidget = ImGui::IsMouseHoveringRect(ImVec2(0, 0), ImVec2(window_width, window_height), true);
+	}
 
 	ImGui::End();
 
