@@ -22,6 +22,7 @@
 #include <bitset>
 #include <algorithm>
 #include <fstream>
+#include <unordered_map>
 
 #include <SDL.h>
 #include <SDL_syswm.h>

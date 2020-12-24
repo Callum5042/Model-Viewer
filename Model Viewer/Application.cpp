@@ -5,13 +5,25 @@
 
 Application::Application()
 {
-	m_Window = std::make_unique<Window>();
 	m_EventDispatcher = std::make_unique<EventDispatcher>();
 
-	m_Renderer = std::make_unique<DxRenderer>();
-	m_Shader = std::make_unique<DxShader>(m_Renderer.get());
-	m_Camera = std::make_unique<Camera>(800, 600);
-	m_Model = std::make_unique<DxModel>(m_Renderer.get());
+	auto startup = RenderAPI::OPENGL;
+	if (startup == RenderAPI::DIRECTX)
+	{
+		m_Window = std::make_unique<Window>();
+		m_Renderer = std::make_unique<DxRenderer>();
+		m_Shader = std::make_unique<DxShader>(m_Renderer.get());
+		m_Camera = std::make_unique<Camera>(800, 600);
+		m_Model = std::make_unique<DxModel>(m_Renderer.get());
+	}
+	else if (startup == RenderAPI::OPENGL)
+	{
+		m_Window = std::make_unique<OpenGLWindow>();
+		m_Renderer = std::make_unique<GlRenderer>();
+		m_Shader = std::make_unique<GlShader>();
+		m_Camera = std::make_unique<GlCamera>(800, 600);
+		m_Model = std::make_unique<GlModel>(m_Shader.get());
+	}
 }
 
 Application::~Application()
@@ -113,6 +125,31 @@ bool Application::Init()
 	QueryHardwareInfo();
 	m_Camera->SetPitchAndYaw(m_Pitch, m_Yaw);
 
+	// Check MSAA levels
+	m_AntiAliasingLevelsText.clear();
+	for (auto& x : m_Renderer->GetSupportMsaaLevels())
+	{
+		auto str = "x" + std::to_string(x);
+		m_AntiAliasingLevelsText.push_back(str);
+	}
+
+	m_AntiAliasingLevelsText.push_back("Off");
+	std::reverse(m_AntiAliasingLevelsText.begin(), m_AntiAliasingLevelsText.end());
+
+	// Get current MSAA level
+	auto level = m_Renderer->GetCurrentMsaaLevel();
+	level = 0;
+	if (level == 0)
+	{
+		m_CurrentAntiAliasingLevel = "Off";
+	}
+	else
+	{
+		m_CurrentAntiAliasingLevel = "x" + std::to_string(level);
+	}
+
+	m_Renderer->CreateAntiAliasingTarget(level, m_Window->GetWidth(), m_Window->GetHeight());
+
 	return true;
 }
 
@@ -166,37 +203,61 @@ void Application::RenderGui()
 
 	ImGui::End();
 
-	// Button
-	static bool rendererOpen = true;
-	ImGui::Begin("Renderer", &rendererOpen);
-
-	if (m_Renderer->GetRenderAPI() == RenderAPI::DIRECTX)
+	// Options
 	{
-		ImGui::Text("DirectX");
-	}
-	else if (m_Renderer->GetRenderAPI() == RenderAPI::OPENGL)
-	{
-		ImGui::Text("OpenGL");
-	}
+		static bool rendererOpen = true;
+		ImGui::Begin("Renderer", &rendererOpen);
 
-	if (ImGui::Button("OpenGL"))
-	{
-		m_SwitchRenderAPI = RenderAPI::OPENGL;
-	}
-	else if (ImGui::Button("DirectX"))
-	{
-		m_SwitchRenderAPI = RenderAPI::DIRECTX;
-	}
+		// Display rendering API
+		static int current_combo_render_api = static_cast<int>(m_Renderer->GetRenderAPI()) - 1;
+		const char* combo_render_api_items[] = { "DirectX", "OpenGL" };
+		if (ImGui::Combo("##RenderAPI", &current_combo_render_api, combo_render_api_items, IM_ARRAYSIZE(combo_render_api_items)))
+		{
+			m_SwitchRenderAPI = static_cast<RenderAPI>(current_combo_render_api + 1);
+		}
 
-	if (ImGui::Checkbox("Wireframe (Press 1)", &m_Wireframe))
-	{
-		m_Renderer->ToggleWireframe(m_Wireframe);
+		// Anti-aliasing
+		if (ImGui::BeginCombo("##AntiAliasing", m_CurrentAntiAliasingLevel.c_str(), 0))
+		{
+			for (auto& x : m_AntiAliasingLevelsText)
+			{
+				bool selected = (m_CurrentAntiAliasingLevel == x.c_str());
+				if (ImGui::Selectable(x.c_str(), &selected))
+				{
+					m_CurrentAntiAliasingLevel = x.c_str();
+
+					int level = 0;
+					if (x != "Off")
+					{
+						auto substr = x.substr(1, x.size() - 1);
+						level = std::stoi(substr);
+					}
+
+					m_Renderer->CreateAntiAliasingTarget(level, m_Window->GetWidth(), m_Window->GetHeight());
+				}
+			}
+
+			ImGui::EndCombo();
+		}
+
+		// Wireframe
+		if (ImGui::Checkbox("Wireframe (Press 1)", &m_Wireframe))
+		{
+			m_Renderer->ToggleWireframe(m_Wireframe);
+		}
+
+		// Camera
+		ImGui::SliderInt("Camera Speed", &m_CameraRotationSpeed, 1, 100);
+
+		// Camera GUI detecting thing
+		{
+			auto window_width = static_cast<float>(m_Window->GetWidth());
+			auto window_height = static_cast<float>(m_Window->GetHeight());
+			m_MouseOverWidget = ImGui::IsMouseHoveringRect(ImVec2(0, 0), ImVec2(window_width, window_height), true);
+		}
+
+		ImGui::End();
 	}
-
-	ImGui::SliderInt("Camera Speed", &m_CameraRotationSpeed, 1, 100);
-	m_MouseOverWidget = ImGui::IsMouseHoveringRect(ImVec2(0, 0), ImVec2(800, 600), true);
-
-	ImGui::End();
 
 	Gui::Render(m_Renderer.get());
 }
@@ -377,8 +438,8 @@ void Application::OnMouseMove(const MouseData& mouse)
 		m_Yaw += (static_cast<float>(mouse.xrel) * m_CameraRotationSpeed / 100);// *dt * m_CameraRotationSpeed * 100);
 		m_Pitch += (static_cast<float>(mouse.yrel) * m_CameraRotationSpeed / 100);// *dt * m_CameraRotationSpeed * 100);
 
-		/*m_Yaw = (m_Yaw > 360.0f ? 0.0f : m_Yaw);
-		m_Yaw = (m_Yaw < 0.0f ? 360.0f : m_Yaw);*/
+		m_Yaw = (m_Yaw > 360.0f ? 0.0f : m_Yaw);
+		m_Yaw = (m_Yaw < 0.0f ? 360.0f : m_Yaw);
 		m_Pitch = std::clamp<float>(m_Pitch, -89, 89);
 
 		m_Camera->SetPitchAndYaw(m_Pitch, m_Yaw);

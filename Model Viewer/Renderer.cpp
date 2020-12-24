@@ -40,28 +40,65 @@ bool DxRenderer::Create(Window* window)
 	CreateRasterStateWireframe();
 	m_DeviceContext->RSSetState(m_RasterStateSolid.Get());
 
+	// Create an MSAA render target.
+	int max_sample_count = 8;
+	for (int i = max_sample_count; i >= 2; i /= 2)
+	{
+		auto quality_levels = 0u;
+		DX::ThrowIfFailed(m_Device->CheckMultisampleQualityLevels(DXGI_FORMAT_R8G8B8A8_UNORM, i, &quality_levels));
+		if (quality_levels != 0)
+		{
+			if (m_MsaaLevel == 0) 
+			{
+				m_MsaaLevel = i;
+			}
+
+			m_SupportMsaaLevels.push_back(i);
+		}
+	}
+
 	return true;
 }
 
 void DxRenderer::Resize(int width, int height)
 {
+	m_RenderTarget.ReleaseAndGetAddressOf();
 	m_DepthStencilView.ReleaseAndGetAddressOf();
 	m_RenderTargetView.ReleaseAndGetAddressOf();
 
+	m_MsaaRenderTarget.ReleaseAndGetAddressOf();
+	m_MsaaDepthStencilView.ReleaseAndGetAddressOf();
+	m_MsaaRenderTargetView.ReleaseAndGetAddressOf();
+
 	DX::ThrowIfFailed(m_SwapChain->ResizeBuffers(2, width, height, DXGI_FORMAT_R8G8B8A8_UNORM, 0));
 	CreateRenderTargetAndDepthStencilView(width, height);
+	CreateAntiAliasingTarget(m_MsaaLevel, width, height);
 	SetViewport(width, height);
 }
 
 void DxRenderer::Clear()
 {
-	m_DeviceContext->OMSetRenderTargets(1, m_RenderTargetView.GetAddressOf(), NULL);
-	m_DeviceContext->ClearRenderTargetView(m_RenderTargetView.Get(), reinterpret_cast<const float*>(&DirectX::Colors::SteelBlue));
-	m_DeviceContext->ClearDepthStencilView(m_DepthStencilView.Get(), D3D11_CLEAR_DEPTH, 1.0f, 0);
+	if (m_UseMsaa)
+	{
+		m_DeviceContext->ClearRenderTargetView(m_MsaaRenderTargetView.Get(), reinterpret_cast<const float*>(&DirectX::Colors::SteelBlue));
+		m_DeviceContext->ClearDepthStencilView(m_MsaaDepthStencilView.Get(), D3D11_CLEAR_DEPTH, 1.0f, 0);
+		m_DeviceContext->OMSetRenderTargets(1, m_MsaaRenderTargetView.GetAddressOf(), NULL);
+	}
+	else
+	{
+		m_DeviceContext->ClearRenderTargetView(m_RenderTargetView.Get(), reinterpret_cast<const float*>(&DirectX::Colors::SteelBlue));
+		m_DeviceContext->ClearDepthStencilView(m_DepthStencilView.Get(), D3D11_CLEAR_DEPTH, 1.0f, 0);
+		m_DeviceContext->OMSetRenderTargets(1, m_RenderTargetView.GetAddressOf(), NULL);
+	}
 }
 
 void DxRenderer::Present()
 {
+	if (m_UseMsaa)
+	{
+		m_DeviceContext->ResolveSubresource(m_RenderTarget.Get(), 0, m_MsaaRenderTarget.Get(), 0, DXGI_FORMAT_R8G8B8A8_UNORM);
+	}
+
 	ComPtr<IDXGISwapChain1> swapChain1 = nullptr;
 	m_SwapChain.As(&swapChain1);
 
@@ -212,9 +249,8 @@ bool DxRenderer::CreateSwapChain(Window* window, int width, int height)
 bool DxRenderer::CreateRenderTargetAndDepthStencilView(int width, int height)
 {
 	// Render target view
-	ComPtr<ID3D11Resource> backBuffer = nullptr;
-	DX::ThrowIfFailed(m_SwapChain->GetBuffer(0, __uuidof(ID3D11Resource), reinterpret_cast<void**>(backBuffer.GetAddressOf())));
-	DX::ThrowIfFailed(m_Device->CreateRenderTargetView(backBuffer.Get(), nullptr, m_RenderTargetView.GetAddressOf()));
+	DX::ThrowIfFailed(m_SwapChain->GetBuffer(0, __uuidof(ID3D11Resource), reinterpret_cast<void**>(m_RenderTarget.GetAddressOf())));
+	DX::ThrowIfFailed(m_Device->CreateRenderTargetView(m_RenderTarget.Get(), nullptr, m_RenderTargetView.GetAddressOf()));
 
 	// Depth stencil view
 	D3D11_TEXTURE2D_DESC descDepth = {};
@@ -246,6 +282,39 @@ void DxRenderer::SetViewport(int width, int height)
 	m_Viewport.TopLeftY = 0;
 
 	m_DeviceContext->RSSetViewports(1, &m_Viewport);
+}
+
+bool DxRenderer::CreateAntiAliasingTarget(int msaa_level, int window_width, int window_height)
+{
+	m_MsaaLevel = msaa_level;
+	if (msaa_level == 0)
+	{
+		m_UseMsaa = false;
+		return true;
+	}
+	else
+	{
+		m_UseMsaa = true;
+	}
+
+	// Render target view
+	CD3D11_TEXTURE2D_DESC renderTargetDesc(DXGI_FORMAT_R8G8B8A8_UNORM, window_width, window_height, 1, 1,
+		D3D11_BIND_RENDER_TARGET, D3D11_USAGE_DEFAULT, 0, m_MsaaLevel);
+
+	DX::ThrowIfFailed(m_Device->CreateTexture2D(&renderTargetDesc, nullptr, m_MsaaRenderTarget.ReleaseAndGetAddressOf()));
+
+	CD3D11_RENDER_TARGET_VIEW_DESC renderTargetViewDesc(D3D11_RTV_DIMENSION_TEXTURE2DMS, DXGI_FORMAT_R8G8B8A8_UNORM);
+	DX::ThrowIfFailed(m_Device->CreateRenderTargetView(m_MsaaRenderTarget.Get(), &renderTargetViewDesc, m_MsaaRenderTargetView.ReleaseAndGetAddressOf()));
+
+	// Depth stencil view
+	CD3D11_TEXTURE2D_DESC depthStencilDesc(DXGI_FORMAT_D32_FLOAT, window_width, window_height, 1, 1,
+		D3D11_BIND_DEPTH_STENCIL, D3D11_USAGE_DEFAULT, 0, m_MsaaLevel);
+
+	ComPtr<ID3D11Texture2D> depthStencil;
+	DX::ThrowIfFailed(m_Device->CreateTexture2D(&depthStencilDesc, nullptr, depthStencil.GetAddressOf()));
+	DX::ThrowIfFailed(m_Device->CreateDepthStencilView(depthStencil.Get(), nullptr, m_MsaaDepthStencilView.ReleaseAndGetAddressOf()));
+
+	return true;
 }
 
 void DxRenderer::CreateRasterStateSolid()
@@ -282,46 +351,91 @@ void DxRenderer::CreateRasterStateWireframe()
 	DX::ThrowIfFailed(m_Device->CreateRasterizerState(&rasterizerState, m_RasterStateWireframe.ReleaseAndGetAddressOf()));
 }
 
+GlRenderer::~GlRenderer()
+{
+	glDeleteTextures(1, &m_BackBuffer);
+	glDeleteBuffers(1, &m_FrameBuffer);
+	glDeleteRenderbuffers(1, &m_DepthBuffer);
+}
+
 bool GlRenderer::Create(Window* window)
 {
+	m_Window = window;
+
+	auto window_width = window->GetWidth();
+	auto window_height = window->GetHeight();
+
 	// Glew
 	GLenum error = glewInit();
 	if (error != GLEW_OK)
 	{
-		//std::cout << "Error: " << glewGetErrorString(error) << '\n';
+		auto glew_error = reinterpret_cast<const char*>(glewGetErrorString(error));
+		SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", glew_error, nullptr);
 		return false;
 	}
 
 #ifdef _DEBUG
 	const unsigned char* glewVersion = glewGetString(GLEW_VERSION);
-	//std::cout << "Glew: " << glewVersion << '\n';
+	std::cout << "Glew: " << glewVersion << '\n';
 #endif
+
+	glEnable(GL_DEBUG_OUTPUT);
+
+	QueryHardwareInfo();
 
 	glEnable(GL_DEPTH_TEST);
 	glDepthFunc(GL_LEQUAL);
 
-	m_Window = window;
+	// MSAA
+	int maxSamples = 0;
+	glGetIntegerv(GL_MAX_SAMPLES, &maxSamples);
+	for (int i = maxSamples; i >= 2; i /= 2)
+	{
+		m_SupportMsaaLevels.push_back(i);
+	}
 
-	QueryHardwareInfo();
 	return true;
 }
 
 void GlRenderer::Resize(int width, int height)
 {
+	CreateAntiAliasingTarget(m_MsaaLevel, width, height);
 	glViewport(0, 0, width, height);
 }
 
 void GlRenderer::Clear()
 {
 	static const GLfloat blue[] = { 0.274509817f, 0.509803951f, 0.705882370f, 1.000000000f };
-	glClearBufferfv(GL_COLOR, 0, blue);
-
 	static GLfloat depth = 1.0f;
+
+	glClearBufferfv(GL_COLOR, 0, blue);
 	glClearBufferfv(GL_DEPTH, 0, &depth);
+
+	if (m_UseMsaa)
+	{
+		glBindFramebuffer(GL_FRAMEBUFFER, m_FrameBuffer);
+		glClearBufferfv(GL_COLOR, 0, blue);
+		glClearBufferfv(GL_DEPTH, 0, &depth);
+	}
+	else
+	{
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	}
 }
 
 void GlRenderer::Present()
 {
+	if (m_UseMsaa)
+	{
+		auto window_width = m_Window->GetWidth();
+		auto window_height = m_Window->GetHeight();
+
+		glBindFramebuffer(GL_READ_FRAMEBUFFER, m_FrameBuffer);
+		glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+		glBlitFramebuffer(0, 0, window_width, window_height, 0, 0, window_width, window_height, GL_COLOR_BUFFER_BIT, GL_NEAREST);
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	}
+
 	SDL_GL_SetSwapInterval(0);
 	SDL_GL_SwapWindow(m_Window->GetSdlWindow());
 }
@@ -357,4 +471,70 @@ void GlRenderer::QueryHardwareInfo()
 		wglGetGPUIDsAMD(n, ids.get());
 		wglGetGPUInfoAMD(ids[0], WGL_GPU_RAM_AMD, GL_UNSIGNED_INT, sizeof(size_t), &m_DeviceVideoMemoryMb);
 	}
+}
+
+bool GlRenderer::CreateAntiAliasingTarget(int msaa_level, int window_width, int window_height)
+{
+	glDeleteRenderbuffers(1, &m_DepthBuffer);
+	glDeleteTextures(1, &m_BackBuffer);
+	glDeleteFramebuffers(1, &m_FrameBuffer);
+
+	m_MsaaLevel = msaa_level;
+	if (msaa_level == 0)
+	{
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+		m_UseMsaa = false;
+		return true;
+	}
+	else
+	{
+		m_UseMsaa = true;
+	}
+
+	GLenum err = 0;
+
+	// Back buffer
+	glGenTextures(1, &m_BackBuffer);
+	glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, m_BackBuffer);
+	glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, msaa_level, GL_RGB, window_width, window_height, GL_TRUE);
+	glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, 0);
+
+	err = glGetError();
+	if (err != GL_NO_ERROR)
+	{
+		std::cout << "Error\n";
+	}
+
+	// Stencil buffer
+	glGenRenderbuffers(1, &m_DepthBuffer);
+	glBindRenderbuffer(GL_RENDERBUFFER, m_DepthBuffer);
+	glRenderbufferStorageMultisample(GL_RENDERBUFFER, msaa_level, GL_DEPTH24_STENCIL8, window_width, window_height);
+	glBindRenderbuffer(GL_RENDERBUFFER, 0);
+
+	err = glGetError();
+	if (err != GL_NO_ERROR)
+	{
+		std::cout << "Error\n";
+	}
+
+	// Frame buffer
+	glGenFramebuffers(1, &m_FrameBuffer);
+	glBindFramebuffer(GL_FRAMEBUFFER, m_FrameBuffer);
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D_MULTISAMPLE, m_BackBuffer, 0);
+	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, m_DepthBuffer);
+
+	err = glGetError();
+	if (err != GL_NO_ERROR)
+	{
+		std::cout << "Error\n";
+	}
+
+	auto t = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+	if (t != GL_FRAMEBUFFER_COMPLETE)
+	{
+		std::cout << "Big bug\n";
+	}
+
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	return true;
 }
