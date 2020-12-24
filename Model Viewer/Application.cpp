@@ -249,13 +249,6 @@ void Application::RenderGui()
 		// Camera
 		ImGui::SliderInt("Camera Speed", &m_CameraRotationSpeed, 1, 100);
 
-		// Camera GUI detecting thing
-		{
-			auto window_width = static_cast<float>(m_Window->GetWidth());
-			auto window_height = static_cast<float>(m_Window->GetHeight());
-			m_MouseOverWidget = ImGui::IsMouseHoveringRect(ImVec2(0, 0), ImVec2(window_width, window_height), true);
-		}
-
 		ImGui::End();
 	}
 
@@ -431,7 +424,7 @@ void Application::OnKeyPressed(SDL_Scancode scancode)
 
 void Application::OnMouseMove(const MouseData& mouse)
 {
-	if (mouse.state == SDL_BUTTON_LMASK && m_IsRotatingCamera)
+	if (mouse.state == SDL_BUTTON_LMASK)
 	{
 		float dt = static_cast<float>(m_Timer.DeltaTime());
 
@@ -448,24 +441,8 @@ void Application::OnMouseMove(const MouseData& mouse)
 
 void Application::OnMousePressed(const MouseData& mouse)
 {
-	if (mouse.state == SDL_BUTTON_LMASK && m_CanRotateCamera && !m_MouseOverWidget)
-	{
-		m_IsRotatingCamera = true;
-		m_LastMousePosition.first = mouse.x;
-		m_LastMousePosition.second = mouse.y;
-
-		SDL_SetRelativeMouseMode(SDL_TRUE);
-	}
 }
 
 void Application::OnMouseReleased(const MouseData& mouse)
 {
-	m_CanRotateCamera = true;
-
-	if (m_IsRotatingCamera)
-	{
-		m_IsRotatingCamera = false;
-		SDL_SetRelativeMouseMode(SDL_FALSE);
-		SDL_WarpMouseInWindow(m_Window->GetSdlWindow(), m_LastMousePosition.first, m_LastMousePosition.second);
-	}
 }
