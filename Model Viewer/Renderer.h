@@ -154,6 +154,7 @@ private:
 	GLuint m_DepthBuffer = 0;
 
 	// MSAA
+	bool m_UseMsaa = false;
 	int m_MsaaLevel = 0;
 	std::vector<int> m_SupportMsaaLevels;
 

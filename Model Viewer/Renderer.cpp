@@ -355,6 +355,7 @@ GlRenderer::~GlRenderer()
 {
 	glDeleteTextures(1, &m_BackBuffer);
 	glDeleteBuffers(1, &m_FrameBuffer);
+	glDeleteRenderbuffers(1, &m_DepthBuffer);
 }
 
 bool GlRenderer::Create(Window* window)
@@ -368,13 +369,14 @@ bool GlRenderer::Create(Window* window)
 	GLenum error = glewInit();
 	if (error != GLEW_OK)
 	{
-		//std::cout << "Error: " << glewGetErrorString(error) << '\n';
+		auto glew_error = reinterpret_cast<const char*>(glewGetErrorString(error));
+		SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", glew_error, nullptr);
 		return false;
 	}
 
 #ifdef _DEBUG
 	const unsigned char* glewVersion = glewGetString(GLEW_VERSION);
-	//std::cout << "Glew: " << glewVersion << '\n';
+	std::cout << "Glew: " << glewVersion << '\n';
 #endif
 
 	glEnable(GL_DEBUG_OUTPUT);
@@ -392,46 +394,12 @@ bool GlRenderer::Create(Window* window)
 		m_SupportMsaaLevels.push_back(i);
 	}
 
-	auto samples = 2;
-
-	// Frame buffer
-	glGenFramebuffers(1, &m_FrameBuffer);
-	glBindFramebuffer(GL_FRAMEBUFFER, m_FrameBuffer);
-	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D_MULTISAMPLE, m_BackBuffer, 0);
-
-	// Back buffer
-	glGenTextures(1, &m_BackBuffer);
-	glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, m_BackBuffer);
-	glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, samples, GL_RGB, window_width, window_height, GL_TRUE);
-	glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, 0);
-	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D_MULTISAMPLE, m_BackBuffer, 0);
-
-	// Stencil buffer
-	glGenRenderbuffers(1, &m_DepthBuffer);
-	glBindRenderbuffer(GL_RENDERBUFFER, m_DepthBuffer);
-	glRenderbufferStorageMultisample(GL_RENDERBUFFER, samples, GL_DEPTH24_STENCIL8, window_width, window_height);
-	glBindRenderbuffer(GL_RENDERBUFFER, 0);
-	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, m_DepthBuffer);
-
-	GLenum err = glGetError();
-	if (err != GL_NO_ERROR)
-	{
-		std::cout << "Error\n";
-	}
-
-	auto t = glCheckFramebufferStatus(GL_FRAMEBUFFER);
-	if (t != GL_FRAMEBUFFER_COMPLETE)
-	{
-		std::cout << "Big bug\n";
-	}
-
-	glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
 	return true;
 }
 
 void GlRenderer::Resize(int width, int height)
 {
+	CreateAntiAliasingTarget(m_MsaaLevel, width, height);
 	glViewport(0, 0, width, height);
 }
 
@@ -443,27 +411,30 @@ void GlRenderer::Clear()
 	glClearBufferfv(GL_COLOR, 0, blue);
 	glClearBufferfv(GL_DEPTH, 0, &depth);
 
-	glBindFramebuffer(GL_FRAMEBUFFER, m_FrameBuffer);
-
-	glClearBufferfv(GL_COLOR, 0, blue);
-	glClearBufferfv(GL_DEPTH, 0, &depth);
+	if (m_UseMsaa)
+	{
+		glBindFramebuffer(GL_FRAMEBUFFER, m_FrameBuffer);
+		glClearBufferfv(GL_COLOR, 0, blue);
+		glClearBufferfv(GL_DEPTH, 0, &depth);
+	}
+	else
+	{
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	}
 }
 
 void GlRenderer::Present()
 {
-	glBindFramebuffer(GL_READ_FRAMEBUFFER, m_FrameBuffer);
-	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
-	glBlitFramebuffer(0, 0, 800, 600, 0, 0, 800, 600, GL_COLOR_BUFFER_BIT, GL_NEAREST);
-
-	GLenum err = glGetError();
-	if (err != GL_NO_ERROR)
+	if (m_UseMsaa)
 	{
-		std::cout << "Error\n";
+		auto window_width = m_Window->GetWidth();
+		auto window_height = m_Window->GetHeight();
+
+		glBindFramebuffer(GL_READ_FRAMEBUFFER, m_FrameBuffer);
+		glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+		glBlitFramebuffer(0, 0, window_width, window_height, 0, 0, window_width, window_height, GL_COLOR_BUFFER_BIT, GL_NEAREST);
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	}
-
-	glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
-
 
 	SDL_GL_SetSwapInterval(0);
 	SDL_GL_SwapWindow(m_Window->GetSdlWindow());
@@ -504,5 +475,66 @@ void GlRenderer::QueryHardwareInfo()
 
 bool GlRenderer::CreateAntiAliasingTarget(int msaa_level, int window_width, int window_height)
 {
-	return false;
+	glDeleteRenderbuffers(1, &m_DepthBuffer);
+	glDeleteTextures(1, &m_BackBuffer);
+	glDeleteFramebuffers(1, &m_FrameBuffer);
+
+	m_MsaaLevel = msaa_level;
+	if (msaa_level == 0)
+	{
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+		m_UseMsaa = false;
+		return true;
+	}
+	else
+	{
+		m_UseMsaa = true;
+	}
+
+	GLenum err = 0;
+
+	// Back buffer
+	glGenTextures(1, &m_BackBuffer);
+	glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, m_BackBuffer);
+	glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, msaa_level, GL_RGB, window_width, window_height, GL_TRUE);
+	glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, 0);
+
+	err = glGetError();
+	if (err != GL_NO_ERROR)
+	{
+		std::cout << "Error\n";
+	}
+
+	// Stencil buffer
+	glGenRenderbuffers(1, &m_DepthBuffer);
+	glBindRenderbuffer(GL_RENDERBUFFER, m_DepthBuffer);
+	glRenderbufferStorageMultisample(GL_RENDERBUFFER, msaa_level, GL_DEPTH24_STENCIL8, window_width, window_height);
+	glBindRenderbuffer(GL_RENDERBUFFER, 0);
+
+	err = glGetError();
+	if (err != GL_NO_ERROR)
+	{
+		std::cout << "Error\n";
+	}
+
+	// Frame buffer
+	glGenFramebuffers(1, &m_FrameBuffer);
+	glBindFramebuffer(GL_FRAMEBUFFER, m_FrameBuffer);
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D_MULTISAMPLE, m_BackBuffer, 0);
+	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, m_DepthBuffer);
+
+	err = glGetError();
+	if (err != GL_NO_ERROR)
+	{
+		std::cout << "Error\n";
+	}
+
+	auto t = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+	if (t != GL_FRAMEBUFFER_COMPLETE)
+	{
+		std::cout << "Big bug\n";
+	}
+
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	return true;
 }
