@@ -148,10 +148,10 @@
     <None Include="Header.hlsli">
       <Filter>Shaders Files\HLSL</Filter>
     </None>
-    <None Include="VertexShader.glsl">
+    <None Include="FragmentShader.glsl">
       <Filter>Shaders Files\GLSL</Filter>
     </None>
-    <None Include="FragmentShader.glsl">
+    <None Include="VertexShader.glsl">
       <Filter>Shaders Files\GLSL</Filter>
     </None>
   </ItemGroup>
