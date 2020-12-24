@@ -125,6 +125,7 @@ bool Application::Init()
 
 	// Get current MSAA level
 	auto level = m_Renderer->GetCurrentMsaaLevel();
+	level = 0;
 	if (level == 0)
 	{
 		m_CurrentAntiAliasingLevel = "Off";
@@ -133,6 +134,8 @@ bool Application::Init()
 	{
 		m_CurrentAntiAliasingLevel = "x" + std::to_string(level);
 	}
+
+	m_Renderer->CreateAntiAliasingTarget(level, m_Window->GetWidth(), m_Window->GetHeight());
 
 	return true;
 }

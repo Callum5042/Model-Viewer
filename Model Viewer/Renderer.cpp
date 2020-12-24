@@ -57,8 +57,6 @@ bool DxRenderer::Create(Window* window)
 		}
 	}
 
-	CreateAntiAliasingTarget(m_MsaaLevel, width, height);
-
 	return true;
 }
 
