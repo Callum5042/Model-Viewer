@@ -72,10 +72,15 @@ private:
 	ComPtr<IDXGISwapChain> m_SwapChain = nullptr;
 	ComPtr<IDXGIFactory1> m_DxgiFactory1 = nullptr;
 	ComPtr<IDXGIFactory2> m_DxgiFactory2 = nullptr;
+	D3D11_VIEWPORT m_Viewport = {};
 
+	ComPtr<ID3D11Texture2D> m_RenderTarget = nullptr;
 	ComPtr<ID3D11RenderTargetView> m_RenderTargetView = nullptr;
 	ComPtr<ID3D11DepthStencilView> m_DepthStencilView = nullptr;
-	D3D11_VIEWPORT m_Viewport = {};
+
+	ComPtr<ID3D11Texture2D> m_MsaaRenderTarget = nullptr;
+	ComPtr<ID3D11RenderTargetView> m_MsaaRenderTargetView = nullptr;
+	ComPtr<ID3D11DepthStencilView> m_MsaaDepthStencilView = nullptr;
 
 	bool CreateDevice();
 	bool CreateSwapChain(Window* window, int width, int height);

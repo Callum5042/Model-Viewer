@@ -40,6 +40,25 @@ bool DxRenderer::Create(Window* window)
 	CreateRasterStateWireframe();
 	m_DeviceContext->RSSetState(m_RasterStateSolid.Get());
 
+	// Create an MSAA render target.
+	int sample_count = 8;
+
+	CD3D11_TEXTURE2D_DESC renderTargetDesc(DXGI_FORMAT_R8G8B8A8_UNORM, width, height, 1, 1,
+		D3D11_BIND_RENDER_TARGET, D3D11_USAGE_DEFAULT, 0, sample_count);
+
+	DX::ThrowIfFailed(m_Device->CreateTexture2D(&renderTargetDesc, nullptr, m_MsaaRenderTarget.ReleaseAndGetAddressOf()));
+
+	CD3D11_RENDER_TARGET_VIEW_DESC renderTargetViewDesc(D3D11_RTV_DIMENSION_TEXTURE2DMS, DXGI_FORMAT_R8G8B8A8_UNORM);
+	DX::ThrowIfFailed(m_Device->CreateRenderTargetView(m_MsaaRenderTarget.Get(), &renderTargetViewDesc, m_MsaaRenderTargetView.ReleaseAndGetAddressOf()));
+
+	// Depth 
+	CD3D11_TEXTURE2D_DESC depthStencilDesc(DXGI_FORMAT_D32_FLOAT, width, height, 1, 1,
+		D3D11_BIND_DEPTH_STENCIL, D3D11_USAGE_DEFAULT, 0, sample_count);
+
+	ComPtr<ID3D11Texture2D> depthStencil;
+	DX::ThrowIfFailed(m_Device->CreateTexture2D(&depthStencilDesc, nullptr, depthStencil.GetAddressOf()));
+	DX::ThrowIfFailed(m_Device->CreateDepthStencilView(depthStencil.Get(), nullptr, m_MsaaDepthStencilView.ReleaseAndGetAddressOf()));
+
 	return true;
 }
 
@@ -55,13 +74,15 @@ void DxRenderer::Resize(int width, int height)
 
 void DxRenderer::Clear()
 {
-	m_DeviceContext->OMSetRenderTargets(1, m_RenderTargetView.GetAddressOf(), NULL);
-	m_DeviceContext->ClearRenderTargetView(m_RenderTargetView.Get(), reinterpret_cast<const float*>(&DirectX::Colors::SteelBlue));
-	m_DeviceContext->ClearDepthStencilView(m_DepthStencilView.Get(), D3D11_CLEAR_DEPTH, 1.0f, 0);
+	m_DeviceContext->ClearRenderTargetView(m_MsaaRenderTargetView.Get(), reinterpret_cast<const float*>(&DirectX::Colors::SteelBlue));
+	m_DeviceContext->ClearDepthStencilView(m_MsaaDepthStencilView.Get(), D3D11_CLEAR_DEPTH, 1.0f, 0);
+	m_DeviceContext->OMSetRenderTargets(1, m_MsaaRenderTargetView.GetAddressOf(), NULL);
 }
 
 void DxRenderer::Present()
 {
+	m_DeviceContext->ResolveSubresource(m_RenderTarget.Get(), 0, m_MsaaRenderTarget.Get(), 0, DXGI_FORMAT_R8G8B8A8_UNORM);
+
 	ComPtr<IDXGISwapChain1> swapChain1 = nullptr;
 	m_SwapChain.As(&swapChain1);
 
@@ -212,9 +233,9 @@ bool DxRenderer::CreateSwapChain(Window* window, int width, int height)
 bool DxRenderer::CreateRenderTargetAndDepthStencilView(int width, int height)
 {
 	// Render target view
-	ComPtr<ID3D11Resource> backBuffer = nullptr;
-	DX::ThrowIfFailed(m_SwapChain->GetBuffer(0, __uuidof(ID3D11Resource), reinterpret_cast<void**>(backBuffer.GetAddressOf())));
-	DX::ThrowIfFailed(m_Device->CreateRenderTargetView(backBuffer.Get(), nullptr, m_RenderTargetView.GetAddressOf()));
+	//ComPtr<ID3D11Resource> backBuffer = nullptr;
+	DX::ThrowIfFailed(m_SwapChain->GetBuffer(0, __uuidof(ID3D11Resource), reinterpret_cast<void**>(m_RenderTarget.GetAddressOf())));
+	DX::ThrowIfFailed(m_Device->CreateRenderTargetView(m_RenderTarget.Get(), nullptr, m_RenderTargetView.GetAddressOf()));
 
 	// Depth stencil view
 	D3D11_TEXTURE2D_DESC descDepth = {};
