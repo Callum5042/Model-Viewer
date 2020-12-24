@@ -113,6 +113,27 @@ bool Application::Init()
 	QueryHardwareInfo();
 	m_Camera->SetPitchAndYaw(m_Pitch, m_Yaw);
 
+	// Check MSAA levels
+	for (auto& x : m_Renderer->GetSupportMsaaLevels())
+	{
+		auto str = "x" + std::to_string(x);
+		m_AntiAliasingLevelsText.push_back(str);
+	}
+
+	m_AntiAliasingLevelsText.push_back("Off");
+	std::reverse(m_AntiAliasingLevelsText.begin(), m_AntiAliasingLevelsText.end());
+
+	// Get current MSAA level
+	auto level = m_Renderer->GetCurrentMsaaLevel();
+	if (level == 0)
+	{
+		m_CurrentAntiAliasingLevel = "Off";
+	}
+	else
+	{
+		m_CurrentAntiAliasingLevel = "x" + std::to_string(level);
+	}
+
 	return true;
 }
 
@@ -180,7 +201,28 @@ void Application::RenderGui()
 		}
 
 		// Anti-aliasing
-		//ImGui::Combo("Anti-aliasing", )
+		if (ImGui::BeginCombo("##AntiAliasing", m_CurrentAntiAliasingLevel.c_str(), 0))
+		{
+			for (auto& x : m_AntiAliasingLevelsText)
+			{
+				bool selected = (m_CurrentAntiAliasingLevel == x.c_str());
+				if (ImGui::Selectable(x.c_str(), &selected))
+				{
+					m_CurrentAntiAliasingLevel = x.c_str();
+
+					int level = 0;
+					if (x != "Off")
+					{
+						auto substr = x.substr(1, x.size() - 1);
+						level = std::stoi(substr);
+					}
+
+					m_Renderer->CreateAntiAliasingTarget(level, m_Window->GetWidth(), m_Window->GetHeight());
+				}
+			}
+
+			ImGui::EndCombo();
+		}
 
 		// Wireframe
 		if (ImGui::Checkbox("Wireframe (Press 1)", &m_Wireframe))
@@ -380,8 +422,8 @@ void Application::OnMouseMove(const MouseData& mouse)
 		m_Yaw += (static_cast<float>(mouse.xrel) * m_CameraRotationSpeed / 100);// *dt * m_CameraRotationSpeed * 100);
 		m_Pitch += (static_cast<float>(mouse.yrel) * m_CameraRotationSpeed / 100);// *dt * m_CameraRotationSpeed * 100);
 
-		/*m_Yaw = (m_Yaw > 360.0f ? 0.0f : m_Yaw);
-		m_Yaw = (m_Yaw < 0.0f ? 360.0f : m_Yaw);*/
+		m_Yaw = (m_Yaw > 360.0f ? 0.0f : m_Yaw);
+		m_Yaw = (m_Yaw < 0.0f ? 360.0f : m_Yaw);
 		m_Pitch = std::clamp<float>(m_Pitch, -89, 89);
 
 		m_Camera->SetPitchAndYaw(m_Pitch, m_Yaw);

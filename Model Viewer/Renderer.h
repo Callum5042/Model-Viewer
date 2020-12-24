@@ -42,6 +42,10 @@ public:
 	virtual SIZE_T GetVRAM() = 0;
 
 	virtual void ToggleWireframe(bool wireframe) = 0;
+
+	virtual bool CreateAntiAliasingTarget(int msaa_level, int window_width, int window_height) = 0;
+	virtual const std::vector<int>& GetSupportMsaaLevels() = 0;
+	virtual int GetCurrentMsaaLevel() = 0;
 };
 
 class DxRenderer : public IRenderer
@@ -56,15 +60,24 @@ public:
 	void Clear();
 	void Present();
 
+	// Direct3D specific data
 	constexpr ComPtr<ID3D11Device>& GetDevice() { return m_Device; }
 	constexpr ComPtr<ID3D11DeviceContext>& GetDeviceContext() { return m_DeviceContext; }
 
+	// Rendering API
 	RenderAPI GetRenderAPI() { return RenderAPI::DIRECTX; }
 
+	// Hardware information
 	const std::string& GetName() override { return m_DeviceName; }
 	SIZE_T GetVRAM() override { return m_DeviceVideoMemoryMb; }
 
+	// Wireframe
 	void ToggleWireframe(bool wireframe) override;
+
+	// Anti-aliasing
+	bool CreateAntiAliasingTarget(int msaa_level, int window_width, int window_height);
+	const std::vector<int>& GetSupportMsaaLevels() { return m_SupportMsaaLevels; }
+	int GetCurrentMsaaLevel() override { return m_MsaaLevel; }
 
 private:
 	ComPtr<ID3D11Device> m_Device = nullptr;
@@ -78,14 +91,19 @@ private:
 	ComPtr<ID3D11RenderTargetView> m_RenderTargetView = nullptr;
 	ComPtr<ID3D11DepthStencilView> m_DepthStencilView = nullptr;
 
-	ComPtr<ID3D11Texture2D> m_MsaaRenderTarget = nullptr;
-	ComPtr<ID3D11RenderTargetView> m_MsaaRenderTargetView = nullptr;
-	ComPtr<ID3D11DepthStencilView> m_MsaaDepthStencilView = nullptr;
-
 	bool CreateDevice();
 	bool CreateSwapChain(Window* window, int width, int height);
 	bool CreateRenderTargetAndDepthStencilView(int width, int height);
 	void SetViewport(int width, int height);
+
+	// Multi sample anti-aliasing
+	bool m_UseMsaa = false;
+	int m_MsaaLevel = 0;
+	std::vector<int> m_SupportMsaaLevels;
+
+	ComPtr<ID3D11Texture2D> m_MsaaRenderTarget = nullptr;
+	ComPtr<ID3D11RenderTargetView> m_MsaaRenderTargetView = nullptr;
+	ComPtr<ID3D11DepthStencilView> m_MsaaDepthStencilView = nullptr;
 
 	// Raster states
 	ComPtr<ID3D11RasterizerState> m_RasterStateSolid = nullptr;
@@ -123,6 +141,9 @@ public:
 
 	void ToggleWireframe(bool wireframe) override;
 
+	// Inherited via IRenderer
+	virtual const std::vector<int>& GetSupportMsaaLevels() override;
+
 private:
 	Window* m_Window = nullptr;
 
@@ -134,4 +155,8 @@ private:
 
 	// Device video memory
 	SIZE_T m_DeviceVideoMemoryMb = 0;
+
+	// Inherited via IRenderer
+	virtual bool CreateAntiAliasingTarget(int msaa_level, int window_width, int window_height) override;
+	int GetCurrentMsaaLevel() override { return 0; }
 };

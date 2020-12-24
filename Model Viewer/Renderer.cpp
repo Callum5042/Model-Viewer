@@ -41,47 +41,65 @@ bool DxRenderer::Create(Window* window)
 	m_DeviceContext->RSSetState(m_RasterStateSolid.Get());
 
 	// Create an MSAA render target.
-	int sample_count = 8;
+	int max_sample_count = 8;
+	for (int i = max_sample_count; i >= 2; i /= 2)
+	{
+		auto quality_levels = 0u;
+		DX::ThrowIfFailed(m_Device->CheckMultisampleQualityLevels(DXGI_FORMAT_R8G8B8A8_UNORM, i, &quality_levels));
+		if (quality_levels != 0)
+		{
+			if (m_MsaaLevel == 0) 
+			{
+				m_MsaaLevel = i;
+			}
 
-	CD3D11_TEXTURE2D_DESC renderTargetDesc(DXGI_FORMAT_R8G8B8A8_UNORM, width, height, 1, 1,
-		D3D11_BIND_RENDER_TARGET, D3D11_USAGE_DEFAULT, 0, sample_count);
+			m_SupportMsaaLevels.push_back(i);
+		}
+	}
 
-	DX::ThrowIfFailed(m_Device->CreateTexture2D(&renderTargetDesc, nullptr, m_MsaaRenderTarget.ReleaseAndGetAddressOf()));
-
-	CD3D11_RENDER_TARGET_VIEW_DESC renderTargetViewDesc(D3D11_RTV_DIMENSION_TEXTURE2DMS, DXGI_FORMAT_R8G8B8A8_UNORM);
-	DX::ThrowIfFailed(m_Device->CreateRenderTargetView(m_MsaaRenderTarget.Get(), &renderTargetViewDesc, m_MsaaRenderTargetView.ReleaseAndGetAddressOf()));
-
-	// Depth 
-	CD3D11_TEXTURE2D_DESC depthStencilDesc(DXGI_FORMAT_D32_FLOAT, width, height, 1, 1,
-		D3D11_BIND_DEPTH_STENCIL, D3D11_USAGE_DEFAULT, 0, sample_count);
-
-	ComPtr<ID3D11Texture2D> depthStencil;
-	DX::ThrowIfFailed(m_Device->CreateTexture2D(&depthStencilDesc, nullptr, depthStencil.GetAddressOf()));
-	DX::ThrowIfFailed(m_Device->CreateDepthStencilView(depthStencil.Get(), nullptr, m_MsaaDepthStencilView.ReleaseAndGetAddressOf()));
+	CreateAntiAliasingTarget(m_MsaaLevel, width, height);
 
 	return true;
 }
 
 void DxRenderer::Resize(int width, int height)
 {
+	m_RenderTarget.ReleaseAndGetAddressOf();
 	m_DepthStencilView.ReleaseAndGetAddressOf();
 	m_RenderTargetView.ReleaseAndGetAddressOf();
 
+	m_MsaaRenderTarget.ReleaseAndGetAddressOf();
+	m_MsaaDepthStencilView.ReleaseAndGetAddressOf();
+	m_MsaaRenderTargetView.ReleaseAndGetAddressOf();
+
 	DX::ThrowIfFailed(m_SwapChain->ResizeBuffers(2, width, height, DXGI_FORMAT_R8G8B8A8_UNORM, 0));
 	CreateRenderTargetAndDepthStencilView(width, height);
+	CreateAntiAliasingTarget(m_MsaaLevel, width, height);
 	SetViewport(width, height);
 }
 
 void DxRenderer::Clear()
 {
-	m_DeviceContext->ClearRenderTargetView(m_MsaaRenderTargetView.Get(), reinterpret_cast<const float*>(&DirectX::Colors::SteelBlue));
-	m_DeviceContext->ClearDepthStencilView(m_MsaaDepthStencilView.Get(), D3D11_CLEAR_DEPTH, 1.0f, 0);
-	m_DeviceContext->OMSetRenderTargets(1, m_MsaaRenderTargetView.GetAddressOf(), NULL);
+	if (m_UseMsaa)
+	{
+		m_DeviceContext->ClearRenderTargetView(m_MsaaRenderTargetView.Get(), reinterpret_cast<const float*>(&DirectX::Colors::SteelBlue));
+		m_DeviceContext->ClearDepthStencilView(m_MsaaDepthStencilView.Get(), D3D11_CLEAR_DEPTH, 1.0f, 0);
+		m_DeviceContext->OMSetRenderTargets(1, m_MsaaRenderTargetView.GetAddressOf(), NULL);
+	}
+	else
+	{
+		m_DeviceContext->ClearRenderTargetView(m_RenderTargetView.Get(), reinterpret_cast<const float*>(&DirectX::Colors::SteelBlue));
+		m_DeviceContext->ClearDepthStencilView(m_DepthStencilView.Get(), D3D11_CLEAR_DEPTH, 1.0f, 0);
+		m_DeviceContext->OMSetRenderTargets(1, m_RenderTargetView.GetAddressOf(), NULL);
+	}
 }
 
 void DxRenderer::Present()
 {
-	m_DeviceContext->ResolveSubresource(m_RenderTarget.Get(), 0, m_MsaaRenderTarget.Get(), 0, DXGI_FORMAT_R8G8B8A8_UNORM);
+	if (m_UseMsaa)
+	{
+		m_DeviceContext->ResolveSubresource(m_RenderTarget.Get(), 0, m_MsaaRenderTarget.Get(), 0, DXGI_FORMAT_R8G8B8A8_UNORM);
+	}
 
 	ComPtr<IDXGISwapChain1> swapChain1 = nullptr;
 	m_SwapChain.As(&swapChain1);
@@ -233,7 +251,6 @@ bool DxRenderer::CreateSwapChain(Window* window, int width, int height)
 bool DxRenderer::CreateRenderTargetAndDepthStencilView(int width, int height)
 {
 	// Render target view
-	//ComPtr<ID3D11Resource> backBuffer = nullptr;
 	DX::ThrowIfFailed(m_SwapChain->GetBuffer(0, __uuidof(ID3D11Resource), reinterpret_cast<void**>(m_RenderTarget.GetAddressOf())));
 	DX::ThrowIfFailed(m_Device->CreateRenderTargetView(m_RenderTarget.Get(), nullptr, m_RenderTargetView.GetAddressOf()));
 
@@ -267,6 +284,39 @@ void DxRenderer::SetViewport(int width, int height)
 	m_Viewport.TopLeftY = 0;
 
 	m_DeviceContext->RSSetViewports(1, &m_Viewport);
+}
+
+bool DxRenderer::CreateAntiAliasingTarget(int msaa_level, int window_width, int window_height)
+{
+	m_MsaaLevel = msaa_level;
+	if (msaa_level == 0)
+	{
+		m_UseMsaa = false;
+		return true;
+	}
+	else
+	{
+		m_UseMsaa = true;
+	}
+
+	// Render target view
+	CD3D11_TEXTURE2D_DESC renderTargetDesc(DXGI_FORMAT_R8G8B8A8_UNORM, window_width, window_height, 1, 1,
+		D3D11_BIND_RENDER_TARGET, D3D11_USAGE_DEFAULT, 0, m_MsaaLevel);
+
+	DX::ThrowIfFailed(m_Device->CreateTexture2D(&renderTargetDesc, nullptr, m_MsaaRenderTarget.ReleaseAndGetAddressOf()));
+
+	CD3D11_RENDER_TARGET_VIEW_DESC renderTargetViewDesc(D3D11_RTV_DIMENSION_TEXTURE2DMS, DXGI_FORMAT_R8G8B8A8_UNORM);
+	DX::ThrowIfFailed(m_Device->CreateRenderTargetView(m_MsaaRenderTarget.Get(), &renderTargetViewDesc, m_MsaaRenderTargetView.ReleaseAndGetAddressOf()));
+
+	// Depth stencil view
+	CD3D11_TEXTURE2D_DESC depthStencilDesc(DXGI_FORMAT_D32_FLOAT, window_width, window_height, 1, 1,
+		D3D11_BIND_DEPTH_STENCIL, D3D11_USAGE_DEFAULT, 0, m_MsaaLevel);
+
+	ComPtr<ID3D11Texture2D> depthStencil;
+	DX::ThrowIfFailed(m_Device->CreateTexture2D(&depthStencilDesc, nullptr, depthStencil.GetAddressOf()));
+	DX::ThrowIfFailed(m_Device->CreateDepthStencilView(depthStencil.Get(), nullptr, m_MsaaDepthStencilView.ReleaseAndGetAddressOf()));
+
+	return true;
 }
 
 void DxRenderer::CreateRasterStateSolid()
@@ -378,4 +428,14 @@ void GlRenderer::QueryHardwareInfo()
 		wglGetGPUIDsAMD(n, ids.get());
 		wglGetGPUInfoAMD(ids[0], WGL_GPU_RAM_AMD, GL_UNSIGNED_INT, sizeof(size_t), &m_DeviceVideoMemoryMb);
 	}
+}
+
+bool GlRenderer::CreateAntiAliasingTarget(int msaa_level, int window_width, int window_height)
+{
+	return false;
+}
+
+const std::vector<int>& GlRenderer::GetSupportMsaaLevels()
+{
+	return std::vector<int>();
 }

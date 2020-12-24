@@ -66,6 +66,10 @@ private:
 	std::string m_RamAmount;
 	std::string m_VideoRamAmount;
 
+	// Anti-aliasing
+	std::string m_CurrentAntiAliasingLevel;
+	std::vector<std::string> m_AntiAliasingLevelsText;
+
 	// Inherited via QuitListener
 	virtual void OnQuit() override;
 
