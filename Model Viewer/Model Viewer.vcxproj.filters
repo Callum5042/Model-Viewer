@@ -19,13 +19,13 @@
     <Filter Include="External\ImGui">
       <UniqueIdentifier>{86baaa9e-c1b2-497e-96cd-29a427fbdc1a}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Shaders">
+    <Filter Include="Shaders Files">
       <UniqueIdentifier>{53f0ac2e-6ecc-480a-bb25-c6b7687021a1}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Shaders\HLSL">
+    <Filter Include="Shaders Files\HLSL">
       <UniqueIdentifier>{3d3b9bb0-4b01-44ac-ba61-79d4f976c60c}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Shaders\GLSL">
+    <Filter Include="Shaders Files\GLSL">
       <UniqueIdentifier>{3f417f41-49ee-4ed8-a0d2-3ff61da97553}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
@@ -146,21 +146,21 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="Header.hlsli">
-      <Filter>Shaders\HLSL</Filter>
+      <Filter>Shaders Files\HLSL</Filter>
     </None>
     <None Include="VertexShader.glsl">
-      <Filter>Shaders\GLSL</Filter>
+      <Filter>Shaders Files\GLSL</Filter>
     </None>
     <None Include="FragmentShader.glsl">
-      <Filter>Shaders\GLSL</Filter>
+      <Filter>Shaders Files\GLSL</Filter>
     </None>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="VertexShader.hlsl">
-      <Filter>Shaders\HLSL</Filter>
+      <Filter>Shaders Files\HLSL</Filter>
     </FxCompile>
     <FxCompile Include="PixelShader.hlsl">
-      <Filter>Shaders\HLSL</Filter>
+      <Filter>Shaders Files\HLSL</Filter>
     </FxCompile>
   </ItemGroup>
 </Project>
