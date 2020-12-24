@@ -93,7 +93,7 @@ bool DxModel::Load()
 	m_MeshData = std::make_unique<MeshData>();
 	//Geometry::CreateBox(1.0f, 1.0f, 1.0f, m_MeshData.get());
 
-	std::ifstream file("D:\\test.bin", std::ios::binary);
+	std::ifstream file("Data Files/Models/test.bin", std::ios::binary);
 	if (!file.is_open())
 	{
 		std::cerr << "Big error\n";
@@ -213,7 +213,7 @@ bool GlModel::Load()
 	m_MeshData = std::make_unique<MeshData>();
 	//Geometry::CreateBox(1.0f, 1.0f, 1.0f, m_MeshData.get());
 
-	std::ifstream file("D:\\test.bin", std::ios::binary);
+	std::ifstream file("Data Files/Models/test.bin", std::ios::binary);
 	if (!file.is_open())
 	{
 		std::cerr << "Big error\n";

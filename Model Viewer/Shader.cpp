@@ -10,12 +10,12 @@ DxShader::DxShader(IRenderer* renderer)
 
 bool DxShader::Create()
 {
-	if (!CreateVertexShader("VertexShader.cso"))
+	if (!CreateVertexShader("Data Files/Shaders/VertexShader.cso"))
 	{
 		return false;
 	}
 
-	if (!CreatePixelShader("PixelShader.cso"))
+	if (!CreatePixelShader("Data Files/Shaders/PixelShader.cso"))
 	{
 		return false;
 	}
@@ -90,8 +90,8 @@ GlShader::~GlShader()
 bool GlShader::Create()
 {
 	m_ShaderId = glCreateProgram();
-	m_VertexShader = LoadVertexShader("VertexShader.glsl");
-	m_FragmentShader = LoadFragmentShader("FragmentShader.glsl");
+	m_VertexShader = LoadVertexShader("Data Files/Shaders/VertexShader.glsl");
+	m_FragmentShader = LoadFragmentShader("Data Files/Shaders/FragmentShader.glsl");
 
 	// Link
 	glAttachShader(m_ShaderId, m_VertexShader);
