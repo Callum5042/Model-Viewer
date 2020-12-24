@@ -126,6 +126,7 @@ bool Application::Init()
 	m_Camera->SetPitchAndYaw(m_Pitch, m_Yaw);
 
 	// Check MSAA levels
+	m_AntiAliasingLevelsText.clear();
 	for (auto& x : m_Renderer->GetSupportMsaaLevels())
 	{
 		auto str = "x" + std::to_string(x);

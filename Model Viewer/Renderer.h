@@ -126,7 +126,7 @@ class GlRenderer : public IRenderer
 {
 public:
 	GlRenderer() = default;
-	virtual ~GlRenderer() = default;
+	virtual ~GlRenderer();
 
 	bool Create(Window* window) override;
 	void Resize(int width, int height) override;
@@ -141,11 +141,21 @@ public:
 
 	void ToggleWireframe(bool wireframe) override;
 
-	// Inherited via IRenderer
-	virtual const std::vector<int>& GetSupportMsaaLevels() override;
+	// Anti-aliasing
+	const std::vector<int>& GetSupportMsaaLevels() override { return m_SupportMsaaLevels; }
+	bool CreateAntiAliasingTarget(int msaa_level, int window_width, int window_height);
+	int GetCurrentMsaaLevel() override { return m_MsaaLevel; }
 
 private:
 	Window* m_Window = nullptr;
+
+	GLuint m_FrameBuffer = 0;
+	GLuint m_BackBuffer = 0;
+	GLuint m_DepthBuffer = 0;
+
+	// MSAA
+	int m_MsaaLevel = 0;
+	std::vector<int> m_SupportMsaaLevels;
 
 	// Query device hardware information
 	void QueryHardwareInfo();
@@ -155,8 +165,4 @@ private:
 
 	// Device video memory
 	SIZE_T m_DeviceVideoMemoryMb = 0;
-
-	// Inherited via IRenderer
-	virtual bool CreateAntiAliasingTarget(int msaa_level, int window_width, int window_height) override;
-	int GetCurrentMsaaLevel() override { return 0; }
 };
