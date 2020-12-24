@@ -286,8 +286,6 @@ void DxRenderer::SetViewport(int width, int height)
 
 bool DxRenderer::CreateAntiAliasingTarget(int msaa_level, int window_width, int window_height)
 {
-	std::cout << "Level selected: " << msaa_level << '\n';
-
 	m_MsaaLevel = msaa_level;
 	if (msaa_level == 0)
 	{
