@@ -153,7 +153,7 @@ bool Application::Init()
 	// Check filtering levels
 	m_TextureFilteringLevelsText.clear();
 	m_TextureFilteringLevelsText.push_back("None");
-	for (int i = 2; i <= m_Renderer->GetMaxAnistrophicFilterLevel(); i *= 2)
+	for (int i = 2; i <= m_Renderer->GetMaxAnisotropicFilterLevel(); i *= 2)
 	{
 		auto str = "x" + std::to_string(i);
 		m_TextureFilteringLevelsText.push_back(str);
@@ -282,7 +282,7 @@ void Application::RenderGui()
 						level = std::stoi(substr);
 					}
 
-					m_Renderer->SetAnistrophicFilter(level);
+					m_Renderer->SetAnisotropicFilter(level);
 				}
 			}
 

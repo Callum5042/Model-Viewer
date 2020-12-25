@@ -55,8 +55,8 @@ public:
 	virtual int GetCurrentMsaaLevel() = 0;
 
 	// Texture filtering
-	virtual int GetMaxAnistrophicFilterLevel() = 0;
-	virtual void SetAnistrophicFilter(int level) = 0;
+	virtual int GetMaxAnisotropicFilterLevel() = 0;
+	virtual void SetAnisotropicFilter(int level) = 0;
 };
 
 class DxRenderer : public IRenderer
@@ -91,8 +91,8 @@ public:
 	int GetCurrentMsaaLevel() override { return m_MsaaLevel; }
 
 	// Texture filtering
-	virtual int GetMaxAnistrophicFilterLevel() override;
-	virtual void SetAnistrophicFilter(int level) override;
+	virtual int GetMaxAnisotropicFilterLevel() override;
+	virtual void SetAnisotropicFilter(int level) override;
 
 private:
 	ComPtr<ID3D11Device> m_Device = nullptr;
@@ -165,8 +165,8 @@ public:
 	int GetCurrentMsaaLevel() override { return m_MsaaLevel; }
 
 	// Texture filtering
-	virtual int GetMaxAnistrophicFilterLevel() override;
-	virtual void SetAnistrophicFilter(int level) override;
+	virtual int GetMaxAnisotropicFilterLevel() override;
+	virtual void SetAnisotropicFilter(int level) override;
 
 private:
 	Window* m_Window = nullptr;

@@ -319,12 +319,12 @@ bool DxRenderer::CreateAntiAliasingTarget(int msaa_level, int window_width, int 
 	return true;
 }
 
-int DxRenderer::GetMaxAnistrophicFilterLevel()
+int DxRenderer::GetMaxAnisotropicFilterLevel()
 {
 	return D3D11_REQ_MAXANISOTROPY;
 }
 
-void DxRenderer::SetAnistrophicFilter(int level)
+void DxRenderer::SetAnisotropicFilter(int level)
 {
 	D3D11_SAMPLER_DESC samplerDesc = {};
 	samplerDesc.Filter = D3D11_FILTER_ANISOTROPIC;
@@ -565,22 +565,28 @@ bool GlRenderer::CreateAntiAliasingTarget(int msaa_level, int window_width, int 
 	return true;
 }
 
-int GlRenderer::GetMaxAnistrophicFilterLevel()
+int GlRenderer::GetMaxAnisotropicFilterLevel()
 {
 	auto max_anisotrophic = 0;
 	glGetIntegerv(GL_MAX_TEXTURE_MAX_ANISOTROPY, &max_anisotrophic);
 	return max_anisotrophic;
 }
 
-void GlRenderer::SetAnistrophicFilter(int level)
+void GlRenderer::SetAnisotropicFilter(int level)
 {
+	if (level == 0)
+	{
+		glDeleteSamplers(1, &m_TextureSampler);
+		return;
+	}
+
 	glCreateSamplers(1, &m_TextureSampler);
 
 	glSamplerParameterf(m_TextureSampler, GL_TEXTURE_WRAP_S, GL_REPEAT);
 	glSamplerParameterf(m_TextureSampler, GL_TEXTURE_WRAP_T, GL_REPEAT);
 
-	glSamplerParameterf(m_TextureSampler, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-	glSamplerParameterf(m_TextureSampler, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glSamplerParameterf(m_TextureSampler, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glSamplerParameterf(m_TextureSampler, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
-	glSamplerParameterf(m_TextureSampler, GL_TEXTURE_MAX_ANISOTROPY, static_cast<GLfloat>(level));
+	//glSamplerParameterf(m_TextureSampler, GL_TEXTURE_MAX_ANISOTROPY, static_cast<GLfloat>(level));
 }
