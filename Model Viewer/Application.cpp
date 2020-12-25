@@ -7,7 +7,7 @@ Application::Application()
 {
 	m_EventDispatcher = std::make_unique<EventDispatcher>();
 
-	auto startup = RenderAPI::DIRECTX;
+	auto startup = RenderAPI::OPENGL;
 	if (startup == RenderAPI::DIRECTX)
 	{
 		m_Window = std::make_unique<Window>();

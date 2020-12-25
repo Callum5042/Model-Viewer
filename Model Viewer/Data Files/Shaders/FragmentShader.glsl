@@ -1,9 +1,13 @@
 #version 450 core
 
-in vec4 fColour;
 layout (location = 0) out vec4 color;
+layout (binding = 0) uniform sampler2D tex;
+
+in vec4 fColour;
+in vec2 fUV;
 
 void main()
 {
-	color = fColour;
+	vec4 diffuse_colour = texture(tex, fUV);
+	color = diffuse_colour * fColour;
 }

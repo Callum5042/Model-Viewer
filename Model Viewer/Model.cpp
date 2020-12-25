@@ -3,8 +3,9 @@
 #include "Renderer.h"
 #include "Camera.h"
 #include "Shader.h"
-#include "DDSTextureLoader.h"
 #include <DirectXMath.h>
+#include "DDSTextureLoader.h"
+#include "LoadTextureDDS.h"
 
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
@@ -148,6 +149,7 @@ GlModel::GlModel(IShader* shader)
 
 GlModel::~GlModel()
 {
+	glDeleteTextures(1, &m_DiffuseTextureId);
 	glDeleteVertexArrays(1, &m_VertexArrayObject);
 	glDeleteBuffers(1, &m_VertexBuffer);
 	glDeleteBuffers(1, &m_IndexBuffer);
@@ -175,12 +177,12 @@ bool GlModel::Load()
 	file.read((char*)&index_count, sizeof(index_count));
 
 	// Get vertices
-	int vertex_stride = sizeof(Vertex) * vertex_count;
+	auto vertex_stride = sizeof(Vertex) * vertex_count;
 	auto vertices = new Vertex[vertex_count];
 	file.read((char*)vertices, vertex_stride);
 
 	// Get indices
-	int index_stride = sizeof(UINT) * index_count;
+	auto index_stride = sizeof(UINT) * index_count;
 	auto indices = new UINT[index_count];
 	file.read((char*)indices, index_stride);
 
@@ -216,6 +218,40 @@ bool GlModel::Load()
 
 	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (GLvoid*)(7 * sizeof(GL_FLOAT)));
 	glEnableVertexAttribArray(2);
+
+	// Load texture
+	Rove::LoadDDS dds;
+
+	std::string texture_path = "Data Files\\Textures\\crate_diffuse.dds";
+	dds.Load(std::move(texture_path));
+
+	glCreateTextures(GL_TEXTURE_2D, 1, &m_DiffuseTextureId);
+	glTextureStorage2D(m_DiffuseTextureId, dds.MipmapCount(), dds.Format(), dds.Width(), dds.Height());
+
+	for (auto& mipmap : dds.mipmaps)
+	{
+		glCompressedTextureSubImage2D(m_DiffuseTextureId, mipmap.level, 0, 0, mipmap.width, mipmap.height, dds.Format(), mipmap.texture_size, mipmap.data);
+	}
+
+	glBindTextureUnit(0, m_DiffuseTextureId);
+
+	// Big sample
+	GLuint sampler;
+	glCreateSamplers(1, &sampler);
+
+	glSamplerParameterf(sampler, GL_TEXTURE_WRAP_S, GL_REPEAT);
+	glSamplerParameterf(sampler, GL_TEXTURE_WRAP_T, GL_REPEAT);
+	glSamplerParameterf(sampler, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+	glSamplerParameterf(sampler, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glSamplerParameterf(sampler, GL_TEXTURE_MAX_ANISOTROPY, GL_MAX_TEXTURE_MAX_ANISOTROPY);
+	glSamplerParameterf(sampler, GL_TEXTURE_BASE_LEVEL, 0);
+	glSamplerParameterf(sampler, GL_TEXTURE_MAX_LEVEL, 0);
+
+	// Don't know if this is needed?
+	//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_BASE_LEVEL, 0);
+	//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, mipMapCount - 1);
+
+	glBindSampler(0, sampler);
 
 	return true;
 }
