@@ -584,9 +584,5 @@ void GlRenderer::SetAnisotropicFilter(int level)
 
 	glSamplerParameterf(m_TextureSampler, GL_TEXTURE_WRAP_S, GL_REPEAT);
 	glSamplerParameterf(m_TextureSampler, GL_TEXTURE_WRAP_T, GL_REPEAT);
-
-	glSamplerParameterf(m_TextureSampler, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-	glSamplerParameterf(m_TextureSampler, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-
-	//glSamplerParameterf(m_TextureSampler, GL_TEXTURE_MAX_ANISOTROPY, static_cast<GLfloat>(level));
+	glSamplerParameterf(m_TextureSampler, GL_TEXTURE_MAX_ANISOTROPY, static_cast<GLfloat>(level));
 }
