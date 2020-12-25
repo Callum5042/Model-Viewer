@@ -57,9 +57,6 @@ bool DxRenderer::Create(Window* window)
 		}
 	}
 
-	// Create texture filter
-	CreateAnisotropicFilter();
-
 	return true;
 }
 
@@ -172,22 +169,6 @@ void DxRenderer::QueryHardwareInfo()
 			}*/
 		}
 	}
-}
-
-void DxRenderer::CreateAnisotropicFilter()
-{
-	D3D11_SAMPLER_DESC samplerDesc = {};
-	samplerDesc.Filter = D3D11_FILTER_ANISOTROPIC;
-	samplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
-	samplerDesc.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
-	samplerDesc.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
-	samplerDesc.MipLODBias = 0;
-	samplerDesc.MaxAnisotropy = 8;
-	samplerDesc.ComparisonFunc = D3D11_COMPARISON_ALWAYS;
-	samplerDesc.MinLOD = 0;
-	samplerDesc.MaxLOD = D3D11_FLOAT32_MAX;
-
-	DX::ThrowIfFailed(m_Device->CreateSamplerState(&samplerDesc, &m_AnisotropicSampler));
 }
 
 bool DxRenderer::CreateDevice()
@@ -338,6 +319,27 @@ bool DxRenderer::CreateAntiAliasingTarget(int msaa_level, int window_width, int 
 	return true;
 }
 
+int DxRenderer::GetMaxAnistrophicFilterLevel()
+{
+	return D3D11_REQ_MAXANISOTROPY;
+}
+
+void DxRenderer::SetAnistrophicFilter(int level)
+{
+	D3D11_SAMPLER_DESC samplerDesc = {};
+	samplerDesc.Filter = D3D11_FILTER_ANISOTROPIC;
+	samplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
+	samplerDesc.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
+	samplerDesc.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
+	samplerDesc.MipLODBias = 0;
+	samplerDesc.MaxAnisotropy = level;
+	samplerDesc.ComparisonFunc = D3D11_COMPARISON_ALWAYS;
+	samplerDesc.MinLOD = 0;
+	samplerDesc.MaxLOD = D3D11_FLOAT32_MAX;
+
+	DX::ThrowIfFailed(m_Device->CreateSamplerState(&samplerDesc, &m_AnisotropicSampler));
+}
+
 void DxRenderer::CreateRasterStateSolid()
 {
 	D3D11_RASTERIZER_DESC rasterizerState = {};
@@ -374,6 +376,7 @@ void DxRenderer::CreateRasterStateWireframe()
 
 GlRenderer::~GlRenderer()
 {
+	glDeleteSamplers(1, &m_TextureSampler);
 	glDeleteTextures(1, &m_BackBuffer);
 	glDeleteBuffers(1, &m_FrameBuffer);
 	glDeleteRenderbuffers(1, &m_DepthBuffer);
@@ -442,6 +445,8 @@ void GlRenderer::Clear()
 	{
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	}
+
+	glBindSampler(0, m_TextureSampler);
 }
 
 void GlRenderer::Present()
@@ -558,4 +563,24 @@ bool GlRenderer::CreateAntiAliasingTarget(int msaa_level, int window_width, int 
 
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	return true;
+}
+
+int GlRenderer::GetMaxAnistrophicFilterLevel()
+{
+	auto max_anisotrophic = 0;
+	glGetIntegerv(GL_MAX_TEXTURE_MAX_ANISOTROPY, &max_anisotrophic);
+	return max_anisotrophic;
+}
+
+void GlRenderer::SetAnistrophicFilter(int level)
+{
+	glCreateSamplers(1, &m_TextureSampler);
+
+	glSamplerParameterf(m_TextureSampler, GL_TEXTURE_WRAP_S, GL_REPEAT);
+	glSamplerParameterf(m_TextureSampler, GL_TEXTURE_WRAP_T, GL_REPEAT);
+
+	glSamplerParameterf(m_TextureSampler, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+	glSamplerParameterf(m_TextureSampler, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+	glSamplerParameterf(m_TextureSampler, GL_TEXTURE_MAX_ANISOTROPY, static_cast<GLfloat>(level));
 }

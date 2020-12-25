@@ -33,19 +33,30 @@ public:
 	virtual bool Create(Window* window) = 0;
 	virtual void Resize(int width, int height) = 0;
 
+	// Clear buffers
 	virtual void Clear() = 0;
+
+	// Present back buffer to screen
 	virtual void Present() = 0;
 
+	// Rendering API
 	virtual RenderAPI GetRenderAPI() = 0;
 
+	// Query hardware
 	virtual const std::string& GetName() = 0;
 	virtual SIZE_T GetVRAM() = 0;
 
+	// Toggle wireframe rendering
 	virtual void ToggleWireframe(bool wireframe) = 0;
 
+	// Anti-aliasing
 	virtual bool CreateAntiAliasingTarget(int msaa_level, int window_width, int window_height) = 0;
 	virtual const std::vector<int>& GetSupportMsaaLevels() = 0;
 	virtual int GetCurrentMsaaLevel() = 0;
+
+	// Texture filtering
+	virtual int GetMaxAnistrophicFilterLevel() = 0;
+	virtual void SetAnistrophicFilter(int level) = 0;
 };
 
 class DxRenderer : public IRenderer
@@ -78,6 +89,10 @@ public:
 	bool CreateAntiAliasingTarget(int msaa_level, int window_width, int window_height);
 	const std::vector<int>& GetSupportMsaaLevels() { return m_SupportMsaaLevels; }
 	int GetCurrentMsaaLevel() override { return m_MsaaLevel; }
+
+	// Texture filtering
+	virtual int GetMaxAnistrophicFilterLevel() override;
+	virtual void SetAnistrophicFilter(int level) override;
 
 private:
 	ComPtr<ID3D11Device> m_Device = nullptr;
@@ -123,7 +138,6 @@ private:
 
 	// Texture filtering
 	ComPtr<ID3D11SamplerState> m_AnisotropicSampler = nullptr;
-	void CreateAnisotropicFilter();
 };
 
 class GlRenderer : public IRenderer
@@ -150,6 +164,10 @@ public:
 	bool CreateAntiAliasingTarget(int msaa_level, int window_width, int window_height);
 	int GetCurrentMsaaLevel() override { return m_MsaaLevel; }
 
+	// Texture filtering
+	virtual int GetMaxAnistrophicFilterLevel() override;
+	virtual void SetAnistrophicFilter(int level) override;
+
 private:
 	Window* m_Window = nullptr;
 
@@ -170,4 +188,7 @@ private:
 
 	// Device video memory
 	SIZE_T m_DeviceVideoMemoryMb = 0;
+
+	// Texture filtering
+	GLuint m_TextureSampler = 0;
 };

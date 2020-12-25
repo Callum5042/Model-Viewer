@@ -150,6 +150,17 @@ bool Application::Init()
 
 	m_Renderer->CreateAntiAliasingTarget(level, m_Window->GetWidth(), m_Window->GetHeight());
 
+	// Check filtering levels
+	m_TextureFilteringLevelsText.clear();
+	m_TextureFilteringLevelsText.push_back("None");
+	for (int i = 2; i <= m_Renderer->GetMaxAnistrophicFilterLevel(); i *= 2)
+	{
+		auto str = "x" + std::to_string(i);
+		m_TextureFilteringLevelsText.push_back(str);
+	}
+
+	m_CurrentTextureFilterLevel = "None";
+
 	return true;
 }
 
@@ -220,7 +231,7 @@ void Application::RenderGui()
 		}
 
 		// Anti-aliasing
-		if (ImGui::BeginCombo("##AntiAliasing", m_CurrentAntiAliasingLevel.c_str(), 0))
+		if (ImGui::BeginCombo("Anti-Aliasing", m_CurrentAntiAliasingLevel.c_str(), 0))
 		{
 			for (auto& x : m_AntiAliasingLevelsText)
 			{
@@ -251,6 +262,31 @@ void Application::RenderGui()
 
 		// Camera
 		ImGui::SliderInt("Camera Speed", &m_CameraRotationSpeed, 1, 100);
+
+		// Texture filtering
+		if (ImGui::BeginCombo("Texture Filtering", m_CurrentTextureFilterLevel.c_str(), 0))
+		{
+			for (auto& x : m_TextureFilteringLevelsText)
+			{
+				bool selected = (m_CurrentTextureFilterLevel == x.c_str());
+				if (ImGui::Selectable(x.c_str(), &selected))
+				{
+					m_CurrentTextureFilterLevel = x.c_str();
+
+					int level = 0;
+					if (x != "None")
+					{
+						auto substr = x.substr(1, x.size() - 1);
+						level = std::stoi(substr);
+					}
+
+					m_Renderer->SetAnistrophicFilter(level);
+				}
+			}
+
+			ImGui::EndCombo();
+		}
+
 
 		ImGui::End();
 	}

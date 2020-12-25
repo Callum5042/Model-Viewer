@@ -68,6 +68,10 @@ private:
 	std::string m_CurrentAntiAliasingLevel;
 	std::vector<std::string> m_AntiAliasingLevelsText;
 
+	// Texture filtering GUI
+	std::string m_CurrentTextureFilterLevel;
+	std::vector<std::string> m_TextureFilteringLevelsText;
+
 	// Inherited via QuitListener
 	virtual void OnQuit() override;
 
