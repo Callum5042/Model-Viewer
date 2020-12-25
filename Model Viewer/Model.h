@@ -9,6 +9,13 @@ class GlShader;
 class IShader;
 class GlCamera;
 
+struct Position
+{
+	float x = 0;
+	float y = 0;
+	float z = 0;
+};
+
 struct Colour
 {
 	float r = 0.0f;
@@ -17,15 +24,19 @@ struct Colour
 	float a = 0.0f;
 };
 
+struct Texture
+{
+	float u = 0;
+	float v = 0;
+};
+
 struct Vertex
 {
 	Vertex() {}
-	Vertex(float x, float y, float z) : x(x), y(y), z(z) {}
 
-	float x = 0;
-	float y = 0;
-	float z = 0;
+	Position position = {};
 	Colour colour = {};
+	Texture texture = {};
 };
 
 struct MeshData
@@ -63,6 +74,7 @@ private:
 	ComPtr<ID3D11Buffer> m_VertexBuffer = nullptr;
 	ComPtr<ID3D11Buffer> m_IndexBuffer = nullptr;
 	ComPtr<ID3D11Buffer> m_ConstantBuffer = nullptr;
+	ComPtr<ID3D11ShaderResourceView> m_DiffuseTexture = nullptr;
 };
 
 class GlModel : public IModel

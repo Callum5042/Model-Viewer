@@ -57,6 +57,9 @@ bool DxRenderer::Create(Window* window)
 		}
 	}
 
+	// Create texture filter
+	CreateAnisotropicFilter();
+
 	return true;
 }
 
@@ -90,6 +93,8 @@ void DxRenderer::Clear()
 		m_DeviceContext->ClearDepthStencilView(m_DepthStencilView.Get(), D3D11_CLEAR_DEPTH, 1.0f, 0);
 		m_DeviceContext->OMSetRenderTargets(1, m_RenderTargetView.GetAddressOf(), NULL);
 	}
+
+	m_DeviceContext->PSSetSamplers(0, 1, m_AnisotropicSampler.GetAddressOf());
 }
 
 void DxRenderer::Present()
@@ -167,6 +172,22 @@ void DxRenderer::QueryHardwareInfo()
 			}*/
 		}
 	}
+}
+
+void DxRenderer::CreateAnisotropicFilter()
+{
+	D3D11_SAMPLER_DESC samplerDesc = {};
+	samplerDesc.Filter = D3D11_FILTER_ANISOTROPIC;
+	samplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
+	samplerDesc.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
+	samplerDesc.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
+	samplerDesc.MipLODBias = 0;
+	samplerDesc.MaxAnisotropy = 8;
+	samplerDesc.ComparisonFunc = D3D11_COMPARISON_ALWAYS;
+	samplerDesc.MinLOD = 0;
+	samplerDesc.MaxLOD = D3D11_FLOAT32_MAX;
+
+	DX::ThrowIfFailed(m_Device->CreateSamplerState(&samplerDesc, &m_AnisotropicSampler));
 }
 
 bool DxRenderer::CreateDevice()

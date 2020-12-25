@@ -120,6 +120,10 @@ private:
 
 	// Device video memory
 	SIZE_T m_DeviceVideoMemoryMb = 0;
+
+	// Texture filtering
+	ComPtr<ID3D11SamplerState> m_AnisotropicSampler = nullptr;
+	void CreateAnisotropicFilter();
 };
 
 class GlRenderer : public IRenderer

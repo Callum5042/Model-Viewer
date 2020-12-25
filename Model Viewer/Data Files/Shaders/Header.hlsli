@@ -7,18 +7,22 @@ struct Material
 
 cbuffer WorldBuffer : register(b0)
 {
-	matrix World;
-	matrix View;
-	matrix Projection;
+	matrix cWorld;
+	matrix cView;
+	matrix cProjection;
 
-	matrix TextureTransform;
-	Material mMaterial;
+	matrix cTextureTransform;
+	Material cMaterial;
 }
+
+SamplerState gSamplerAnisotropic : register(s0);
+Texture2D gTextureDiffuse : register(t0);
 
 struct VertexInput
 {
 	float3 Position : POSITION;
 	float4 Colour : COLOUR;
+	float2 Texture : TEXTURE;
 };
 
 struct PixelInput
@@ -26,4 +30,5 @@ struct PixelInput
 	float3 Position : POSITION;
 	float4 PositionH : SV_POSITION;
 	float4 Colour : COLOUR;
+	float2 Texture : TEXTURE;
 };
