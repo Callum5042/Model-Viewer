@@ -23,6 +23,7 @@
 #include <algorithm>
 #include <fstream>
 #include <unordered_map>
+#include <chrono>
 
 #include <SDL.h>
 #include <SDL_syswm.h>

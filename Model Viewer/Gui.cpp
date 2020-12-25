@@ -11,7 +11,7 @@ bool Gui::Init(Window* window, IRenderer* renderer)
 {
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
-    ImGuiIO& io = ImGui::GetIO(); (void)io;
+    ImGuiIO& io = ImGui::GetIO();
     ImGui::GetStyle().WindowRounding = 0.0f;
     ImGui::StyleColorsDark();
 

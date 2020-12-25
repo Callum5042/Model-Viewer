@@ -73,7 +73,7 @@
       <AdditionalDependencies>$(SolutionDir)external\sdl\lib\SDL2.lib;$(SolutionDir)external\sdl\lib\SDL2main.lib;winmm.lib;imm32.lib;version.lib;Setupapi.lib;d3d11.lib;$(SolutionDir)external\glew\lib\glew32sd.lib;opengl32.lib;%(AdditionalDependencies);dxguid.lib</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
-      <Command>xcopy /e /v /i /y "$(ProjectDir)Data Files" "$(SolutionDir)bin\$(ProjectName)\$(Configuration)\$(Platform)\Data Files"</Command>
+      <Command>xcopy /e /v /i /y "$(ProjectDir)Data Files" "$(SolutionDir)bin\$(ProjectName)\$(Configuration)\$(Platform)\Data Files" &gt; nul</Command>
     </PostBuildEvent>
     <FxCompile>
       <ObjectFileOutput>$(ProjectDir)Data Files\Shaders\%(Filename).cso</ObjectFileOutput>
@@ -101,7 +101,7 @@
       <AdditionalDependencies>$(SolutionDir)external\sdl\lib\SDL2.lib;$(SolutionDir)external\sdl\lib\SDL2main.lib;winmm.lib;imm32.lib;version.lib;Setupapi.lib;d3d11.lib;$(SolutionDir)external\glew\lib\glew32s.lib;opengl32.lib;%(AdditionalDependencies);dxguid.lib</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
-      <Command>xcopy /e /v /i /y "$(ProjectDir)Data Files" "$(SolutionDir)bin\$(ProjectName)\$(Configuration)\$(Platform)\Data Files"</Command>
+      <Command>xcopy /e /v /i /y "$(ProjectDir)Data Files" "$(SolutionDir)bin\$(ProjectName)\$(Configuration)\$(Platform)\Data Files" &gt; nul</Command>
     </PostBuildEvent>
     <FxCompile>
       <ObjectFileOutput>$(ProjectDir)Data Files\Shaders\%(Filename).cso</ObjectFileOutput>

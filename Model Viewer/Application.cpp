@@ -13,7 +13,7 @@ Application::Application()
 		m_Window = std::make_unique<Window>();
 		m_Renderer = std::make_unique<DxRenderer>();
 		m_Shader = std::make_unique<DxShader>(m_Renderer.get());
-		m_Camera = std::make_unique<Camera>(800, 600);
+		m_Camera = std::make_unique<Camera>(800, 600, m_Fov);
 		m_Model = std::make_unique<DxModel>(m_Renderer.get());
 	}
 	else if (startup == RenderAPI::OPENGL)
@@ -21,7 +21,7 @@ Application::Application()
 		m_Window = std::make_unique<OpenGLWindow>();
 		m_Renderer = std::make_unique<GlRenderer>();
 		m_Shader = std::make_unique<GlShader>();
-		m_Camera = std::make_unique<GlCamera>(800, 600);
+		m_Camera = std::make_unique<GlCamera>(800, 600, m_Fov);
 		m_Model = std::make_unique<GlModel>(m_Shader.get());
 	}
 }
@@ -199,6 +199,9 @@ void Application::RenderGui()
 
 		auto yaw = "Yaw: " + std::to_string(m_Yaw);
 		ImGui::Text(yaw.c_str());
+
+		auto fov = "Field of view: " + std::to_string(static_cast<int>(m_Fov));
+		ImGui::Text(fov.c_str());
 	}
 
 	ImGui::End();
@@ -282,7 +285,7 @@ void Application::ChangeRenderAPI()
 			m_Window = std::make_unique<Window>();
 			m_Renderer = std::make_unique<DxRenderer>();
 			m_Shader = std::make_unique<DxShader>(m_Renderer.get());
-			m_Camera = std::make_unique<Camera>(800, 600);
+			m_Camera = std::make_unique<Camera>(window_width, window_height, m_Fov);
 			m_Model = std::make_unique<DxModel>(m_Renderer.get());
 		}
 		else if (m_SwitchRenderAPI == RenderAPI::OPENGL)
@@ -290,7 +293,7 @@ void Application::ChangeRenderAPI()
 			m_Window = std::make_unique<OpenGLWindow>();
 			m_Renderer = std::make_unique<GlRenderer>();
 			m_Shader = std::make_unique<GlShader>();
-			m_Camera = std::make_unique<GlCamera>(800, 600);
+			m_Camera = std::make_unique<GlCamera>(window_width, window_height, m_Fov);
 			m_Model = std::make_unique<GlModel>(m_Shader.get());
 		}
 
@@ -299,7 +302,6 @@ void Application::ChangeRenderAPI()
 		// Restore window state
 		m_Window->SetPosition(window_position.first, window_position.second);
 		m_Renderer->Resize(window_width, window_height);
-		m_Camera->Resize(window_width, window_height);
 
 		if (maximised)
 		{
@@ -445,4 +447,11 @@ void Application::OnMousePressed(const MouseData& mouse)
 
 void Application::OnMouseReleased(const MouseData& mouse)
 {
+}
+
+void Application::OnMouseWheel(const MouseData& mouse)
+{
+	m_Fov -= static_cast<int>(mouse.y);
+	m_Fov = std::clamp<float>(m_Fov, 1.0f, 180.0f);
+	m_Camera->SetFov(m_Fov);
 }

@@ -239,13 +239,21 @@ bool GlModel::Load()
 	GLuint sampler;
 	glCreateSamplers(1, &sampler);
 
-	glSamplerParameterf(sampler, GL_TEXTURE_WRAP_S, GL_REPEAT);
+	int max_anisotrophic = 0;
+	glGetIntegerv(GL_MAX_TEXTURE_MAX_ANISOTROPY, &max_anisotrophic);
+
+	//glSamplerParameterf(sampler, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	//glSamplerParameterf(sampler, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+	glSamplerParameterf(sampler, GL_TEXTURE_MAX_ANISOTROPY, GL_MAX_TEXTURE_MAX_ANISOTROPY);
+
+	/*glSamplerParameterf(sampler, GL_TEXTURE_WRAP_S, GL_REPEAT);
 	glSamplerParameterf(sampler, GL_TEXTURE_WRAP_T, GL_REPEAT);
 	glSamplerParameterf(sampler, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
 	glSamplerParameterf(sampler, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	glSamplerParameterf(sampler, GL_TEXTURE_MAX_ANISOTROPY, GL_MAX_TEXTURE_MAX_ANISOTROPY);
 	glSamplerParameterf(sampler, GL_TEXTURE_BASE_LEVEL, 0);
-	glSamplerParameterf(sampler, GL_TEXTURE_MAX_LEVEL, 0);
+	glSamplerParameterf(sampler, GL_TEXTURE_MAX_LEVEL, 0);*/
 
 	// Don't know if this is needed?
 	//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_BASE_LEVEL, 0);
