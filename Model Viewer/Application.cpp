@@ -178,8 +178,8 @@ void Application::RenderGui()
 	// Gui
 	Gui::StartFrame(m_Window.get(), m_Renderer.get());
 
-	//bool show_demo_window = true;
-	//ImGui::ShowDemoWindow(&show_demo_window);
+	bool show_demo_window = true;
+	ImGui::ShowDemoWindow(&show_demo_window);
 
 	// Info
 	const float distance = 15.0f;
@@ -221,6 +221,8 @@ void Application::RenderGui()
 	{
 		static bool rendererOpen = true;
 		ImGui::Begin("Renderer", &rendererOpen);
+
+		ImGui::PushItemWidth(120.0f);
 
 		// Display rendering API
 		static int current_combo_render_api = static_cast<int>(m_Renderer->GetRenderAPI()) - 1;
@@ -287,7 +289,7 @@ void Application::RenderGui()
 			ImGui::EndCombo();
 		}
 
-
+		ImGui::PopItemWidth();
 		ImGui::End();
 	}
 
