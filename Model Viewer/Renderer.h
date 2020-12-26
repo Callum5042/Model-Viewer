@@ -52,7 +52,7 @@ public:
 	// Anti-aliasing
 	virtual bool CreateAntiAliasingTarget(int msaa_level, int window_width, int window_height) = 0;
 	virtual const std::vector<int>& GetSupportMsaaLevels() = 0;
-	virtual int GetCurrentMsaaLevel() = 0;
+	virtual int GetMaxMsaaLevel() = 0;
 
 	// Texture filtering
 	virtual int GetMaxAnisotropicFilterLevel() = 0;
@@ -88,7 +88,7 @@ public:
 	// Anti-aliasing
 	bool CreateAntiAliasingTarget(int msaa_level, int window_width, int window_height);
 	const std::vector<int>& GetSupportMsaaLevels() { return m_SupportMsaaLevels; }
-	int GetCurrentMsaaLevel() override { return m_MsaaLevel; }
+	int GetMaxMsaaLevel() override { return m_MaxMsaaLevel; }
 
 	// Texture filtering
 	virtual int GetMaxAnisotropicFilterLevel() override;
@@ -113,7 +113,8 @@ private:
 
 	// Multi sample anti-aliasing
 	bool m_UseMsaa = false;
-	int m_MsaaLevel = 0;
+	int m_CurrentMsaaLevel = 0;
+	int m_MaxMsaaLevel = 0;
 	std::vector<int> m_SupportMsaaLevels;
 
 	ComPtr<ID3D11Texture2D> m_MsaaRenderTarget = nullptr;
@@ -165,7 +166,7 @@ public:
 	// Anti-aliasing
 	const std::vector<int>& GetSupportMsaaLevels() override { return m_SupportMsaaLevels; }
 	bool CreateAntiAliasingTarget(int msaa_level, int window_width, int window_height);
-	int GetCurrentMsaaLevel() override { return m_MsaaLevel; }
+	int GetMaxMsaaLevel() override { return m_MaxMsaaLevel; }
 
 	// Texture filtering
 	virtual int GetMaxAnisotropicFilterLevel() override;
@@ -180,7 +181,8 @@ private:
 
 	// MSAA
 	bool m_UseMsaa = false;
-	int m_MsaaLevel = 0;
+	int m_CurrentMsaaLevel = 0;
+	int m_MaxMsaaLevel = 0;
 	std::vector<int> m_SupportMsaaLevels;
 
 	// Query device hardware information

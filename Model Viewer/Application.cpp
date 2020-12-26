@@ -137,7 +137,7 @@ bool Application::Init()
 	std::reverse(m_AntiAliasingLevelsText.begin(), m_AntiAliasingLevelsText.end());
 
 	// Get current MSAA level
-	auto level = m_Renderer->GetCurrentMsaaLevel();
+	auto level = m_Renderer->GetMaxMsaaLevel();
 	if (level == 0)
 	{
 		m_CurrentAntiAliasingLevel = "Off";

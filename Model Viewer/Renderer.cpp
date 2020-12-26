@@ -48,9 +48,9 @@ bool DxRenderer::Create(Window* window)
 		DX::ThrowIfFailed(m_Device->CheckMultisampleQualityLevels(DXGI_FORMAT_R8G8B8A8_UNORM, i, &quality_levels));
 		if (quality_levels != 0)
 		{
-			if (m_MsaaLevel == 0) 
+			if (m_MaxMsaaLevel == 0) 
 			{
-				m_MsaaLevel = i;
+				m_MaxMsaaLevel = i;
 			}
 
 			m_SupportMsaaLevels.push_back(i);
@@ -91,7 +91,7 @@ void DxRenderer::Resize(int width, int height)
 
 	DX::ThrowIfFailed(m_SwapChain->ResizeBuffers(2, width, height, DXGI_FORMAT_R8G8B8A8_UNORM, 0));
 	CreateRenderTargetAndDepthStencilView(width, height);
-	CreateAntiAliasingTarget(m_MsaaLevel, width, height);
+	CreateAntiAliasingTarget(m_CurrentMsaaLevel, width, height);
 	SetViewport(width, height);
 }
 
@@ -308,7 +308,7 @@ void DxRenderer::SetViewport(int width, int height)
 
 bool DxRenderer::CreateAntiAliasingTarget(int msaa_level, int window_width, int window_height)
 {
-	m_MsaaLevel = msaa_level;
+	m_CurrentMsaaLevel = msaa_level;
 	if (msaa_level == 0)
 	{
 		m_UseMsaa = false;
@@ -321,7 +321,7 @@ bool DxRenderer::CreateAntiAliasingTarget(int msaa_level, int window_width, int 
 
 	// Render target view
 	CD3D11_TEXTURE2D_DESC renderTargetDesc(DXGI_FORMAT_R8G8B8A8_UNORM, window_width, window_height, 1, 1,
-		D3D11_BIND_RENDER_TARGET, D3D11_USAGE_DEFAULT, 0, m_MsaaLevel);
+		D3D11_BIND_RENDER_TARGET, D3D11_USAGE_DEFAULT, 0, m_CurrentMsaaLevel);
 
 	DX::ThrowIfFailed(m_Device->CreateTexture2D(&renderTargetDesc, nullptr, m_MsaaRenderTarget.ReleaseAndGetAddressOf()));
 
@@ -330,7 +330,7 @@ bool DxRenderer::CreateAntiAliasingTarget(int msaa_level, int window_width, int 
 
 	// Depth stencil view
 	CD3D11_TEXTURE2D_DESC depthStencilDesc(DXGI_FORMAT_D32_FLOAT, window_width, window_height, 1, 1,
-		D3D11_BIND_DEPTH_STENCIL, D3D11_USAGE_DEFAULT, 0, m_MsaaLevel);
+		D3D11_BIND_DEPTH_STENCIL, D3D11_USAGE_DEFAULT, 0, m_CurrentMsaaLevel);
 
 	ComPtr<ID3D11Texture2D> depthStencil;
 	DX::ThrowIfFailed(m_Device->CreateTexture2D(&depthStencilDesc, nullptr, depthStencil.GetAddressOf()));
@@ -438,12 +438,14 @@ bool GlRenderer::Create(Window* window)
 		m_SupportMsaaLevels.push_back(i);
 	}
 
+	m_MaxMsaaLevel = maxSamples;
+
 	return true;
 }
 
 void GlRenderer::Resize(int width, int height)
 {
-	CreateAntiAliasingTarget(m_MsaaLevel, width, height);
+	CreateAntiAliasingTarget(m_CurrentMsaaLevel, width, height);
 	glViewport(0, 0, width, height);
 }
 
@@ -525,7 +527,7 @@ bool GlRenderer::CreateAntiAliasingTarget(int msaa_level, int window_width, int 
 	glDeleteTextures(1, &m_BackBuffer);
 	glDeleteFramebuffers(1, &m_FrameBuffer);
 
-	m_MsaaLevel = msaa_level;
+	m_MaxMsaaLevel = msaa_level;
 	if (msaa_level == 0)
 	{
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
