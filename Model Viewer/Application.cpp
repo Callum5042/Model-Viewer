@@ -178,8 +178,8 @@ void Application::RenderGui()
 	// Gui
 	Gui::StartFrame(m_Window.get(), m_Renderer.get());
 
-	bool show_demo_window = true;
-	ImGui::ShowDemoWindow(&show_demo_window);
+	//bool show_demo_window = true;
+	//ImGui::ShowDemoWindow(&show_demo_window);
 
 	// Info
 	const float distance = 15.0f;
