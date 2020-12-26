@@ -13,7 +13,7 @@ Application::Application()
 		m_Window = std::make_unique<Window>();
 		m_Renderer = std::make_unique<DxRenderer>();
 		m_Shader = std::make_unique<DxShader>(m_Renderer.get());
-		m_Camera = std::make_unique<Camera>(800, 600);
+		m_Camera = std::make_unique<Camera>(800, 600, m_Fov);
 		m_Model = std::make_unique<DxModel>(m_Renderer.get());
 	}
 	else if (startup == RenderAPI::OPENGL)
@@ -21,7 +21,7 @@ Application::Application()
 		m_Window = std::make_unique<OpenGLWindow>();
 		m_Renderer = std::make_unique<GlRenderer>();
 		m_Shader = std::make_unique<GlShader>();
-		m_Camera = std::make_unique<GlCamera>(800, 600);
+		m_Camera = std::make_unique<GlCamera>(800, 600, m_Fov);
 		m_Model = std::make_unique<GlModel>(m_Shader.get());
 	}
 }
@@ -150,6 +150,17 @@ bool Application::Init()
 
 	m_Renderer->CreateAntiAliasingTarget(level, m_Window->GetWidth(), m_Window->GetHeight());
 
+	// Check filtering levels
+	m_TextureFilteringLevelsText.clear();
+	for (int i = 1; i <= m_Renderer->GetMaxAnisotropicFilterLevel(); i *= 2)
+	{
+		auto str = "x" + std::to_string(i);
+		m_TextureFilteringLevelsText.push_back(str);
+	}
+
+	m_CurrentTextureFilterLevel = "x1";
+	m_Renderer->SetAnisotropicFilter(1);
+
 	return true;
 }
 
@@ -199,6 +210,9 @@ void Application::RenderGui()
 
 		auto yaw = "Yaw: " + std::to_string(m_Yaw);
 		ImGui::Text(yaw.c_str());
+
+		auto fov = "Field of view: " + std::to_string(static_cast<int>(m_Fov));
+		ImGui::Text(fov.c_str());
 	}
 
 	ImGui::End();
@@ -207,6 +221,8 @@ void Application::RenderGui()
 	{
 		static bool rendererOpen = true;
 		ImGui::Begin("Renderer", &rendererOpen);
+
+		ImGui::PushItemWidth(120.0f);
 
 		// Display rendering API
 		static int current_combo_render_api = static_cast<int>(m_Renderer->GetRenderAPI()) - 1;
@@ -217,7 +233,7 @@ void Application::RenderGui()
 		}
 
 		// Anti-aliasing
-		if (ImGui::BeginCombo("##AntiAliasing", m_CurrentAntiAliasingLevel.c_str(), 0))
+		if (ImGui::BeginCombo("Anti-Aliasing", m_CurrentAntiAliasingLevel.c_str(), 0))
 		{
 			for (auto& x : m_AntiAliasingLevelsText)
 			{
@@ -249,6 +265,27 @@ void Application::RenderGui()
 		// Camera
 		ImGui::SliderInt("Camera Speed", &m_CameraRotationSpeed, 1, 100);
 
+		// Texture filtering
+		if (ImGui::BeginCombo("Texture Filtering", m_CurrentTextureFilterLevel.c_str(), 0))
+		{
+			for (auto& x : m_TextureFilteringLevelsText)
+			{
+				bool selected = (m_CurrentTextureFilterLevel == x.c_str());
+				if (ImGui::Selectable(x.c_str(), &selected))
+				{
+					m_CurrentTextureFilterLevel = x.c_str();
+
+					int level = 0;
+					auto substr = x.substr(1, x.size() - 1);
+					level = std::stoi(substr);
+					m_Renderer->SetAnisotropicFilter(level);
+				}
+			}
+
+			ImGui::EndCombo();
+		}
+
+		ImGui::PopItemWidth();
 		ImGui::End();
 	}
 
@@ -282,7 +319,7 @@ void Application::ChangeRenderAPI()
 			m_Window = std::make_unique<Window>();
 			m_Renderer = std::make_unique<DxRenderer>();
 			m_Shader = std::make_unique<DxShader>(m_Renderer.get());
-			m_Camera = std::make_unique<Camera>(800, 600);
+			m_Camera = std::make_unique<Camera>(window_width, window_height, m_Fov);
 			m_Model = std::make_unique<DxModel>(m_Renderer.get());
 		}
 		else if (m_SwitchRenderAPI == RenderAPI::OPENGL)
@@ -290,7 +327,7 @@ void Application::ChangeRenderAPI()
 			m_Window = std::make_unique<OpenGLWindow>();
 			m_Renderer = std::make_unique<GlRenderer>();
 			m_Shader = std::make_unique<GlShader>();
-			m_Camera = std::make_unique<GlCamera>(800, 600);
+			m_Camera = std::make_unique<GlCamera>(window_width, window_height, m_Fov);
 			m_Model = std::make_unique<GlModel>(m_Shader.get());
 		}
 
@@ -299,7 +336,6 @@ void Application::ChangeRenderAPI()
 		// Restore window state
 		m_Window->SetPosition(window_position.first, window_position.second);
 		m_Renderer->Resize(window_width, window_height);
-		m_Camera->Resize(window_width, window_height);
 
 		if (maximised)
 		{
@@ -445,4 +481,11 @@ void Application::OnMousePressed(const MouseData& mouse)
 
 void Application::OnMouseReleased(const MouseData& mouse)
 {
+}
+
+void Application::OnMouseWheel(const MouseData& mouse)
+{
+	m_Fov -= static_cast<int>(mouse.y);
+	m_Fov = std::clamp<float>(m_Fov, 1.0f, 180.0f);
+	m_Camera->SetFov(m_Fov);
 }

@@ -13,12 +13,6 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
-    <Filter Include="External">
-      <UniqueIdentifier>{b3a3e7a3-c8d0-4426-83a1-75927f4a2cce}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="External\ImGui">
-      <UniqueIdentifier>{86baaa9e-c1b2-497e-96cd-29a427fbdc1a}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Shaders Files">
       <UniqueIdentifier>{53f0ac2e-6ecc-480a-bb25-c6b7687021a1}</UniqueIdentifier>
     </Filter>
@@ -27,6 +21,15 @@
     </Filter>
     <Filter Include="Shaders Files\GLSL">
       <UniqueIdentifier>{3f417f41-49ee-4ed8-a0d2-3ff61da97553}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Third Party">
+      <UniqueIdentifier>{b3a3e7a3-c8d0-4426-83a1-75927f4a2cce}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Third Party\ImGui">
+      <UniqueIdentifier>{86baaa9e-c1b2-497e-96cd-29a427fbdc1a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Third Party\DDSTextureLoader">
+      <UniqueIdentifier>{b2587b25-05a5-475f-8bca-0a85f6669293}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -49,28 +52,28 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\external\imgui\imgui.cpp">
-      <Filter>External\ImGui</Filter>
+      <Filter>Third Party\ImGui</Filter>
     </ClCompile>
     <ClCompile Include="..\external\imgui\imgui_demo.cpp">
-      <Filter>External\ImGui</Filter>
+      <Filter>Third Party\ImGui</Filter>
     </ClCompile>
     <ClCompile Include="..\external\imgui\imgui_draw.cpp">
-      <Filter>External\ImGui</Filter>
+      <Filter>Third Party\ImGui</Filter>
     </ClCompile>
     <ClCompile Include="..\external\imgui\imgui_impl_dx11.cpp">
-      <Filter>External\ImGui</Filter>
+      <Filter>Third Party\ImGui</Filter>
     </ClCompile>
     <ClCompile Include="..\external\imgui\imgui_impl_sdl.cpp">
-      <Filter>External\ImGui</Filter>
+      <Filter>Third Party\ImGui</Filter>
     </ClCompile>
     <ClCompile Include="..\external\imgui\imgui_widgets.cpp">
-      <Filter>External\ImGui</Filter>
+      <Filter>Third Party\ImGui</Filter>
     </ClCompile>
     <ClCompile Include="Timer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\external\imgui\imgui_impl_opengl3.cpp">
-      <Filter>External\ImGui</Filter>
+      <Filter>Third Party\ImGui</Filter>
     </ClCompile>
     <ClCompile Include="Gui.cpp">
       <Filter>Source Files</Filter>
@@ -82,6 +85,12 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Shader.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="DDSTextureLoader.cpp">
+      <Filter>Third Party\DDSTextureLoader</Filter>
+    </ClCompile>
+    <ClCompile Include="LoadTextureDDS.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -102,34 +111,34 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\external\imgui\imconfig.h">
-      <Filter>External\ImGui</Filter>
+      <Filter>Third Party\ImGui</Filter>
     </ClInclude>
     <ClInclude Include="..\external\imgui\imgui.h">
-      <Filter>External\ImGui</Filter>
+      <Filter>Third Party\ImGui</Filter>
     </ClInclude>
     <ClInclude Include="..\external\imgui\imgui_impl_dx11.h">
-      <Filter>External\ImGui</Filter>
+      <Filter>Third Party\ImGui</Filter>
     </ClInclude>
     <ClInclude Include="..\external\imgui\imgui_impl_sdl.h">
-      <Filter>External\ImGui</Filter>
+      <Filter>Third Party\ImGui</Filter>
     </ClInclude>
     <ClInclude Include="..\external\imgui\imgui_internal.h">
-      <Filter>External\ImGui</Filter>
+      <Filter>Third Party\ImGui</Filter>
     </ClInclude>
     <ClInclude Include="..\external\imgui\imstb_rectpack.h">
-      <Filter>External\ImGui</Filter>
+      <Filter>Third Party\ImGui</Filter>
     </ClInclude>
     <ClInclude Include="..\external\imgui\imstb_textedit.h">
-      <Filter>External\ImGui</Filter>
+      <Filter>Third Party\ImGui</Filter>
     </ClInclude>
     <ClInclude Include="..\external\imgui\imstb_truetype.h">
-      <Filter>External\ImGui</Filter>
+      <Filter>Third Party\ImGui</Filter>
     </ClInclude>
     <ClInclude Include="Timer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\external\imgui\imgui_impl_opengl3.h">
-      <Filter>External\ImGui</Filter>
+      <Filter>Third Party\ImGui</Filter>
     </ClInclude>
     <ClInclude Include="Gui.h">
       <Filter>Header Files</Filter>
@@ -144,6 +153,12 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="resource.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="DDSTextureLoader.h">
+      <Filter>Third Party\DDSTextureLoader</Filter>
+    </ClInclude>
+    <ClInclude Include="LoadTextureDDS.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

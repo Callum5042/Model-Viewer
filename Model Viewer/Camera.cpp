@@ -4,8 +4,9 @@
 using namespace DirectX;
 using namespace glm;
 
-Camera::Camera(int width, int height)
+Camera::Camera(int width, int height, float fov) : m_WindowWidth(width), m_WindowHeight(height), m_FOV(fov)
 {
+	SetFov(fov);
 	Resize(width, height);
 }
 
@@ -38,21 +39,23 @@ void Camera::SetPitchAndYaw(float pitch, float yaw)
 	m_View = DirectX::XMMatrixLookAtLH(eye, at, up);
 }
 
-void Camera::UpdateFov(float fov)
+void Camera::SetFov(float fov)
 {
-	m_FOV -= fov;
-	m_FOV = std::clamp<float>(m_FOV, 1.0f, 180.0f);
-
+	m_FOV = fov;
 	Resize(m_WindowWidth, m_WindowHeight);
 }
 
-GlCamera::GlCamera(int width, int height)
+GlCamera::GlCamera(int width, int height, float fov) : m_WindowWidth(width), m_WindowHeight(height), m_FOV(fov)
 {
+	SetFov(fov);
 	Resize(width, height);
 }
 
 void GlCamera::Resize(int width, int height)
 {
+	m_WindowWidth = width;
+	m_WindowHeight = height;
+
 	auto fieldOfView = glm::radians(m_FOV);
 	auto screenAspect = static_cast<float>(width) / height;
 	m_Projection = glm::perspective(fieldOfView, screenAspect, 0.01f, 100.0f);
@@ -94,4 +97,10 @@ void GlCamera::SetPitchAndYaw(float pitch, float yaw)
 	Result[3][2] = dot(f, eye);
 
 	m_View = Result;
+}
+
+void GlCamera::SetFov(float fov)
+{
+	m_FOV = fov;
+	Resize(m_WindowWidth, m_WindowHeight);
 }

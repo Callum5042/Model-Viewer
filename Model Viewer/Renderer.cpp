@@ -90,6 +90,8 @@ void DxRenderer::Clear()
 		m_DeviceContext->ClearDepthStencilView(m_DepthStencilView.Get(), D3D11_CLEAR_DEPTH, 1.0f, 0);
 		m_DeviceContext->OMSetRenderTargets(1, m_RenderTargetView.GetAddressOf(), NULL);
 	}
+
+	m_DeviceContext->PSSetSamplers(0, 1, m_AnisotropicSampler.GetAddressOf());
 }
 
 void DxRenderer::Present()
@@ -317,6 +319,27 @@ bool DxRenderer::CreateAntiAliasingTarget(int msaa_level, int window_width, int 
 	return true;
 }
 
+int DxRenderer::GetMaxAnisotropicFilterLevel()
+{
+	return D3D11_REQ_MAXANISOTROPY;
+}
+
+void DxRenderer::SetAnisotropicFilter(int level)
+{
+	D3D11_SAMPLER_DESC samplerDesc = {};
+	samplerDesc.Filter = D3D11_FILTER_ANISOTROPIC;
+	samplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
+	samplerDesc.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
+	samplerDesc.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
+	samplerDesc.MipLODBias = 0;
+	samplerDesc.MaxAnisotropy = level;
+	samplerDesc.ComparisonFunc = D3D11_COMPARISON_ALWAYS;
+	samplerDesc.MinLOD = 0;
+	samplerDesc.MaxLOD = D3D11_FLOAT32_MAX;
+
+	DX::ThrowIfFailed(m_Device->CreateSamplerState(&samplerDesc, &m_AnisotropicSampler));
+}
+
 void DxRenderer::CreateRasterStateSolid()
 {
 	D3D11_RASTERIZER_DESC rasterizerState = {};
@@ -353,6 +376,7 @@ void DxRenderer::CreateRasterStateWireframe()
 
 GlRenderer::~GlRenderer()
 {
+	glDeleteSamplers(1, &m_TextureSampler);
 	glDeleteTextures(1, &m_BackBuffer);
 	glDeleteBuffers(1, &m_FrameBuffer);
 	glDeleteRenderbuffers(1, &m_DepthBuffer);
@@ -421,6 +445,8 @@ void GlRenderer::Clear()
 	{
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	}
+
+	glBindSampler(0, m_TextureSampler);
 }
 
 void GlRenderer::Present()
@@ -537,4 +563,26 @@ bool GlRenderer::CreateAntiAliasingTarget(int msaa_level, int window_width, int 
 
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	return true;
+}
+
+int GlRenderer::GetMaxAnisotropicFilterLevel()
+{
+	auto max_anisotrophic = 0;
+	glGetIntegerv(GL_MAX_TEXTURE_MAX_ANISOTROPY, &max_anisotrophic);
+	return max_anisotrophic;
+}
+
+void GlRenderer::SetAnisotropicFilter(int level)
+{
+	if (level == 0)
+	{
+		glDeleteSamplers(1, &m_TextureSampler);
+		return;
+	}
+
+	glCreateSamplers(1, &m_TextureSampler);
+
+	glSamplerParameterf(m_TextureSampler, GL_TEXTURE_WRAP_S, GL_REPEAT);
+	glSamplerParameterf(m_TextureSampler, GL_TEXTURE_WRAP_T, GL_REPEAT);
+	glSamplerParameterf(m_TextureSampler, GL_TEXTURE_MAX_ANISOTROPY, static_cast<GLfloat>(level));
 }

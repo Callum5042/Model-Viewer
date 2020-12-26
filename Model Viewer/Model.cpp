@@ -2,8 +2,10 @@
 #include "Model.h"
 #include "Renderer.h"
 #include "Camera.h"
-#include <DirectXMath.h>
 #include "Shader.h"
+#include <DirectXMath.h>
+#include "DDSTextureLoader.h"
+#include "LoadTextureDDS.h"
 
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
@@ -14,70 +16,8 @@ _declspec(align(16)) struct ConstantBuffer
 	DirectX::XMMATRIX world;
 	DirectX::XMMATRIX view;
 	DirectX::XMMATRIX projection;
+	DirectX::XMMATRIX texture;
 };
-
-namespace Geometry
-{
-	void CreateBox(float width, float height, float depth, MeshData* mesh)
-	{
-		Vertex vertices[] =
-		{
-			{ -width, -height, -depth },
-			{ -width, +height, -depth },
-			{ +width, +height, -depth },
-			{ +width, -height, -depth },
-
-			{ -width, -height, +depth },
-			{ +width, -height, +depth },
-			{ +width, +height, +depth },
-			{ -width, +height, +depth },
-
-			{ -width, +height, -depth },
-			{ -width, +height, +depth },
-			{ +width, +height, +depth },
-			{ +width, +height, -depth },
-
-			{ -width, -height, -depth },
-			{ +width, -height, -depth },
-			{ +width, -height, +depth },
-			{ -width, -height, +depth },
-
-			{ -width, -height, +depth },
-			{ -width, +height, +depth },
-			{ -width, +height, -depth },
-			{ -width, -height, -depth },
-
-			{ +width, -height, -depth },
-			{ +width, +height, -depth },
-			{ +width, +height, +depth },
-			{ +width, -height, +depth }
-		};
-
-		unsigned int indices[] =
-		{
-			0, 1, 2,
-			0, 2, 3,
-
-			4, 5, 6,
-			4, 6, 7,
-
-			8, 9, 10,
-			8, 10, 11,
-
-			12, 13, 14,
-			12, 14, 15,
-
-			16, 17, 18,
-			16, 18, 19,
-
-			20, 21, 22,
-			20, 22, 23,
-		};
-
-		mesh->vertices.assign(&vertices[0], &vertices[24]);
-		mesh->indices.assign(&indices[0], &indices[36]);
-	}
-}
 
 DxModel::DxModel(IRenderer* renderer)
 {
@@ -91,8 +31,6 @@ DxModel::~DxModel()
 bool DxModel::Load()
 {
 	m_MeshData = std::make_unique<MeshData>();
-	//Geometry::CreateBox(1.0f, 1.0f, 1.0f, m_MeshData.get());
-
 	std::ifstream file("Data Files/Models/test.bin", std::ios::binary);
 	if (!file.is_open())
 	{
@@ -112,12 +50,12 @@ bool DxModel::Load()
 	file.read((char*)&index_count, sizeof(index_count));
 
 	// Get vertices
-	int vertex_stride = sizeof(Vertex) * vertex_count;
+	auto vertex_stride = sizeof(Vertex) * vertex_count;
 	auto vertices = new Vertex[vertex_count];
 	file.read((char*)vertices, vertex_stride);
 
 	// Get indices
-	int index_stride = sizeof(UINT) * index_count;
+	auto index_stride = sizeof(UINT) * index_count;
 	auto indices = new UINT[index_count];
 	file.read((char*)indices, index_stride);
 
@@ -161,6 +99,10 @@ bool DxModel::Load()
 
 	DX::ThrowIfFailed(m_Renderer->GetDevice()->CreateBuffer(&bd, nullptr, m_ConstantBuffer.ReleaseAndGetAddressOf()));
 
+	// Load mr texture
+	ComPtr<ID3D11Resource> resource = nullptr;
+	DX::ThrowIfFailed(DirectX::CreateDDSTextureFromFile(m_Renderer->GetDevice().Get(), L"Data Files\\Textures\\crate_diffuse.dds", resource.ReleaseAndGetAddressOf(), m_DiffuseTexture.ReleaseAndGetAddressOf()));
+
 	return true;
 }
 
@@ -181,16 +123,20 @@ void DxModel::Render(ICamera* camera)
 	m_Renderer->GetDeviceContext()->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
 	// Set buffer
-	DirectX::XMMATRIX world = DirectX::XMMatrixIdentity();
+	auto world = DirectX::XMMatrixIdentity();
 
 	ConstantBuffer cb = {};
 	cb.world = DirectX::XMMatrixTranspose(world);
 	cb.view = DirectX::XMMatrixTranspose(dxCamera->GetView());
 	cb.projection = DirectX::XMMatrixTranspose(dxCamera->GetProjection());
+	cb.texture = DirectX::XMMatrixIdentity();
 
 	m_Renderer->GetDeviceContext()->VSSetConstantBuffers(0, 1, m_ConstantBuffer.GetAddressOf());
 	m_Renderer->GetDeviceContext()->PSSetConstantBuffers(0, 1, m_ConstantBuffer.GetAddressOf());
 	m_Renderer->GetDeviceContext()->UpdateSubresource(m_ConstantBuffer.Get(), 0, nullptr, &cb, 0, 0);
+
+	// Texture
+	m_Renderer->GetDeviceContext()->PSSetShaderResources(0, 1, m_DiffuseTexture.GetAddressOf());
 
 	// Render geometry
 	m_Renderer->GetDeviceContext()->DrawIndexed(static_cast<UINT>(m_MeshData->indices.size()), 0, 0);
@@ -203,6 +149,7 @@ GlModel::GlModel(IShader* shader)
 
 GlModel::~GlModel()
 {
+	glDeleteTextures(1, &m_DiffuseTextureId);
 	glDeleteVertexArrays(1, &m_VertexArrayObject);
 	glDeleteBuffers(1, &m_VertexBuffer);
 	glDeleteBuffers(1, &m_IndexBuffer);
@@ -211,8 +158,6 @@ GlModel::~GlModel()
 bool GlModel::Load()
 {
 	m_MeshData = std::make_unique<MeshData>();
-	//Geometry::CreateBox(1.0f, 1.0f, 1.0f, m_MeshData.get());
-
 	std::ifstream file("Data Files/Models/test.bin", std::ios::binary);
 	if (!file.is_open())
 	{
@@ -232,12 +177,12 @@ bool GlModel::Load()
 	file.read((char*)&index_count, sizeof(index_count));
 
 	// Get vertices
-	int vertex_stride = sizeof(Vertex) * vertex_count;
+	auto vertex_stride = sizeof(Vertex) * vertex_count;
 	auto vertices = new Vertex[vertex_count];
 	file.read((char*)vertices, vertex_stride);
 
 	// Get indices
-	int index_stride = sizeof(UINT) * index_count;
+	auto index_stride = sizeof(UINT) * index_count;
 	auto indices = new UINT[index_count];
 	file.read((char*)indices, index_stride);
 
@@ -265,12 +210,30 @@ bool GlModel::Load()
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(GLuint) * m_MeshData->indices.size(), &m_MeshData->indices[0], GL_STATIC_DRAW);
 
 	// Something pipeline
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 7 * sizeof(GLfloat), 0);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), 0);
 	glEnableVertexAttribArray(0);
 
-	glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, 7 * sizeof(GL_FLOAT), (GLvoid*)(3 * sizeof(GL_FLOAT)));
+	glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, sizeof(Vertex), (GLvoid*)(3 * sizeof(GL_FLOAT)));
 	glEnableVertexAttribArray(1);
 
+	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (GLvoid*)(7 * sizeof(GL_FLOAT)));
+	glEnableVertexAttribArray(2);
+
+	// Load texture
+	Rove::LoadDDS dds;
+
+	std::string texture_path = "Data Files\\Textures\\crate_diffuse.dds";
+	dds.Load(std::move(texture_path));
+
+	glCreateTextures(GL_TEXTURE_2D, 1, &m_DiffuseTextureId);
+	glTextureStorage2D(m_DiffuseTextureId, dds.MipmapCount(), dds.Format(), dds.Width(), dds.Height());
+
+	for (auto& mipmap : dds.mipmaps)
+	{
+		glCompressedTextureSubImage2D(m_DiffuseTextureId, mipmap.level, 0, 0, mipmap.width, mipmap.height, dds.Format(), mipmap.texture_size, mipmap.data);
+	}
+
+	glBindTextureUnit(0, m_DiffuseTextureId);
 	return true;
 }
 

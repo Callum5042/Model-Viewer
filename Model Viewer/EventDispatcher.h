@@ -46,6 +46,7 @@ public:
 	virtual void OnMouseMove(const MouseData& mouse) {};
 	virtual void OnMousePressed(const MouseData& mouse) {};
 	virtual void OnMouseReleased(const MouseData& mouse) {};
+	virtual void OnMouseWheel(const MouseData& mouse) {};
 };
 
 class EventDispatcher

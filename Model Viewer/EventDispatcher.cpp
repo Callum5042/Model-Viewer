@@ -26,6 +26,7 @@ void EventDispatcher::Poll()
 		case SDL_MOUSEBUTTONDOWN:
 		case SDL_MOUSEBUTTONUP:
 		case SDL_MOUSEMOTION:
+		case SDL_MOUSEWHEEL:
 			PollMouseEvents(e);
 			break;
 		}
@@ -123,6 +124,20 @@ void EventDispatcher::PollMouseEvents(const SDL_Event& e)
 			if (listener != nullptr)
 			{
 				listener->OnMouseReleased(data);
+			}
+		}
+	}
+	else if (e.type == SDL_MOUSEWHEEL)
+	{
+		MouseData data;
+		data.x = e.wheel.x;
+		data.y = e.wheel.y;
+
+		for (auto& listener : m_MouseListener)
+		{
+			if (listener != nullptr)
+			{
+				listener->OnMouseWheel(data);
 			}
 		}
 	}
