@@ -8,7 +8,7 @@ Window::~Window()
 
 bool Window::Create(std::string&& title, int width, int height, WindowMode windowMode)
 {
-    auto windowFlags = SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE | SDL_WINDOW_ALLOW_HIGHDPI;
+    auto windowFlags = SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE | SDL_WINDOW_ALLOW_HIGHDPI | SDL_WINDOW_MAXIMIZED;
     if (windowMode == WindowMode::BORDERLESS_FULLSCREEN)
     {
         windowFlags |= SDL_WINDOW_MAXIMIZED | SDL_WINDOW_BORDERLESS;
