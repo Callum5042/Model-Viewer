@@ -102,6 +102,7 @@ private:
 
 	// Texture resources
 	ComPtr<ID3D11ShaderResourceView> m_DiffuseTexture = nullptr;
+	ComPtr<ID3D11ShaderResourceView> m_NormalTexture = nullptr;
 
 	// Light
 	ComPtr<ID3D11Buffer> m_LightBuffer = nullptr;

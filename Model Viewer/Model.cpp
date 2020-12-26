@@ -129,6 +129,8 @@ bool DxModel::Load()
 	ComPtr<ID3D11Resource> resource = nullptr;
 	DX::ThrowIfFailed(DirectX::CreateDDSTextureFromFile(m_Renderer->GetDevice().Get(), L"Data Files\\Textures\\crate_diffuse.dds", resource.ReleaseAndGetAddressOf(), m_DiffuseTexture.ReleaseAndGetAddressOf()));
 
+	DX::ThrowIfFailed(DirectX::CreateDDSTextureFromFile(m_Renderer->GetDevice().Get(), L"Data Files\\Textures\\crate_normal.dds", resource.ReleaseAndGetAddressOf(), m_NormalTexture.ReleaseAndGetAddressOf()));
+
 	// Mr sun
 	D3D11_BUFFER_DESC lbd = {};
 	lbd.Usage = D3D11_USAGE_DEFAULT;
@@ -179,6 +181,7 @@ void DxModel::Render(ICamera* camera)
 
 	// Texture
 	m_Renderer->GetDeviceContext()->PSSetShaderResources(0, 1, m_DiffuseTexture.GetAddressOf());
+	m_Renderer->GetDeviceContext()->PSSetShaderResources(1, 1, m_NormalTexture.GetAddressOf());
 
 	// Light up me life
 	auto diffuse = DirectX::XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
@@ -186,7 +189,7 @@ void DxModel::Render(ICamera* camera)
 	auto specular = DirectX::XMFLOAT4(0.1f, 0.1f, 0.1f, 32.0f);
 	auto direction = DirectX::XMFLOAT4(-0.8f, -0.5f, 0.5f, 1.0f);
 
-	LightBuffer lightBuffer;
+	LightBuffer lightBuffer = {};
 	lightBuffer.mDirectionalLight.mCameraPos = dxCamera->GetPosition();
 	lightBuffer.mDirectionalLight.mDiffuse = diffuse;
 	lightBuffer.mDirectionalLight.mAmbient = ambient;

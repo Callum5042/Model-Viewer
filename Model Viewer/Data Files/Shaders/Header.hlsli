@@ -39,6 +39,9 @@ cbuffer DirectionalLightBuffer : register(b1)
 SamplerState gSamplerAnisotropic : register(s0);
 Texture2D gTextureDiffuse : register(t0);
 
+SamplerComparisonState gShadowSampler : register(s1);
+Texture2D gTextureNormal : register(t1);
+
 // Vertex shader input
 struct VertexInput
 {

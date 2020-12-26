@@ -138,6 +138,9 @@ private:
 
 	// Texture filtering
 	ComPtr<ID3D11SamplerState> m_AnisotropicSampler = nullptr;
+
+	// Shaders
+	ComPtr<ID3D11SamplerState> m_ShadowSampler = nullptr;
 };
 
 class GlRenderer : public IRenderer
