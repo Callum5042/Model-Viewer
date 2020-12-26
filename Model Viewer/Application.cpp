@@ -138,7 +138,6 @@ bool Application::Init()
 
 	// Get current MSAA level
 	auto level = m_Renderer->GetCurrentMsaaLevel();
-	level = 0;
 	if (level == 0)
 	{
 		m_CurrentAntiAliasingLevel = "Off";
@@ -158,8 +157,9 @@ bool Application::Init()
 		m_TextureFilteringLevelsText.push_back(str);
 	}
 
-	m_CurrentTextureFilterLevel = "x1";
-	m_Renderer->SetAnisotropicFilter(1);
+	int max_anisotropic_filtering = m_Renderer->GetMaxAnisotropicFilterLevel();
+	m_CurrentTextureFilterLevel = "x" + std::to_string(max_anisotropic_filtering);
+	m_Renderer->SetAnisotropicFilter(max_anisotropic_filtering);
 
 	return true;
 }
