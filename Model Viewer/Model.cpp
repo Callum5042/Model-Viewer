@@ -11,12 +11,38 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
+__declspec(align(16)) struct ShaderMaterial
+{
+	DirectX::XMFLOAT4 mDiffuse;
+	DirectX::XMFLOAT4 mAmbient;
+	DirectX::XMFLOAT4 mSpecular;
+};
+
 _declspec(align(16)) struct ConstantBuffer
 {
 	DirectX::XMMATRIX world;
 	DirectX::XMMATRIX view;
 	DirectX::XMMATRIX projection;
+	DirectX::XMMATRIX worldInverse;
 	DirectX::XMMATRIX texture;
+	ShaderMaterial mMaterial;
+};
+
+_declspec(align(16)) struct DirectionalLight
+{
+	DirectX::XMFLOAT4 mDiffuse;
+	DirectX::XMFLOAT4 mAmbient;
+	DirectX::XMFLOAT4 mSpecular;
+	DirectX::XMFLOAT4 mDirection;
+	DirectX::XMFLOAT3 mCameraPos;
+	float padding;
+};
+
+_declspec(align(16)) struct LightBuffer
+{
+	DirectionalLight mDirectionalLight;
+	/*DirectX::XMMATRIX mLightView;
+	DirectX::XMMATRIX mLightProj;*/
 };
 
 DxModel::DxModel(IRenderer* renderer)
@@ -103,6 +129,14 @@ bool DxModel::Load()
 	ComPtr<ID3D11Resource> resource = nullptr;
 	DX::ThrowIfFailed(DirectX::CreateDDSTextureFromFile(m_Renderer->GetDevice().Get(), L"Data Files\\Textures\\crate_diffuse.dds", resource.ReleaseAndGetAddressOf(), m_DiffuseTexture.ReleaseAndGetAddressOf()));
 
+	// Mr sun
+	D3D11_BUFFER_DESC lbd = {};
+	lbd.Usage = D3D11_USAGE_DEFAULT;
+	lbd.ByteWidth = sizeof(LightBuffer);
+	lbd.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+
+	DX::ThrowIfFailed(m_Renderer->GetDevice()->CreateBuffer(&lbd, nullptr, m_LightBuffer.GetAddressOf()));
+
 	return true;
 }
 
@@ -129,7 +163,15 @@ void DxModel::Render(ICamera* camera)
 	cb.world = DirectX::XMMatrixTranspose(world);
 	cb.view = DirectX::XMMatrixTranspose(dxCamera->GetView());
 	cb.projection = DirectX::XMMatrixTranspose(dxCamera->GetProjection());
+	cb.worldInverse = DirectX::XMMatrixInverse(nullptr, world);
 	cb.texture = DirectX::XMMatrixIdentity();
+
+	ShaderMaterial material;
+	material.mDiffuse = DirectX::XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
+	material.mAmbient = DirectX::XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
+	material.mSpecular = DirectX::XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
+
+	cb.mMaterial = material;
 
 	m_Renderer->GetDeviceContext()->VSSetConstantBuffers(0, 1, m_ConstantBuffer.GetAddressOf());
 	m_Renderer->GetDeviceContext()->PSSetConstantBuffers(0, 1, m_ConstantBuffer.GetAddressOf());
@@ -137,6 +179,26 @@ void DxModel::Render(ICamera* camera)
 
 	// Texture
 	m_Renderer->GetDeviceContext()->PSSetShaderResources(0, 1, m_DiffuseTexture.GetAddressOf());
+
+	// Light up me life
+	auto diffuse = DirectX::XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
+	auto ambient = DirectX::XMFLOAT4(0.5f, 0.5f, 0.5f, 0.0f);
+	auto specular = DirectX::XMFLOAT4(0.1f, 0.1f, 0.1f, 32.0f);
+	auto direction = DirectX::XMFLOAT4(-0.8f, -0.5f, 0.5f, 1.0f);
+
+	LightBuffer lightBuffer;
+	lightBuffer.mDirectionalLight.mCameraPos = dxCamera->GetPosition();
+	lightBuffer.mDirectionalLight.mDiffuse = diffuse;
+	lightBuffer.mDirectionalLight.mAmbient = ambient;
+	lightBuffer.mDirectionalLight.mSpecular = specular;
+	lightBuffer.mDirectionalLight.mDirection = direction;
+
+	//lightBuffer.mLightView = DirectX::XMMatrixTranspose(ortho->GetView());
+	//lightBuffer.mLightProj = DirectX::XMMatrixTranspose(ortho->GetProjection());
+
+	m_Renderer->GetDeviceContext()->VSSetConstantBuffers(1, 1, m_LightBuffer.GetAddressOf());
+	m_Renderer->GetDeviceContext()->PSSetConstantBuffers(1, 1, m_LightBuffer.GetAddressOf());
+	m_Renderer->GetDeviceContext()->UpdateSubresource(m_LightBuffer.Get(), 0, nullptr, &lightBuffer, 0, 0);
 
 	// Render geometry
 	m_Renderer->GetDeviceContext()->DrawIndexed(static_cast<UINT>(m_MeshData->indices.size()), 0, 0);

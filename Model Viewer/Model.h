@@ -30,12 +30,37 @@ struct Texture
 	float v = 0;
 };
 
+struct Normal
+{
+	float x = 0;
+	float y = 0;
+	float z = 0;
+};
+
+struct Tangent
+{
+	float x = 0;
+	float y = 0;
+	float z = 0;
+};
+
+struct BiTangent
+{
+	float x = 0;
+	float y = 0;
+	float z = 0;
+};
+
 struct Vertex
 {
 	Vertex() {}
+
 	Position position = {};
 	Colour colour = {};
 	Texture texture = {};
+	Normal normal = {};
+	Tangent tangent = {};
+	BiTangent bi_tangent = {};
 };
 
 struct MeshData
@@ -77,6 +102,9 @@ private:
 
 	// Texture resources
 	ComPtr<ID3D11ShaderResourceView> m_DiffuseTexture = nullptr;
+
+	// Light
+	ComPtr<ID3D11Buffer> m_LightBuffer = nullptr;
 };
 
 class GlModel : public IModel

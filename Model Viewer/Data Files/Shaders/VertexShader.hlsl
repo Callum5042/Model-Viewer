@@ -16,8 +16,10 @@ PixelInput main(VertexInput input)
 	output.Colour = input.Colour;
 
 	// Transform texture to world space.
-	output.Texture = input.Texture;
-	//output.Texture = mul(float4(input.Texture, 1.0f, 1.0f), cTextureTransform).xy;
+	output.Texture = mul(float4(input.Texture, 1.0f, 1.0f), cTextureTransform).xy;
+
+	// Transform normals by inverse world
+	output.Normal = mul(input.Normal, (float3x3)cInverseWorld).xyz;
 
 	return output;
 }

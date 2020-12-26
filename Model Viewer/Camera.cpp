@@ -31,6 +31,7 @@ void Camera::SetPitchAndYaw(float pitch, float yaw)
 	auto position = DirectX::XMVectorSet(0.0f, 0.0f, -8.0f, 0.0f);
 	auto camRotationMatrix = DirectX::XMMatrixRotationRollPitchYaw(pitch_radians, yaw_radians, 0);
 	position = XMVector3TransformCoord(position, camRotationMatrix);
+	XMStoreFloat3(&m_Position, position);
 
 	// Look at
 	auto eye = position;

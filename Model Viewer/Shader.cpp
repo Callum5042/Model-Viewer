@@ -40,10 +40,10 @@ bool DxShader::CreateVertexShader(const std::string& vertex_shader_path)
 	}
 
 	vertexFile.seekg(0, vertexFile.end);
-	int vertexsize = static_cast<int>(vertexFile.tellg());
+	auto vertexsize = static_cast<int>(vertexFile.tellg());
 	vertexFile.seekg(0, vertexFile.beg);
 
-	char* vertexbuffer = new char[vertexsize];
+	auto vertexbuffer = new char[vertexsize];
 	vertexFile.read(vertexbuffer, vertexsize);
 
 	DX::ThrowIfFailed(m_Renderer->GetDevice()->CreateVertexShader(vertexbuffer, vertexsize, nullptr, m_VertexShader.ReleaseAndGetAddressOf()));
@@ -53,6 +53,9 @@ bool DxShader::CreateVertexShader(const std::string& vertex_shader_path)
 		{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
 		{ "COLOUR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 12, D3D11_INPUT_PER_VERTEX_DATA, 0 },
 		{ "TEXTURE", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 28, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+		{ "NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 44, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+		{ "TANGENT", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 48, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+		{ "BITTANGENT", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 60, D3D11_INPUT_PER_VERTEX_DATA, 0 },
 	};
 
 	UINT numElements = ARRAYSIZE(layout);
@@ -72,10 +75,10 @@ bool DxShader::CreatePixelShader(const std::string& pixel_shader_path)
 	}
 
 	pixelFile.seekg(0, pixelFile.end);
-	int pixelsize = static_cast<int>(pixelFile.tellg());
+	auto pixelsize = static_cast<int>(pixelFile.tellg());
 	pixelFile.seekg(0, pixelFile.beg);
 
-	char* pixelbuffer = new char[pixelsize];
+	auto pixelbuffer = new char[pixelsize];
 	pixelFile.read(pixelbuffer, pixelsize);
 
 	DX::ThrowIfFailed(m_Renderer->GetDevice()->CreatePixelShader(pixelbuffer, pixelsize, nullptr, m_PixelShader.ReleaseAndGetAddressOf()));
@@ -109,10 +112,10 @@ void GlShader::Use()
 
 GLuint GlShader::LoadVertexShader(std::string&& vertexPath)
 {
-	GLuint vertexShader = glCreateShader(GL_VERTEX_SHADER);
+	auto vertexShader = glCreateShader(GL_VERTEX_SHADER);
 
-	std::string vertexShaderSource = ReadShader(std::move(vertexPath));
-	const GLchar* vertexC = vertexShaderSource.c_str();
+	auto vertexShaderSource = ReadShader(std::move(vertexPath));
+	auto vertexC = vertexShaderSource.c_str();
 
 	glShaderSource(vertexShader, 1, &vertexC, NULL);
 	glCompileShader(vertexShader);
@@ -127,10 +130,10 @@ GLuint GlShader::LoadVertexShader(std::string&& vertexPath)
 
 GLuint GlShader::LoadFragmentShader(std::string&& fragmentPath)
 {
-	GLuint fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
+	auto fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
 
-	std::string fragmentShaderSource = ReadShader(std::move(fragmentPath));
-	const GLchar* fragmentC = fragmentShaderSource.c_str();
+	auto fragmentShaderSource = ReadShader(std::move(fragmentPath));
+	auto fragmentC = fragmentShaderSource.c_str();
 
 	glShaderSource(fragmentShader, 1, &fragmentC, NULL);
 	glCompileShader(fragmentShader);
