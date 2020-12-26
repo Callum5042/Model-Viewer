@@ -21,8 +21,8 @@ DxRenderer::~DxRenderer()
 
 bool DxRenderer::Create(Window* window)
 {
-	int width = window->GetWidth();
-	int height = window->GetHeight();
+	auto width = window->GetWidth();
+	auto height = window->GetHeight();
 
 	if (!CreateDevice())
 		return false;
@@ -41,7 +41,7 @@ bool DxRenderer::Create(Window* window)
 	m_DeviceContext->RSSetState(m_RasterStateSolid.Get());
 
 	// Create an MSAA render target.
-	int max_sample_count = 8;
+	auto max_sample_count = 8;
 	for (int i = max_sample_count; i >= 2; i /= 2)
 	{
 		auto quality_levels = 0u;
@@ -145,7 +145,7 @@ void DxRenderer::QueryHardwareInfo()
 	std::vector<ComPtr<IDXGIAdapter>> adapters;
 	ComPtr<IDXGIAdapter> adapter = nullptr;
 
-	int i = 0;
+	auto i = 0;
 	while (m_DxgiFactory2->EnumAdapters(i++, &adapter) != DXGI_ERROR_NOT_FOUND)
 	{
 		adapters.push_back(adapter);
@@ -214,7 +214,7 @@ bool DxRenderer::CreateDevice()
 
 bool DxRenderer::CreateSwapChain(Window* window, int width, int height)
 {
-	HWND hwnd = DX::GetHwnd(window);
+	auto hwnd = DX::GetHwnd(window);
 
 	ComPtr<IDXGIDevice> dxgiDevice = nullptr;
 	DX::ThrowIfFailed(m_Device.As(&dxgiDevice));
@@ -419,7 +419,7 @@ bool GlRenderer::Create(Window* window)
 	}
 
 #ifdef _DEBUG
-	const unsigned char* glewVersion = glewGetString(GLEW_VERSION);
+	auto glewVersion = glewGetString(GLEW_VERSION);
 	std::cout << "Glew: " << glewVersion << '\n';
 #endif
 
@@ -431,9 +431,9 @@ bool GlRenderer::Create(Window* window)
 	glDepthFunc(GL_LEQUAL);
 
 	// MSAA
-	int maxSamples = 0;
+	auto maxSamples = 0;
 	glGetIntegerv(GL_MAX_SAMPLES, &maxSamples);
-	for (int i = maxSamples; i >= 2; i /= 2)
+	for (auto i = maxSamples; i >= 2; i /= 2)
 	{
 		m_SupportMsaaLevels.push_back(i);
 	}
@@ -596,6 +596,7 @@ int GlRenderer::GetMaxAnisotropicFilterLevel()
 
 void GlRenderer::SetAnisotropicFilter(int level)
 {
+	m_CurrentMsaaLevel = level;
 	if (level == 0)
 	{
 		glDeleteSamplers(1, &m_TextureSampler);

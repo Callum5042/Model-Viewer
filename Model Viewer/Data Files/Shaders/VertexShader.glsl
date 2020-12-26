@@ -1,17 +1,21 @@
 #version 400 core
 
-uniform mat4 view, projection, transform;
+uniform mat4 gView, gProjection, gWorld;
 
 layout (location = 0) in vec4 vPosition;
 layout (location = 1) in vec4 vColour;
 layout (location = 2) in vec2 vUV;
+layout (location = 3) in vec3 vNormal;
 
 out vec4 fColour;
 out vec2 fUV;
+out vec3 fNormal;
 
 void main()
 {
-    gl_Position = projection * view * transform * vPosition;
+    gl_Position = gProjection * gView * gWorld * vPosition;
+
     fColour = vColour;
     fUV = vUV;
+    fNormal = vNormal;
 }

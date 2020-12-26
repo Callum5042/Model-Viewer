@@ -284,6 +284,9 @@ bool GlModel::Load()
 	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (GLvoid*)(7 * sizeof(GL_FLOAT)));
 	glEnableVertexAttribArray(2);
 
+	glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (GLvoid*)(10 * sizeof(GL_FLOAT)));
+	glEnableVertexAttribArray(3);
+
 	// Load texture
 	Rove::LoadDDS dds;
 
@@ -308,16 +311,34 @@ void GlModel::Render(ICamera* camera)
 
 	// Update shader transform
 	auto transform = glm::mat4(1.0f);
-	auto transformLoc = glGetUniformLocation(m_Shader->GetShaderId(), "transform");
+	auto transformLoc = glGetUniformLocation(m_Shader->GetShaderId(), "gWorld");
 	glUniformMatrix4fv(transformLoc, 1, GL_FALSE, glm::value_ptr(transform));
 
 	// Update shader view
-	auto viewLoc = glGetUniformLocation(m_Shader->GetShaderId(), "view");
+	auto viewLoc = glGetUniformLocation(m_Shader->GetShaderId(), "gView");
 	glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(glCamera->GetView()));
 
 	// Update shader projection
-	auto projLoc = glGetUniformLocation(m_Shader->GetShaderId(), "projection");
+	auto projLoc = glGetUniformLocation(m_Shader->GetShaderId(), "gProjection");
 	glUniformMatrix4fv(projLoc, 1, GL_FALSE, glm::value_ptr(glCamera->GetProjection()));
+
+	// The light man
+	auto gDirectionLight = glGetUniformLocation(m_Shader->GetShaderId(), "gDirectionLight");
+	glm::vec4 direction_light(-0.8f, -0.5f, 0.5f, 1.0f);
+	glUniform4fv(gDirectionLight, 1, glm::value_ptr(direction_light));
+
+	auto gDiffuseLight = glGetUniformLocation(m_Shader->GetShaderId(), "gDiffuseLight");
+	glm::vec4 diffuse_light(1.0f, 1.0f, 1.0f, 1.0f);
+	glUniform4fv(gDiffuseLight, 1, glm::value_ptr(diffuse_light));
+
+	auto gAmbientLightLoc = glGetUniformLocation(m_Shader->GetShaderId(), "gAmbientLight");
+	glm::vec4 ambient_light(0.5f, 0.5f, 0.5f, 1.0f);
+	glUniform4fv(gAmbientLightLoc, 1, glm::value_ptr(ambient_light));
+
+	/*auto diffuse = DirectX::XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
+	auto ambient = DirectX::XMFLOAT4(0.5f, 0.5f, 0.5f, 0.0f);
+	auto specular = DirectX::XMFLOAT4(0.1f, 0.1f, 0.1f, 32.0f);
+	auto direction = DirectX::XMFLOAT4(-0.8f, -0.5f, 0.5f, 1.0f);*/
 
 	// Draw
 	glBindVertexArray(m_VertexArrayObject);
