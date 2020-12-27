@@ -128,4 +128,5 @@ private:
 
 	// Texture resourcees
 	GLuint m_DiffuseTextureId = 0;
+	GLuint m_NormalTextureId = 0;
 };

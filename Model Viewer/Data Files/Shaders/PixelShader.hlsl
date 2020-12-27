@@ -40,16 +40,14 @@ float3 CalculateBumpMap(PixelInput input)
 
 float4 main(PixelInput input) : SV_TARGET
 {
-	// Sample the texture
+	// Diffuse texture
 	float4 diffuse_texture = gTextureDiffuse.Sample(gSamplerAnisotropic, input.Texture);
 	
-	// Shaders
-	float lighting = 1;
-
 	// Normal Texture
 	input.Normal = CalculateBumpMap(input);
 
 	// Directional Light
+	float lighting = 1;
 	float4 directional_light = CalculateDirectionalLighting(input.Position, input.Normal, lighting);
 
 	// Combine all pixels

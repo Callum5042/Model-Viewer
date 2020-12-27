@@ -214,6 +214,7 @@ GlModel::GlModel(IShader* shader)
 
 GlModel::~GlModel()
 {
+	glDeleteTextures(1, &m_NormalTextureId);
 	glDeleteTextures(1, &m_DiffuseTextureId);
 	glDeleteVertexArrays(1, &m_VertexArrayObject);
 	glDeleteBuffers(1, &m_VertexBuffer);
@@ -287,21 +288,42 @@ bool GlModel::Load()
 	glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (GLvoid*)(9 * sizeof(GL_FLOAT)));
 	glEnableVertexAttribArray(3);
 
-	// Load texture
-	Rove::LoadDDS dds;
+	glVertexAttribPointer(4, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (GLvoid*)(12 * sizeof(GL_FLOAT)));
+	glEnableVertexAttribArray(4);
 
-	std::string texture_path = "Data Files\\Textures\\crate_diffuse.dds";
-	dds.Load(std::move(texture_path));
+	glVertexAttribPointer(5, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (GLvoid*)(15 * sizeof(GL_FLOAT)));
+	glEnableVertexAttribArray(5);
+
+	// Load diffuse texture
+	Rove::LoadDDS diffuse_dds;
+	std::string diffuse_texture_path = "Data Files\\Textures\\crate_diffuse.dds";
+	diffuse_dds.Load(std::move(diffuse_texture_path));
 
 	glCreateTextures(GL_TEXTURE_2D, 1, &m_DiffuseTextureId);
-	glTextureStorage2D(m_DiffuseTextureId, dds.MipmapCount(), dds.Format(), dds.Width(), dds.Height());
+	glTextureStorage2D(m_DiffuseTextureId, diffuse_dds.MipmapCount(), diffuse_dds.Format(), diffuse_dds.Width(), diffuse_dds.Height());
 
-	for (auto& mipmap : dds.mipmaps)
+	for (auto& mipmap : diffuse_dds.mipmaps)
 	{
-		glCompressedTextureSubImage2D(m_DiffuseTextureId, mipmap.level, 0, 0, mipmap.width, mipmap.height, dds.Format(), mipmap.texture_size, mipmap.data);
+		glCompressedTextureSubImage2D(m_DiffuseTextureId, mipmap.level, 0, 0, mipmap.width, mipmap.height, diffuse_dds.Format(), mipmap.texture_size, mipmap.data);
 	}
 
 	glBindTextureUnit(0, m_DiffuseTextureId);
+
+	// Load normal texture
+	Rove::LoadDDS normal_dds;
+	std::string normal_texture_path = "Data Files\\Textures\\crate_normal.dds";
+	normal_dds.Load(std::move(normal_texture_path));
+
+	glCreateTextures(GL_TEXTURE_2D, 1, &m_NormalTextureId);
+	glTextureStorage2D(m_NormalTextureId, normal_dds.MipmapCount(), normal_dds.Format(), normal_dds.Width(), normal_dds.Height());
+
+	for (auto& mipmap : normal_dds.mipmaps)
+	{
+		glCompressedTextureSubImage2D(m_NormalTextureId, mipmap.level, 0, 0, mipmap.width, mipmap.height, normal_dds.Format(), mipmap.texture_size, mipmap.data);
+	}
+
+	glBindTextureUnit(1, m_NormalTextureId);
+
 	return true;
 }
 
