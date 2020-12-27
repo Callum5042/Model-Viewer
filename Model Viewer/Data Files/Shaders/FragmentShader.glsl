@@ -18,10 +18,10 @@ vec4 CalculateDirectionalLighting()
 
 	// Diffuse lighting
 	vec3 lightVec = -gDirectionLight.xyz;
-	vec4 diffuse_light = clamp(dot(lightVec, fNormal), 0.0, 1.0) * gDiffuseLight;// *diffuse;
+	vec4 diffuse_light = clamp(dot(lightVec, fNormal), 0.0, 1.0) * gDiffuseLight * diffuse;
 
 	// Ambient lightingt
-	vec4 ambient_light = gAmbientLight;// *ambient;
+	vec4 ambient_light = gAmbientLight * ambient;
 
 	// Specular lighting
 	vec3 viewDir = normalize(gCameraPos.xyz - fPosition.xyz);
