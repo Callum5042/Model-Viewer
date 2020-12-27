@@ -532,7 +532,7 @@ bool GlRenderer::CreateAntiAliasingTarget(int msaa_level, int window_width, int 
 	glDeleteTextures(1, &m_BackBuffer);
 	glDeleteFramebuffers(1, &m_FrameBuffer);
 
-	m_MaxMsaaLevel = msaa_level;
+	m_CurrentMsaaLevel = msaa_level;
 	if (msaa_level == 0)
 	{
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -601,7 +601,6 @@ int GlRenderer::GetMaxAnisotropicFilterLevel()
 
 void GlRenderer::SetAnisotropicFilter(int level)
 {
-	m_CurrentMsaaLevel = level;
 	if (level == 0)
 	{
 		glDeleteSamplers(1, &m_TextureSampler);
