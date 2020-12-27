@@ -73,6 +73,8 @@ void GlCamera::SetPitchAndYaw(float pitch, float yaw)
 	auto rotationMatrix = glm::yawPitchRoll(yaw_radians, pitch_radians, 0.0f);
 	position = rotationMatrix * position;
 
+	m_Position = position;
+
 	// Look at
 	glm::vec3 eye = position;
 	glm::vec3 at(0.0f, 0.0f, 0.0f);

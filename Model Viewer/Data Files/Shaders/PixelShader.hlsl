@@ -40,8 +40,6 @@ float3 CalculateBumpMap(PixelInput input)
 
 float4 main(PixelInput input) : SV_TARGET
 {
-	input.Normal = normalize(input.Normal);
-
 	// Sample the texture
 	float4 diffuse_texture = gTextureDiffuse.Sample(gSamplerAnisotropic, input.Texture);
 	

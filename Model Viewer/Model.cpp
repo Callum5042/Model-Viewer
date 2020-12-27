@@ -335,10 +335,13 @@ void GlModel::Render(ICamera* camera)
 	glm::vec4 ambient_light(0.5f, 0.5f, 0.5f, 1.0f);
 	glUniform4fv(gAmbientLightLoc, 1, glm::value_ptr(ambient_light));
 
-	/*auto diffuse = DirectX::XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
-	auto ambient = DirectX::XMFLOAT4(0.5f, 0.5f, 0.5f, 0.0f);
-	auto specular = DirectX::XMFLOAT4(0.1f, 0.1f, 0.1f, 32.0f);
-	auto direction = DirectX::XMFLOAT4(-0.8f, -0.5f, 0.5f, 1.0f);*/
+	auto gSpecularLight = glGetUniformLocation(m_Shader->GetShaderId(), "gSpecularLight");
+	glm::vec4 specular_light(0.1f, 0.1f, 0.1f, 32.0f);
+	glUniform4fv(gSpecularLight, 1, glm::value_ptr(specular_light));
+
+	auto gCameraPos = glGetUniformLocation(m_Shader->GetShaderId(), "gCameraPos");
+	auto cameraPos = glCamera->GetPosition();
+	glUniform4fv(gCameraPos, 1, glm::value_ptr(cameraPos));
 
 	// Draw
 	glBindVertexArray(m_VertexArrayObject);

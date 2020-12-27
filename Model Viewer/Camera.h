@@ -59,6 +59,8 @@ public:
 	constexpr glm::mat4 GetView() { return m_View; }
 	constexpr glm::mat4 GetProjection() { return m_Projection; }
 
+	constexpr glm::vec3 GetPosition() { return m_Position; }
+
 	void Resize(int width, int height);
 
 	// Inherited via ICamera

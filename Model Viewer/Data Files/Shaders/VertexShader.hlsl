@@ -20,6 +20,7 @@ PixelInput main(VertexInput input)
 
 	// Transform normals by inverse world
 	output.Normal = mul(input.Normal, (float3x3)cInverseWorld).xyz;
+	output.Normal = normalize(output.Normal);
 
 	// Normal mapping
 	output.Tangent = mul(input.Tangent, (float3x3)cInverseWorld);
