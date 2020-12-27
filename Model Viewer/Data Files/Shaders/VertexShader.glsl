@@ -20,12 +20,14 @@ void main()
 {
     gl_Position = gProjection * gView * gWorld * vPosition;
 
-    fPosition = gl_Position;
+    fPosition = vPosition;
+
     fColour = vColour;
     fUV = vUV;
 
     // Texture mapping
-    fNormal = normalize(vNormal);
+    fNormal = (vNormal * inverse(mat3(gWorld))).xyz;
+    fNormal = normalize(fNormal);
 
     // Normal mapping
     fTangent = (vec4(vTangent, 1.0f) * inverse(gWorld)).xyz;

@@ -138,6 +138,7 @@ bool Application::Init()
 
 	// Get current MSAA level
 	auto level = m_Renderer->GetMaxMsaaLevel();
+	level = 8;
 	if (level == 0)
 	{
 		m_CurrentAntiAliasingLevel = "Off";
