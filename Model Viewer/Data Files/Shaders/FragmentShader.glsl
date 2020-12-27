@@ -12,21 +12,25 @@ in vec3 fNormal;
 vec4 CalculateDirectionalLighting()
 {
 	vec4 material_diffuse = vec4(1.0f, 1.0f, 1.0f, 1.0f);
+	vec4 material_ambient = vec4(1.0f, 1.0f, 1.0f, 1.0f);
+
+	vec3 normal = normalize(fNormal);
 
 	// Diffuse lighting
 	vec3 lightVec = -gDirectionLight.xyz;
-	vec4 diffuse_light = clamp(dot(lightVec, normalize(fNormal)), 0.0, 1.0) * gDiffuseLight * material_diffuse;
+	vec4 diffuse_light = max(dot(normal, lightVec), 0.0) * gDiffuseLight * material_diffuse;
+	//vec4 diffuse_light = clamp(dot(lightVec, normal), 0.0, 1.0) * gDiffuseLight * material_diffuse;
 
-	// Ambient lighting
-	vec4 ambient_light = gAmbientLight;
+	// Ambient lightingt
+	vec4 ambient_light = gAmbientLight * maerial_ambient;
 
 //	// Specular lighting
 //	float3 viewDir = normalize(mDirectionalLight.mCameraPos - position);
-//	float3 reflectDir = reflect(-lightVec, normal);
+//	float3 reflectDir = reflect(-lightVec, no rmal);
 //	float spec = pow(max(dot(viewDir, reflectDir), 0.0), mDirectionalLight.mSpecular.w * cMaterial.mSpecular.w);
 //	float4 specular_light = lighting * float4(spec * mDirectionalLight.mSpecular.xyz * cMaterial.mSpecular.xyz, 1.0f);
 
-	return diffuse_light;// + ambient_light;
+	return diffuse_light;
 }
 
 void main()
@@ -39,5 +43,5 @@ void main()
 
 	// Final pixel
 	//color = diffuse_colour * fColour;
-	color =  directional_light * diffuse_colour;
+	color = directional_light;// *diffuse_colour;
 }

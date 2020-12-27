@@ -187,7 +187,8 @@ void DxModel::Render(ICamera* camera)
 	auto diffuse = DirectX::XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
 	auto ambient = DirectX::XMFLOAT4(0.5f, 0.5f, 0.5f, 0.0f);
 	auto specular = DirectX::XMFLOAT4(0.1f, 0.1f, 0.1f, 32.0f);
-	auto direction = DirectX::XMFLOAT4(-0.8f, -0.5f, 0.5f, 1.0f);
+	//auto direction = DirectX::XMFLOAT4(-0.8f, -0.5f, 0.5f, 1.0f);
+	auto direction = DirectX::XMFLOAT4(1.0f, 0.0f, 0.0f, 1.0f);
 
 	LightBuffer lightBuffer = {};
 	lightBuffer.mDirectionalLight.mCameraPos = dxCamera->GetPosition();
