@@ -51,7 +51,7 @@ vec3 CalculateBumpMap()
 	mat3 TBN = mat3(T, B, N);
 
 	// Transform from tangent space to world space.
-	vec3 bumpedNormalW = normalT * TBN;
+	vec3 bumpedNormalW = TBN * normalT;
 	return bumpedNormalW;
 }
 
