@@ -49,7 +49,7 @@ float4 main(PixelInput input) : SV_TARGET
 	float lighting = 1;
 
 	// Normal Texture
-	//input.Normal = CalculateBumpMap(input);
+	input.Normal = CalculateBumpMap(input);
 
 	// Directional Light
 	float4 directional_light = CalculateDirectionalLighting(input.Position, input.Normal, lighting);

@@ -169,6 +169,7 @@ bool GlShader::HasCompiled(GLuint shader)
 		GLchar* log = new GLchar[len + 1];
 		glGetShaderInfoLog(shader, len, &len, log);
 		std::cerr << "Shader compilation failed: " << log << std::endl;
+		SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", log, nullptr);
 		delete[] log;
 #endif
 

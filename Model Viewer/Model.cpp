@@ -187,8 +187,7 @@ void DxModel::Render(ICamera* camera)
 	auto diffuse = DirectX::XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
 	auto ambient = DirectX::XMFLOAT4(0.5f, 0.5f, 0.5f, 0.0f);
 	auto specular = DirectX::XMFLOAT4(0.1f, 0.1f, 0.1f, 32.0f);
-	//auto direction = DirectX::XMFLOAT4(-0.8f, -0.5f, 0.5f, 1.0f);
-	auto direction = DirectX::XMFLOAT4(1.0f, 0.0f, 0.0f, 1.0f);
+	auto direction = DirectX::XMFLOAT4(-0.8f, -0.5f, 0.5f, 1.0f);
 
 	LightBuffer lightBuffer = {};
 	lightBuffer.mDirectionalLight.mCameraPos = dxCamera->GetPosition();
@@ -285,7 +284,7 @@ bool GlModel::Load()
 	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (GLvoid*)(7 * sizeof(GL_FLOAT)));
 	glEnableVertexAttribArray(2);
 
-	glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (GLvoid*)(10 * sizeof(GL_FLOAT)));
+	glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (GLvoid*)(9 * sizeof(GL_FLOAT)));
 	glEnableVertexAttribArray(3);
 
 	// Load texture
