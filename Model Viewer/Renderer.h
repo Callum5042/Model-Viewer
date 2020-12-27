@@ -57,6 +57,9 @@ public:
 	// Texture filtering
 	virtual int GetMaxAnisotropicFilterLevel() = 0;
 	virtual void SetAnisotropicFilter(int level) = 0;
+
+	// Vsync
+	virtual void SetVync(bool enable) = 0;
 };
 
 class DxRenderer : public IRenderer
@@ -93,6 +96,9 @@ public:
 	// Texture filtering
 	virtual int GetMaxAnisotropicFilterLevel() override;
 	virtual void SetAnisotropicFilter(int level) override;
+
+	// Vsync
+	virtual void SetVync(bool enable) override;
 
 private:
 	ComPtr<ID3D11Device> m_Device = nullptr;
@@ -142,6 +148,9 @@ private:
 
 	// Shaders
 	ComPtr<ID3D11SamplerState> m_ShadowSampler = nullptr;
+
+	// Vsync
+	bool m_Vsync = false;
 };
 
 class GlRenderer : public IRenderer
@@ -172,6 +181,9 @@ public:
 	virtual int GetMaxAnisotropicFilterLevel() override;
 	virtual void SetAnisotropicFilter(int level) override;
 
+	// Vsync
+	virtual void SetVync(bool enable) override;
+
 private:
 	Window* m_Window = nullptr;
 
@@ -196,4 +208,7 @@ private:
 
 	// Texture filtering
 	GLuint m_TextureSampler = 0;
+
+	// Vsync
+	bool m_Vsync = false;
 };

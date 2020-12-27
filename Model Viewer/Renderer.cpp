@@ -125,7 +125,7 @@ void DxRenderer::Present()
 	m_SwapChain.As(&swapChain1);
 
 	DXGI_PRESENT_PARAMETERS presentParameters = {};
-	DX::ThrowIfFailed(swapChain1->Present1(0, 0, &presentParameters));
+	DX::ThrowIfFailed(swapChain1->Present1(static_cast<int>(m_Vsync), 0, &presentParameters));
 }
 
 void DxRenderer::ToggleWireframe(bool wireframe)
@@ -360,6 +360,11 @@ void DxRenderer::SetAnisotropicFilter(int level)
 	DX::ThrowIfFailed(m_Device->CreateSamplerState(&samplerDesc, &m_AnisotropicSampler));
 }
 
+void DxRenderer::SetVync(bool enable)
+{
+	m_Vsync = enable;
+}
+
 void DxRenderer::CreateRasterStateSolid()
 {
 	D3D11_RASTERIZER_DESC rasterizerState = {};
@@ -484,7 +489,7 @@ void GlRenderer::Present()
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	}
 
-	SDL_GL_SetSwapInterval(0);
+	SDL_GL_SetSwapInterval(static_cast<int>(m_Vsync));
 	SDL_GL_SwapWindow(m_Window->GetSdlWindow());
 }
 
@@ -608,4 +613,9 @@ void GlRenderer::SetAnisotropicFilter(int level)
 	glSamplerParameterf(m_TextureSampler, GL_TEXTURE_WRAP_S, GL_REPEAT);
 	glSamplerParameterf(m_TextureSampler, GL_TEXTURE_WRAP_T, GL_REPEAT);
 	glSamplerParameterf(m_TextureSampler, GL_TEXTURE_MAX_ANISOTROPY, static_cast<GLfloat>(level));
+}
+
+void GlRenderer::SetVync(bool enable)
+{
+	m_Vsync = enable;
 }

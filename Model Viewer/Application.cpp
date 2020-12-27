@@ -161,6 +161,7 @@ bool Application::Init()
 	int max_anisotropic_filtering = m_Renderer->GetMaxAnisotropicFilterLevel();
 	m_CurrentTextureFilterLevel = "x" + std::to_string(max_anisotropic_filtering);
 	m_Renderer->SetAnisotropicFilter(max_anisotropic_filtering);
+	m_Renderer->SetVync(m_Vsync);
 
 	return true;
 }
@@ -284,6 +285,12 @@ void Application::RenderGui()
 			}
 
 			ImGui::EndCombo();
+		}
+
+		// Vsync
+		if (ImGui::Checkbox("Vsync", &m_Vsync))
+		{
+			m_Renderer->SetVync(m_Vsync);
 		}
 
 		ImGui::PopItemWidth();
