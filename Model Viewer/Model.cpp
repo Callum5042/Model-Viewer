@@ -327,22 +327,38 @@ bool GlModel::Load()
 	return true;
 }
 
+struct GlWorld
+{
+	glm::mat4 world;
+	glm::mat4 view;
+	glm::mat4 proj;
+};
+
 void GlModel::Render(ICamera* camera)
 {
 	auto glCamera = reinterpret_cast<GlCamera*>(camera);
 
+	GlWorld world = {};
+	world.world = glm::mat4(1.0f);
+	world.view = glCamera->GetView();
+	world.proj = glCamera->GetProjection();
+
 	// Update shader transform
-	auto transform = glm::mat4(1.0f);
-	auto transformLoc = glGetUniformLocation(m_Shader->GetShaderId(), "gWorld");
-	glUniformMatrix4fv(transformLoc, 1, GL_FALSE, glm::value_ptr(transform));
+	auto world_location = glGetUniformBlockIndex(m_Shader->GetShaderId(), "cWorld");
+	glUniformBlockBinding(m_Shader->GetShaderId(), world_location, 0);
 
-	// Update shader view
-	auto viewLoc = glGetUniformLocation(m_Shader->GetShaderId(), "gView");
-	glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(glCamera->GetView()));
+	unsigned int uboMatrices;
+	glGenBuffers(1, &uboMatrices);
 
-	// Update shader projection
-	auto projLoc = glGetUniformLocation(m_Shader->GetShaderId(), "gProjection");
-	glUniformMatrix4fv(projLoc, 1, GL_FALSE, glm::value_ptr(glCamera->GetProjection()));
+	glBindBuffer(GL_UNIFORM_BUFFER, uboMatrices);
+	glBufferData(GL_UNIFORM_BUFFER, sizeof(GlWorld), NULL, GL_STATIC_DRAW);
+	glBindBuffer(GL_UNIFORM_BUFFER, 0);
+
+	glBindBufferRange(GL_UNIFORM_BUFFER, 0, uboMatrices, 0, sizeof(GlWorld));
+
+	glBindBuffer(GL_UNIFORM_BUFFER, uboMatrices);
+	glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(GlWorld), &world);
+	glBindBuffer(GL_UNIFORM_BUFFER, 0);
 
 	// The light man
 	auto gDirectionLight = glGetUniformLocation(m_Shader->GetShaderId(), "gDirectionLight");

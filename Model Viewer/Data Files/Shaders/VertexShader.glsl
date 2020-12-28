@@ -1,6 +1,11 @@
 #version 400 core
 
-uniform mat4 gView, gProjection, gWorld;
+layout (std140) uniform cWorld
+{
+    mat4 gWorld;
+    mat4 gView;
+    mat4 gProjection;
+};
 
 layout (location = 0) in vec4 vPosition;
 layout (location = 1) in vec4 vColour;

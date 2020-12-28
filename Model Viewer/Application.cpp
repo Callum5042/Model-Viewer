@@ -459,7 +459,7 @@ void Application::OnResize(int width, int height)
 void Application::OnKeyPressed(SDL_Scancode scancode)
 {
 #pragma warning(pop)
-	if (scancode == SDL_SCANCODE_1)
+	if (scancode == SDL_SCANCODE_1 || scancode == SDL_SCANCODE_KP_1)
 	{
 		m_Wireframe = !m_Wireframe;
 		m_Renderer->ToggleWireframe(m_Wireframe);
