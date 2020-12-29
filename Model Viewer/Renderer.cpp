@@ -124,8 +124,15 @@ void DxRenderer::Present()
 	ComPtr<IDXGISwapChain1> swapChain1 = nullptr;
 	m_SwapChain.As(&swapChain1);
 
-	DXGI_PRESENT_PARAMETERS presentParameters = {};
-	DX::ThrowIfFailed(swapChain1->Present1(static_cast<int>(m_Vsync), 0, &presentParameters));
+	if (swapChain1 != nullptr)
+	{
+		DXGI_PRESENT_PARAMETERS presentParameters = {};
+		DX::ThrowIfFailed(swapChain1->Present1(static_cast<int>(m_Vsync), 0, &presentParameters));
+	}
+	else
+	{
+		DX::ThrowIfFailed(m_SwapChain->Present(static_cast<int>(m_Vsync), 0));
+	}
 }
 
 void DxRenderer::ToggleWireframe(bool wireframe)
