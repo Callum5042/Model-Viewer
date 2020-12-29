@@ -362,7 +362,7 @@ void DxRenderer::SetAnisotropicFilter(int level)
 	samplerDesc.MaxAnisotropy = level;
 	samplerDesc.ComparisonFunc = D3D11_COMPARISON_ALWAYS;
 	samplerDesc.MinLOD = 0;
-	samplerDesc.MaxLOD = D3D11_FLOAT32_MAX;
+	samplerDesc.MaxLOD = 1000.0f;
 
 	DX::ThrowIfFailed(m_Device->CreateSamplerState(&samplerDesc, &m_AnisotropicSampler));
 }
@@ -481,6 +481,7 @@ void GlRenderer::Clear()
 	}
 
 	glBindSampler(0, m_TextureSampler);
+	glBindSampler(1, m_TextureSampler);
 }
 
 void GlRenderer::Present()
@@ -616,9 +617,9 @@ void GlRenderer::SetAnisotropicFilter(int level)
 
 	glCreateSamplers(1, &m_TextureSampler);
 
-	glSamplerParameterf(m_TextureSampler, GL_TEXTURE_WRAP_S, GL_REPEAT);
-	glSamplerParameterf(m_TextureSampler, GL_TEXTURE_WRAP_T, GL_REPEAT);
 	glSamplerParameterf(m_TextureSampler, GL_TEXTURE_MAX_ANISOTROPY, static_cast<GLfloat>(level));
+	glSamplerParameterf(m_TextureSampler, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+	glSamplerParameterf(m_TextureSampler, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 }
 
 void GlRenderer::SetVync(bool enable)
