@@ -46,6 +46,11 @@ _declspec(align(16)) struct LightBuffer
 	DirectX::XMMATRIX mLightProj;*/
 };
 
+_declspec(align(16)) struct BoneBuffer
+{
+	DirectX::XMMATRIX transform[96];
+};
+
 DxModel::DxModel(IRenderer* renderer)
 {
 	m_Renderer = reinterpret_cast<DxRenderer*>(renderer);
@@ -58,46 +63,6 @@ DxModel::~DxModel()
 bool DxModel::Load()
 {
 	m_MeshData = std::make_unique<MeshData>();
-	//std::ifstream file("Data Files/Models/test.bin", std::ios::binary);
-	//if (!file.is_open())
-	//{
-	//	std::cerr << "Big error\n";
-	//}
-
-	//// Parse header
-	//char magic_number[3];
-	//file.read(magic_number, 3);
-
-	//// Get vertex count
-	//auto vertex_count = 0;
-	//file.read((char*)&vertex_count, sizeof(vertex_count));
-
-	//// Get index count
-	//auto index_count = 0;
-	//file.read((char*)&index_count, sizeof(index_count));
-
-	//// Get vertices
-	//auto vertex_stride = sizeof(Vertex) * vertex_count;
-	//auto vertices = new Vertex[vertex_count];
-	//file.read((char*)vertices, vertex_stride);
-
-	//// Get indices
-	//auto index_stride = sizeof(UINT) * index_count;
-	//auto indices = new UINT[index_count];
-	//file.read((char*)indices, index_stride);
-
-	//// Copy to MeshData vectors
-	//m_MeshData->vertices.assign(&vertices[0], &vertices[vertex_count]);
-	//m_MeshData->indices.assign(&indices[0], &indices[index_count]);
-
-	//Subset subset;
-	//subset.baseVertex = 0;
-	//subset.totalIndex = index_count;
-	//m_MeshData->subsets.push_back(subset);
-
-	//delete[] vertices;
-	//delete[] indices;
-
 
 	//if (!ModelLoader::Load("Data Files/Models/simple.glb", m_MeshData.get()))
 	if (!ModelLoader::Load("Data Files/Models/complex_post.glb", m_MeshData.get()))
@@ -105,9 +70,6 @@ bool DxModel::Load()
 	{
 		return false;
 	}
-
-
-	//////////////////////////////////////////////////////////////////////////////////////////////////////
 
 	// Create vertex buffer
 	D3D11_BUFFER_DESC vbd = {};
@@ -153,7 +115,58 @@ bool DxModel::Load()
 
 	DX::ThrowIfFailed(m_Renderer->GetDevice()->CreateBuffer(&lbd, nullptr, m_LightBuffer.GetAddressOf()));
 
+	// Mr bone buffer
+	D3D11_BUFFER_DESC bone_bd = {};
+	bone_bd.Usage = D3D11_USAGE_DEFAULT;
+	bone_bd.ByteWidth = sizeof(BoneBuffer);
+	bone_bd.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+
+	DX::ThrowIfFailed(m_Renderer->GetDevice()->CreateBuffer(&bone_bd, nullptr, m_BoneConstantBuffer.ReleaseAndGetAddressOf()));
+
+
+
 	return true;
+}
+
+void DxModel::Update(float dt)
+{
+	static float TimeInSeconds = 0.0f;
+	TimeInSeconds += dt * 100.0f;
+
+	auto numBones = m_MeshData->bones.size();
+	std::vector<DirectX::XMMATRIX> toParentTransforms(numBones);
+
+	// Animation
+	auto clip = m_MeshData->animations.find("Take1");
+	clip->second.Interpolate(TimeInSeconds, toParentTransforms);
+	if (TimeInSeconds > clip->second.GetClipEndTime())
+	{
+		TimeInSeconds = 0.0f;
+	}
+
+	// Transform to root
+	std::vector<DirectX::XMMATRIX> toRootTransforms(numBones);
+	toRootTransforms[0] = toParentTransforms[0];
+	for (UINT i = 1; i < numBones; ++i)
+	{
+		DirectX::XMMATRIX toParent = toParentTransforms[i];
+		DirectX::XMMATRIX parentToRoot = toRootTransforms[m_MeshData->bones[i].parentId];
+		toRootTransforms[i] = XMMatrixMultiply(toParent, parentToRoot);
+	}
+
+	// Transform bone
+	BoneBuffer bone_buffer = {};
+	for (size_t i = 0; i < m_MeshData->bones.size(); i++)
+	{
+		DirectX::XMMATRIX offset = m_MeshData->bones[i].offset;
+		DirectX::XMMATRIX toRoot = toRootTransforms[i];
+		DirectX::XMMATRIX matrix = DirectX::XMMatrixMultiply(offset, toRoot);
+		bone_buffer.transform[i] = DirectX::XMMatrixTranspose(matrix);
+	}
+
+	// Update bone buffer
+	m_Renderer->GetDeviceContext()->VSSetConstantBuffers(2, 1, m_BoneConstantBuffer.GetAddressOf());
+	m_Renderer->GetDeviceContext()->UpdateSubresource(m_BoneConstantBuffer.Get(), 0, nullptr, &bone_buffer, 0, 0);
 }
 
 void DxModel::Render(ICamera* camera)

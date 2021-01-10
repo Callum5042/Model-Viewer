@@ -60,6 +60,7 @@ int Application::Execute()
 		CalculateFramesPerSecond();
 
 		m_EventDispatcher->Poll();
+		Update(m_Timer.DeltaTime());
 		Render();
 
 		ChangeRenderAPI();
@@ -81,6 +82,11 @@ void Application::CalculateFramesPerSecond()
 		time = 0.0f;
 		frameCount = 0;
 	}
+}
+
+void Application::Update(float dt)
+{
+	m_Model->Update(dt);
 }
 
 bool Application::Init()

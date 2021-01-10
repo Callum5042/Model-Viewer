@@ -9,6 +9,19 @@
 
 namespace
 {
+	DirectX::XMMATRIX ConvertToDirectXMatrix(aiMatrix4x4 matrix)
+	{
+		aiVector3D scale, rot, pos;
+		matrix.Decompose(scale, rot, pos);
+
+		DirectX::XMMATRIX _matrix = DirectX::XMMatrixIdentity();
+		_matrix *= DirectX::XMMatrixRotationRollPitchYaw(rot.x, rot.y, rot.z);
+		_matrix *= DirectX::XMMatrixScaling(scale.x, scale.y, scale.z);
+		_matrix *= DirectX::XMMatrixTranslation(pos.x, pos.y, pos.z);
+
+		return _matrix;
+	}
+
 	void LoadVertices(aiMesh* mesh, MeshData* meshData, unsigned& vertex_count)
 	{
 		for (auto i = 0u; i < mesh->mNumVertices; ++i)
@@ -119,6 +132,86 @@ bool ModelLoader::Load(const std::string& path, MeshData* meshData)
 		index_count_total += index_count;
 		subset.totalIndex = index_count;
 		meshData->subsets[mesh_index] = subset;
+
+		// Load bones
+		for (auto bone_index = 0u; bone_index < mesh->mNumBones; ++bone_index)
+		{
+			auto ai_bone = mesh->mBones[bone_index];
+
+			BoneInfo boneInfo = {};
+			boneInfo.name = ai_bone->mName.C_Str();
+			boneInfo.parentName = ai_bone->mNode->mParent->mName.C_Str();
+			meshData->bones.push_back(boneInfo);
+
+			meshData->bones[bone_index].offset = ConvertToDirectXMatrix(ai_bone->mOffsetMatrix);;
+
+			// Vertex weight data
+			for (auto bone_weight_index = 0u; bone_weight_index < ai_bone->mNumWeights; bone_weight_index++)
+			{
+				auto vertexID = ai_bone->mWeights[bone_weight_index].mVertexId;
+				auto weight = ai_bone->mWeights[bone_weight_index].mWeight;
+				auto& vertex = meshData->vertices[vertexID];
+
+				for (int vertex_weight_index = 0; vertex_weight_index < 4; ++vertex_weight_index)
+				{
+					if (vertex.weight[vertex_weight_index] == 0.0)
+					{
+						vertex.weight[vertex_weight_index] = weight;
+						vertex.bone[vertex_weight_index] = bone_index;
+						break;
+					}
+				}
+			}
+		}
+
+		// Calculate parent
+		for (int i = 0; i < meshData->bones.size(); ++i)
+		{
+			int parentId = 0;
+			for (int j = 0; j < meshData->bones.size(); ++j)
+			{
+				if (meshData->bones[i].parentName == meshData->bones[j].name)
+				{
+					parentId = j;
+					break;
+				}
+			}
+
+			meshData->bones[i].parentId = parentId;
+		}
+	}
+
+	// Load animations
+	for (auto animation_index = 0u; animation_index < scene->mNumAnimations; ++animation_index)
+	{
+		auto animation = scene->mAnimations[animation_index];
+		auto ticksPerSecond = static_cast<float>(animation->mTicksPerSecond);
+
+		AnimationClip clip;
+		clip.BoneAnimations.resize(animation->mNumChannels);
+		for (unsigned i = 0; i < animation->mNumChannels; ++i)
+		{
+			auto channel = animation->mChannels[i];
+			std::string name = channel->mNodeName.C_Str();
+			for (unsigned k = 0; k < channel->mNumPositionKeys; ++k)
+			{
+				auto time = channel->mPositionKeys[k].mTime;
+				auto pos = channel->mPositionKeys[k].mValue;
+				auto rotation = channel->mRotationKeys[k].mValue;
+				auto scale = channel->mScalingKeys[k].mValue;
+
+				Keyframe frame;
+				frame.TimePos = static_cast<float>(time);
+				frame.Translation = DirectX::XMFLOAT3(pos.x, pos.y, pos.z);
+				frame.RotationQuat = DirectX::XMFLOAT4(rotation.x, rotation.y, rotation.z, rotation.w);
+				frame.Scale = DirectX::XMFLOAT3(scale.x, scale.y, scale.z);
+
+				clip.BoneAnimations[i].Keyframes.push_back(frame);
+			}
+		}
+
+		std::string animation_name = animation->mName.C_Str();
+		meshData->animations["Take1"] = clip;
 	}
 
 	return true;

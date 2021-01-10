@@ -63,6 +63,12 @@ struct Vertex
 	Normal normal = {};
 	Tangent tangent = {};
 	BiTangent bi_tangent = {};
+
+	// Weights
+	float weight[4] = { 0, 0, 0, 0 };
+
+	// Bone index
+	int bone[4] = { 0, 0, 0, 0 };
 };
 
 struct BoneInfo
@@ -145,6 +151,7 @@ public:
 	virtual ~IModel() = default;
 
 	virtual bool Load() = 0;
+	virtual void Update(float dt) = 0;
 	virtual void Render(ICamera* camera) = 0;
 };
 
@@ -155,6 +162,7 @@ public:
 	virtual ~DxModel();
 
 	bool Load() override;
+	void Update(float dt) override;
 	void Render(ICamera* camera) override;
 
 private:
@@ -172,6 +180,9 @@ private:
 
 	// Light
 	ComPtr<ID3D11Buffer> m_LightBuffer = nullptr;
+
+	// Bones
+	ComPtr<ID3D11Buffer> m_BoneConstantBuffer = nullptr;
 };
 
 class GlModel : public IModel
@@ -181,6 +192,7 @@ public:
 	virtual ~GlModel();
 
 	bool Load() override;
+	void Update(float dt) override {}
 	void Render(ICamera* camera) override;
 
 private:
