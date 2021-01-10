@@ -51,6 +51,6 @@ float4 main(PixelInput input) : SV_TARGET
 	float4 directional_light = CalculateDirectionalLighting(input.Position, input.Normal, lighting);
 
 	// Combine all pixels
-	float4 finalColour = (directional_light)*diffuse_texture;// *input.Colour;
+	float4 finalColour = (directional_light) * diffuse_texture;// *input.Colour;
 	return finalColour;
 }

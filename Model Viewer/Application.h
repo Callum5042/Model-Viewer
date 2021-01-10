@@ -55,6 +55,7 @@ private:
 	float m_Pitch = 30.0f;
 	float m_Yaw = 0.0f;
 	float m_Fov = 50.0f;
+	float m_Radius = -8.0f;
 	int m_CameraRotationSpeed = 20;
 	std::pair<int, int> m_LastMousePosition;
 
@@ -90,4 +91,7 @@ private:
 	virtual void OnMousePressed(const MouseData& mouse) override;
 	virtual void OnMouseReleased(const MouseData& mouse) override;
 	virtual void OnMouseWheel(const MouseData& mouse) override;
+
+	// Model path
+	std::string m_ModelPath;
 };

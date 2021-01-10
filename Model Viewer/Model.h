@@ -150,7 +150,7 @@ public:
 	IModel() = default;
 	virtual ~IModel() = default;
 
-	virtual bool Load() = 0;
+	virtual bool Load(const std::string& path) = 0;
 	virtual void Update(float dt) = 0;
 	virtual void Render(ICamera* camera) = 0;
 };
@@ -161,7 +161,7 @@ public:
 	DxModel(IRenderer* renderer);
 	virtual ~DxModel();
 
-	bool Load() override;
+	bool Load(const std::string& path) override;
 	void Update(float dt) override;
 	void Render(ICamera* camera) override;
 
@@ -191,7 +191,7 @@ public:
 	GlModel(IShader* shader);
 	virtual ~GlModel();
 
-	bool Load() override;
+	bool Load(const std::string& path) override;
 	void Update(float dt) override {}
 	void Render(ICamera* camera) override;
 

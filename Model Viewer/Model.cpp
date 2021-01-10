@@ -60,12 +60,12 @@ DxModel::~DxModel()
 {
 }
 
-bool DxModel::Load()
+bool DxModel::Load(const std::string& path)
 {
 	m_MeshData = std::make_unique<MeshData>();
 
 	//if (!ModelLoader::Load("Data Files/Models/simple.glb", m_MeshData.get()))
-	if (!ModelLoader::Load("Data Files/Models/complex_post.glb", m_MeshData.get()))
+	if (!ModelLoader::Load(path, m_MeshData.get()))
 	//if (!ModelLoader::Load("Data Files/Models/crate.glb", m_MeshData.get()))
 	{
 		return false;
@@ -258,43 +258,14 @@ GlModel::~GlModel()
 	glDeleteBuffers(1, &m_IndexBuffer);
 }
 
-bool GlModel::Load()
+bool GlModel::Load(const std::string& path)
 {
 	m_MeshData = std::make_unique<MeshData>();
-	std::ifstream file("Data Files/Models/test.bin", std::ios::binary);
-	if (!file.is_open())
+	if (!ModelLoader::Load(path, m_MeshData.get()))
+	//if (!ModelLoader::Load("Data Files/Models/crate.glb", m_MeshData.get()))
 	{
-		std::cerr << "Big error\n";
+		return false;
 	}
-
-	// Parse header
-	char magic_number[3];
-	file.read(magic_number, 3);
-
-	// Get vertex count
-	auto vertex_count = 0;
-	file.read((char*)&vertex_count, sizeof(vertex_count));
-
-	// Get index count
-	auto index_count = 0;
-	file.read((char*)&index_count, sizeof(index_count));
-
-	// Get vertices
-	auto vertex_stride = sizeof(Vertex) * vertex_count;
-	auto vertices = new Vertex[vertex_count];
-	file.read((char*)vertices, vertex_stride);
-
-	// Get indices
-	auto index_stride = sizeof(UINT) * index_count;
-	auto indices = new UINT[index_count];
-	file.read((char*)indices, index_stride);
-
-	// Copy to MeshData vectors
-	m_MeshData->vertices.assign(&vertices[0], &vertices[vertex_count]);
-	m_MeshData->indices.assign(&indices[0], &indices[index_count]);
-
-	delete[] vertices;
-	delete[] indices;
 
 	// Vertex Array Object
 	glCreateVertexArrays(1, &m_VertexArrayObject);
@@ -330,6 +301,12 @@ bool GlModel::Load()
 
 	glVertexAttribPointer(5, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (GLvoid*)(15 * sizeof(GL_FLOAT)));
 	glEnableVertexAttribArray(5);
+
+	glVertexAttribPointer(6, 4, GL_FLOAT, GL_FALSE, sizeof(Vertex), (GLvoid*)(18 * sizeof(GL_FLOAT)));
+	glEnableVertexAttribArray(6);
+
+	glVertexAttribPointer(7, 4, GL_INT, GL_FALSE, sizeof(Vertex), (GLvoid*)(22 * sizeof(GL_INT)));
+	glEnableVertexAttribArray(7);
 
 	// Load diffuse texture
 	Rove::LoadDDS diffuse_dds;
@@ -425,13 +402,11 @@ void GlModel::Render(ICamera* camera)
 
 float BoneAnimation::GetStartTime() const
 {
-	// Keyframes are sorted by time, so first keyframe gives start time.
 	return Keyframes.front().TimePos;
 }
 
 float BoneAnimation::GetEndTime() const
 {
-	// Keyframes are sorted by time, so last keyframe gives end time.
 	return Keyframes.back().TimePos;
 }
 
@@ -445,7 +420,6 @@ void BoneAnimation::Interpolate(float t, DirectX::XMMATRIX& M) const
 
 		DirectX::XMVECTOR zero = DirectX::XMVectorSet(0.0f, 0.0f, 0.0f, 1.0f);
 		M = DirectX::XMMatrixAffineTransformation(S, zero, Q, P);
-		//XMStoreFloat4x4(&M, DirectX::XMMatrixAffineTransformation(S, zero, Q, P));
 	}
 	else if (t >= Keyframes.back().TimePos)
 	{
@@ -455,7 +429,6 @@ void BoneAnimation::Interpolate(float t, DirectX::XMMATRIX& M) const
 
 		DirectX::XMVECTOR zero = DirectX::XMVectorSet(0.0f, 0.0f, 0.0f, 1.0f);
 		M = DirectX::XMMatrixAffineTransformation(S, zero, Q, P);
-		//XMStoreFloat4x4(&M, DirectX::XMMatrixAffineTransformation(S, zero, Q, P));
 	}
 	else
 	{

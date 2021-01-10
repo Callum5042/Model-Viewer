@@ -7,7 +7,9 @@ Application::Application()
 {
 	m_EventDispatcher = std::make_unique<EventDispatcher>();
 
-	auto startup = RenderAPI::DIRECTX;
+	m_ModelPath = "Data Files/Models/complex_post.glb";
+
+	auto startup = RenderAPI::OPENGL;
 	if (startup == RenderAPI::DIRECTX)
 	{
 		m_Window = std::make_unique<Window>();
@@ -60,7 +62,7 @@ int Application::Execute()
 		CalculateFramesPerSecond();
 
 		m_EventDispatcher->Poll();
-		Update(m_Timer.DeltaTime());
+		Update(static_cast<float>(m_Timer.DeltaTime()));
 		Render();
 
 		ChangeRenderAPI();
@@ -122,13 +124,14 @@ bool Application::Init()
 	}
 
 	// Load model
-	if (!m_Model->Load())
+	if (!m_Model->Load(m_ModelPath))
 	{
 		SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", "IModel::Load failed!", nullptr);
 		return false;
 	}
 
 	QueryHardwareInfo();
+	m_Camera->SetRadius(m_Radius);
 	m_Camera->SetPitchAndYaw(m_Pitch, m_Yaw);
 
 	// Check MSAA levels
@@ -502,8 +505,7 @@ void Application::OnMouseWheel(const MouseData& mouse)
 	//m_Fov -= static_cast<int>(mouse.y);
 	m_Fov = std::clamp<float>(m_Fov, 1.0f, 180.0f);
 
-	static float radius = -8.0f;
-	radius += static_cast<int>(mouse.y);
-	m_Camera->SetRadius(radius);
+	m_Radius += static_cast<int>(mouse.y);
+	m_Camera->SetRadius(m_Radius);
 	m_Camera->SetPitchAndYaw(m_Pitch, m_Yaw);
 }
