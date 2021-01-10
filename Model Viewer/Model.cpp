@@ -11,12 +11,38 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
+__declspec(align(16)) struct ShaderMaterial
+{
+	DirectX::XMFLOAT4 mDiffuse;
+	DirectX::XMFLOAT4 mAmbient;
+	DirectX::XMFLOAT4 mSpecular;
+};
+
 _declspec(align(16)) struct ConstantBuffer
 {
 	DirectX::XMMATRIX world;
 	DirectX::XMMATRIX view;
 	DirectX::XMMATRIX projection;
+	DirectX::XMMATRIX worldInverse;
 	DirectX::XMMATRIX texture;
+	ShaderMaterial mMaterial;
+};
+
+_declspec(align(16)) struct DirectionalLight
+{
+	DirectX::XMFLOAT4 mDiffuse;
+	DirectX::XMFLOAT4 mAmbient;
+	DirectX::XMFLOAT4 mSpecular;
+	DirectX::XMFLOAT4 mDirection;
+	DirectX::XMFLOAT3 mCameraPos;
+	float padding;
+};
+
+_declspec(align(16)) struct LightBuffer
+{
+	DirectionalLight mDirectionalLight;
+	/*DirectX::XMMATRIX mLightView;
+	DirectX::XMMATRIX mLightProj;*/
 };
 
 DxModel::DxModel(IRenderer* renderer)
@@ -103,6 +129,16 @@ bool DxModel::Load()
 	ComPtr<ID3D11Resource> resource = nullptr;
 	DX::ThrowIfFailed(DirectX::CreateDDSTextureFromFile(m_Renderer->GetDevice().Get(), L"Data Files\\Textures\\crate_diffuse.dds", resource.ReleaseAndGetAddressOf(), m_DiffuseTexture.ReleaseAndGetAddressOf()));
 
+	DX::ThrowIfFailed(DirectX::CreateDDSTextureFromFile(m_Renderer->GetDevice().Get(), L"Data Files\\Textures\\crate_normal.dds", resource.ReleaseAndGetAddressOf(), m_NormalTexture.ReleaseAndGetAddressOf()));
+
+	// Mr sun
+	D3D11_BUFFER_DESC lbd = {};
+	lbd.Usage = D3D11_USAGE_DEFAULT;
+	lbd.ByteWidth = sizeof(LightBuffer);
+	lbd.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+
+	DX::ThrowIfFailed(m_Renderer->GetDevice()->CreateBuffer(&lbd, nullptr, m_LightBuffer.GetAddressOf()));
+
 	return true;
 }
 
@@ -129,7 +165,15 @@ void DxModel::Render(ICamera* camera)
 	cb.world = DirectX::XMMatrixTranspose(world);
 	cb.view = DirectX::XMMatrixTranspose(dxCamera->GetView());
 	cb.projection = DirectX::XMMatrixTranspose(dxCamera->GetProjection());
+	cb.worldInverse = DirectX::XMMatrixInverse(nullptr, world);
 	cb.texture = DirectX::XMMatrixIdentity();
+
+	ShaderMaterial material;
+	material.mDiffuse = DirectX::XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
+	material.mAmbient = DirectX::XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
+	material.mSpecular = DirectX::XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
+
+	cb.mMaterial = material;
 
 	m_Renderer->GetDeviceContext()->VSSetConstantBuffers(0, 1, m_ConstantBuffer.GetAddressOf());
 	m_Renderer->GetDeviceContext()->PSSetConstantBuffers(0, 1, m_ConstantBuffer.GetAddressOf());
@@ -137,6 +181,27 @@ void DxModel::Render(ICamera* camera)
 
 	// Texture
 	m_Renderer->GetDeviceContext()->PSSetShaderResources(0, 1, m_DiffuseTexture.GetAddressOf());
+	m_Renderer->GetDeviceContext()->PSSetShaderResources(1, 1, m_NormalTexture.GetAddressOf());
+
+	// Light up me life
+	auto diffuse = DirectX::XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
+	auto ambient = DirectX::XMFLOAT4(0.5f, 0.5f, 0.5f, 0.0f);
+	auto specular = DirectX::XMFLOAT4(0.1f, 0.1f, 0.1f, 32.0f);
+	auto direction = DirectX::XMFLOAT4(-0.8f, -0.5f, 0.5f, 1.0f);
+
+	LightBuffer lightBuffer = {};
+	lightBuffer.mDirectionalLight.mCameraPos = dxCamera->GetPosition();
+	lightBuffer.mDirectionalLight.mDiffuse = diffuse;
+	lightBuffer.mDirectionalLight.mAmbient = ambient;
+	lightBuffer.mDirectionalLight.mSpecular = specular;
+	lightBuffer.mDirectionalLight.mDirection = direction;
+
+	//lightBuffer.mLightView = DirectX::XMMatrixTranspose(ortho->GetView());
+	//lightBuffer.mLightProj = DirectX::XMMatrixTranspose(ortho->GetProjection());
+
+	m_Renderer->GetDeviceContext()->VSSetConstantBuffers(1, 1, m_LightBuffer.GetAddressOf());
+	m_Renderer->GetDeviceContext()->PSSetConstantBuffers(1, 1, m_LightBuffer.GetAddressOf());
+	m_Renderer->GetDeviceContext()->UpdateSubresource(m_LightBuffer.Get(), 0, nullptr, &lightBuffer, 0, 0);
 
 	// Render geometry
 	m_Renderer->GetDeviceContext()->DrawIndexed(static_cast<UINT>(m_MeshData->indices.size()), 0, 0);
@@ -149,6 +214,7 @@ GlModel::GlModel(IShader* shader)
 
 GlModel::~GlModel()
 {
+	glDeleteTextures(1, &m_NormalTextureId);
 	glDeleteTextures(1, &m_DiffuseTextureId);
 	glDeleteVertexArrays(1, &m_VertexArrayObject);
 	glDeleteBuffers(1, &m_VertexBuffer);
@@ -219,40 +285,101 @@ bool GlModel::Load()
 	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (GLvoid*)(7 * sizeof(GL_FLOAT)));
 	glEnableVertexAttribArray(2);
 
-	// Load texture
-	Rove::LoadDDS dds;
+	glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (GLvoid*)(9 * sizeof(GL_FLOAT)));
+	glEnableVertexAttribArray(3);
 
-	std::string texture_path = "Data Files\\Textures\\crate_diffuse.dds";
-	dds.Load(std::move(texture_path));
+	glVertexAttribPointer(4, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (GLvoid*)(12 * sizeof(GL_FLOAT)));
+	glEnableVertexAttribArray(4);
+
+	glVertexAttribPointer(5, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (GLvoid*)(15 * sizeof(GL_FLOAT)));
+	glEnableVertexAttribArray(5);
+
+	// Load diffuse texture
+	Rove::LoadDDS diffuse_dds;
+	std::string diffuse_texture_path = "Data Files\\Textures\\crate_diffuse.dds";
+	diffuse_dds.Load(std::move(diffuse_texture_path));
 
 	glCreateTextures(GL_TEXTURE_2D, 1, &m_DiffuseTextureId);
-	glTextureStorage2D(m_DiffuseTextureId, dds.MipmapCount(), dds.Format(), dds.Width(), dds.Height());
+	glTextureStorage2D(m_DiffuseTextureId, diffuse_dds.MipmapCount(), diffuse_dds.Format(), diffuse_dds.Width(), diffuse_dds.Height());
 
-	for (auto& mipmap : dds.mipmaps)
+	for (auto& mipmap : diffuse_dds.mipmaps)
 	{
-		glCompressedTextureSubImage2D(m_DiffuseTextureId, mipmap.level, 0, 0, mipmap.width, mipmap.height, dds.Format(), mipmap.texture_size, mipmap.data);
+		glCompressedTextureSubImage2D(m_DiffuseTextureId, mipmap.level, 0, 0, mipmap.width, mipmap.height, diffuse_dds.Format(), mipmap.texture_size, mipmap.data);
 	}
 
 	glBindTextureUnit(0, m_DiffuseTextureId);
+
+	// Load normal texture
+	Rove::LoadDDS normal_dds;
+	std::string normal_texture_path = "Data Files\\Textures\\crate_normal.dds";
+	normal_dds.Load(std::move(normal_texture_path));
+
+	glCreateTextures(GL_TEXTURE_2D, 1, &m_NormalTextureId);
+	glTextureStorage2D(m_NormalTextureId, normal_dds.MipmapCount(), normal_dds.Format(), normal_dds.Width(), normal_dds.Height());
+
+	for (auto& mipmap : normal_dds.mipmaps)
+	{
+		glCompressedTextureSubImage2D(m_NormalTextureId, mipmap.level, 0, 0, mipmap.width, mipmap.height, normal_dds.Format(), mipmap.texture_size, mipmap.data);
+	}
+
+	glBindTextureUnit(1, m_NormalTextureId);
+
 	return true;
 }
+
+struct GlWorld
+{
+	glm::mat4 world;
+	glm::mat4 view;
+	glm::mat4 proj;
+};
 
 void GlModel::Render(ICamera* camera)
 {
 	auto glCamera = reinterpret_cast<GlCamera*>(camera);
 
+	GlWorld world = {};
+	world.world = glm::mat4(1.0f);
+	world.view = glCamera->GetView();
+	world.proj = glCamera->GetProjection();
+
 	// Update shader transform
-	auto transform = glm::mat4(1.0f);
-	auto transformLoc = glGetUniformLocation(m_Shader->GetShaderId(), "transform");
-	glUniformMatrix4fv(transformLoc, 1, GL_FALSE, glm::value_ptr(transform));
+	auto world_location = glGetUniformBlockIndex(m_Shader->GetShaderId(), "cWorld");
+	glUniformBlockBinding(m_Shader->GetShaderId(), world_location, 0);
 
-	// Update shader view
-	auto viewLoc = glGetUniformLocation(m_Shader->GetShaderId(), "view");
-	glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(glCamera->GetView()));
+	unsigned int uboMatrices;
+	glGenBuffers(1, &uboMatrices);
 
-	// Update shader projection
-	auto projLoc = glGetUniformLocation(m_Shader->GetShaderId(), "projection");
-	glUniformMatrix4fv(projLoc, 1, GL_FALSE, glm::value_ptr(glCamera->GetProjection()));
+	glBindBuffer(GL_UNIFORM_BUFFER, uboMatrices);
+	glBufferData(GL_UNIFORM_BUFFER, sizeof(GlWorld), NULL, GL_STATIC_DRAW);
+	glBindBuffer(GL_UNIFORM_BUFFER, 0);
+
+	glBindBufferRange(GL_UNIFORM_BUFFER, 0, uboMatrices, 0, sizeof(GlWorld));
+
+	glBindBuffer(GL_UNIFORM_BUFFER, uboMatrices);
+	glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(GlWorld), &world);
+	glBindBuffer(GL_UNIFORM_BUFFER, 0);
+
+	// The light man
+	auto gDirectionLight = glGetUniformLocation(m_Shader->GetShaderId(), "gDirectionLight");
+	glm::vec4 direction_light(-0.8f, -0.5f, 0.5f, 1.0f);
+	glUniform4fv(gDirectionLight, 1, glm::value_ptr(direction_light));
+
+	auto gDiffuseLight = glGetUniformLocation(m_Shader->GetShaderId(), "gDiffuseLight");
+	glm::vec4 diffuse_light(1.0f, 1.0f, 1.0f, 1.0f);
+	glUniform4fv(gDiffuseLight, 1, glm::value_ptr(diffuse_light));
+
+	auto gAmbientLightLoc = glGetUniformLocation(m_Shader->GetShaderId(), "gAmbientLight");
+	glm::vec4 ambient_light(0.5f, 0.5f, 0.5f, 1.0f);
+	glUniform4fv(gAmbientLightLoc, 1, glm::value_ptr(ambient_light));
+
+	auto gSpecularLight = glGetUniformLocation(m_Shader->GetShaderId(), "gSpecularLight");
+	glm::vec4 specular_light(0.1f, 0.1f, 0.1f, 32.0f);
+	glUniform4fv(gSpecularLight, 1, glm::value_ptr(specular_light));
+
+	auto gCameraPos = glGetUniformLocation(m_Shader->GetShaderId(), "gCameraPos");
+	auto cameraPos = glCamera->GetPosition();
+	glUniform4fv(gCameraPos, 1, glm::value_ptr(cameraPos));
 
 	// Draw
 	glBindVertexArray(m_VertexArrayObject);

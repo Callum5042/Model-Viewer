@@ -72,6 +72,9 @@ private:
 	std::string m_CurrentTextureFilterLevel;
 	std::vector<std::string> m_TextureFilteringLevelsText;
 
+	// Vsync
+	bool m_Vsync = false;
+
 	// Inherited via QuitListener
 	virtual void OnQuit() override;
 

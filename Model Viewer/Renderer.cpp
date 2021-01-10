@@ -21,8 +21,8 @@ DxRenderer::~DxRenderer()
 
 bool DxRenderer::Create(Window* window)
 {
-	int width = window->GetWidth();
-	int height = window->GetHeight();
+	auto width = window->GetWidth();
+	auto height = window->GetHeight();
 
 	if (!CreateDevice())
 		return false;
@@ -41,21 +41,40 @@ bool DxRenderer::Create(Window* window)
 	m_DeviceContext->RSSetState(m_RasterStateSolid.Get());
 
 	// Create an MSAA render target.
-	int max_sample_count = 8;
+	auto max_sample_count = 8;
 	for (int i = max_sample_count; i >= 2; i /= 2)
 	{
 		auto quality_levels = 0u;
 		DX::ThrowIfFailed(m_Device->CheckMultisampleQualityLevels(DXGI_FORMAT_R8G8B8A8_UNORM, i, &quality_levels));
 		if (quality_levels != 0)
 		{
-			if (m_MsaaLevel == 0) 
+			if (m_MaxMsaaLevel == 0) 
 			{
-				m_MsaaLevel = i;
+				m_MaxMsaaLevel = i;
 			}
 
 			m_SupportMsaaLevels.push_back(i);
 		}
 	}
+
+	// Create shader sampler
+	D3D11_SAMPLER_DESC comparisonSamplerDesc;
+	ZeroMemory(&comparisonSamplerDesc, sizeof(D3D11_SAMPLER_DESC));
+	comparisonSamplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_BORDER;
+	comparisonSamplerDesc.AddressV = D3D11_TEXTURE_ADDRESS_BORDER;
+	comparisonSamplerDesc.AddressW = D3D11_TEXTURE_ADDRESS_BORDER;
+	comparisonSamplerDesc.BorderColor[0] = 0.0f;
+	comparisonSamplerDesc.BorderColor[1] = 0.0f;
+	comparisonSamplerDesc.BorderColor[2] = 0.0f;
+	comparisonSamplerDesc.BorderColor[3] = 0.0f;
+	comparisonSamplerDesc.MinLOD = 0.f;
+	comparisonSamplerDesc.MaxLOD = D3D11_FLOAT32_MAX;
+	comparisonSamplerDesc.MipLODBias = 0.0f;
+	comparisonSamplerDesc.MaxAnisotropy = 0;
+	comparisonSamplerDesc.ComparisonFunc = D3D11_COMPARISON_LESS_EQUAL;
+	comparisonSamplerDesc.Filter = D3D11_FILTER_COMPARISON_ANISOTROPIC;
+
+	DX::ThrowIfFailed(m_Device->CreateSamplerState(&comparisonSamplerDesc, &m_ShadowSampler));
 
 	return true;
 }
@@ -72,7 +91,7 @@ void DxRenderer::Resize(int width, int height)
 
 	DX::ThrowIfFailed(m_SwapChain->ResizeBuffers(2, width, height, DXGI_FORMAT_R8G8B8A8_UNORM, 0));
 	CreateRenderTargetAndDepthStencilView(width, height);
-	CreateAntiAliasingTarget(m_MsaaLevel, width, height);
+	CreateAntiAliasingTarget(m_CurrentMsaaLevel, width, height);
 	SetViewport(width, height);
 }
 
@@ -92,6 +111,7 @@ void DxRenderer::Clear()
 	}
 
 	m_DeviceContext->PSSetSamplers(0, 1, m_AnisotropicSampler.GetAddressOf());
+	m_DeviceContext->PSSetSamplers(1, 1, m_ShadowSampler.GetAddressOf());
 }
 
 void DxRenderer::Present()
@@ -104,8 +124,15 @@ void DxRenderer::Present()
 	ComPtr<IDXGISwapChain1> swapChain1 = nullptr;
 	m_SwapChain.As(&swapChain1);
 
-	DXGI_PRESENT_PARAMETERS presentParameters = {};
-	DX::ThrowIfFailed(swapChain1->Present1(0, 0, &presentParameters));
+	if (swapChain1 != nullptr)
+	{
+		DXGI_PRESENT_PARAMETERS presentParameters = {};
+		DX::ThrowIfFailed(swapChain1->Present1(static_cast<int>(m_Vsync), 0, &presentParameters));
+	}
+	else
+	{
+		DX::ThrowIfFailed(m_SwapChain->Present(static_cast<int>(m_Vsync), 0));
+	}
 }
 
 void DxRenderer::ToggleWireframe(bool wireframe)
@@ -125,7 +152,7 @@ void DxRenderer::QueryHardwareInfo()
 	std::vector<ComPtr<IDXGIAdapter>> adapters;
 	ComPtr<IDXGIAdapter> adapter = nullptr;
 
-	int i = 0;
+	auto i = 0;
 	while (m_DxgiFactory2->EnumAdapters(i++, &adapter) != DXGI_ERROR_NOT_FOUND)
 	{
 		adapters.push_back(adapter);
@@ -187,14 +214,14 @@ bool DxRenderer::CreateDevice()
 	deviceFlag = D3D11_CREATE_DEVICE_DEBUG;
 #endif
 
-	DX::ThrowIfFailed(D3D11CreateDevice(nullptr, D3D_DRIVER_TYPE_HARDWARE, nullptr, deviceFlag, featureLevels, numFeatureLevels, D3D11_SDK_VERSION, &m_Device, &featureLevel, &m_DeviceContext));
+	DX::ThrowIfFailed(D3D11CreateDevice(nullptr, D3D_DRIVER_TYPE_HARDWARE, nullptr, deviceFlag, featureLevels, numFeatureLevels, D3D11_SDK_VERSION, m_Device.ReleaseAndGetAddressOf(), &featureLevel, m_DeviceContext.ReleaseAndGetAddressOf()));
 
 	return true;
 }
 
 bool DxRenderer::CreateSwapChain(Window* window, int width, int height)
 {
-	HWND hwnd = DX::GetHwnd(window);
+	auto hwnd = DX::GetHwnd(window);
 
 	ComPtr<IDXGIDevice> dxgiDevice = nullptr;
 	DX::ThrowIfFailed(m_Device.As(&dxgiDevice));
@@ -288,7 +315,7 @@ void DxRenderer::SetViewport(int width, int height)
 
 bool DxRenderer::CreateAntiAliasingTarget(int msaa_level, int window_width, int window_height)
 {
-	m_MsaaLevel = msaa_level;
+	m_CurrentMsaaLevel = msaa_level;
 	if (msaa_level == 0)
 	{
 		m_UseMsaa = false;
@@ -301,7 +328,7 @@ bool DxRenderer::CreateAntiAliasingTarget(int msaa_level, int window_width, int 
 
 	// Render target view
 	CD3D11_TEXTURE2D_DESC renderTargetDesc(DXGI_FORMAT_R8G8B8A8_UNORM, window_width, window_height, 1, 1,
-		D3D11_BIND_RENDER_TARGET, D3D11_USAGE_DEFAULT, 0, m_MsaaLevel);
+		D3D11_BIND_RENDER_TARGET, D3D11_USAGE_DEFAULT, 0, m_CurrentMsaaLevel);
 
 	DX::ThrowIfFailed(m_Device->CreateTexture2D(&renderTargetDesc, nullptr, m_MsaaRenderTarget.ReleaseAndGetAddressOf()));
 
@@ -310,7 +337,7 @@ bool DxRenderer::CreateAntiAliasingTarget(int msaa_level, int window_width, int 
 
 	// Depth stencil view
 	CD3D11_TEXTURE2D_DESC depthStencilDesc(DXGI_FORMAT_D32_FLOAT, window_width, window_height, 1, 1,
-		D3D11_BIND_DEPTH_STENCIL, D3D11_USAGE_DEFAULT, 0, m_MsaaLevel);
+		D3D11_BIND_DEPTH_STENCIL, D3D11_USAGE_DEFAULT, 0, m_CurrentMsaaLevel);
 
 	ComPtr<ID3D11Texture2D> depthStencil;
 	DX::ThrowIfFailed(m_Device->CreateTexture2D(&depthStencilDesc, nullptr, depthStencil.GetAddressOf()));
@@ -335,9 +362,14 @@ void DxRenderer::SetAnisotropicFilter(int level)
 	samplerDesc.MaxAnisotropy = level;
 	samplerDesc.ComparisonFunc = D3D11_COMPARISON_ALWAYS;
 	samplerDesc.MinLOD = 0;
-	samplerDesc.MaxLOD = D3D11_FLOAT32_MAX;
+	samplerDesc.MaxLOD = 1000.0f;
 
 	DX::ThrowIfFailed(m_Device->CreateSamplerState(&samplerDesc, &m_AnisotropicSampler));
+}
+
+void DxRenderer::SetVync(bool enable)
+{
+	m_Vsync = enable;
 }
 
 void DxRenderer::CreateRasterStateSolid()
@@ -399,7 +431,7 @@ bool GlRenderer::Create(Window* window)
 	}
 
 #ifdef _DEBUG
-	const unsigned char* glewVersion = glewGetString(GLEW_VERSION);
+	auto glewVersion = glewGetString(GLEW_VERSION);
 	std::cout << "Glew: " << glewVersion << '\n';
 #endif
 
@@ -411,19 +443,21 @@ bool GlRenderer::Create(Window* window)
 	glDepthFunc(GL_LEQUAL);
 
 	// MSAA
-	int maxSamples = 0;
+	auto maxSamples = 0;
 	glGetIntegerv(GL_MAX_SAMPLES, &maxSamples);
-	for (int i = maxSamples; i >= 2; i /= 2)
+	for (auto i = maxSamples; i >= 2; i /= 2)
 	{
 		m_SupportMsaaLevels.push_back(i);
 	}
+
+	m_MaxMsaaLevel = maxSamples;
 
 	return true;
 }
 
 void GlRenderer::Resize(int width, int height)
 {
-	CreateAntiAliasingTarget(m_MsaaLevel, width, height);
+	CreateAntiAliasingTarget(m_CurrentMsaaLevel, width, height);
 	glViewport(0, 0, width, height);
 }
 
@@ -447,6 +481,7 @@ void GlRenderer::Clear()
 	}
 
 	glBindSampler(0, m_TextureSampler);
+	glBindSampler(1, m_TextureSampler);
 }
 
 void GlRenderer::Present()
@@ -462,7 +497,7 @@ void GlRenderer::Present()
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	}
 
-	SDL_GL_SetSwapInterval(0);
+	SDL_GL_SetSwapInterval(static_cast<int>(m_Vsync));
 	SDL_GL_SwapWindow(m_Window->GetSdlWindow());
 }
 
@@ -505,7 +540,7 @@ bool GlRenderer::CreateAntiAliasingTarget(int msaa_level, int window_width, int 
 	glDeleteTextures(1, &m_BackBuffer);
 	glDeleteFramebuffers(1, &m_FrameBuffer);
 
-	m_MsaaLevel = msaa_level;
+	m_CurrentMsaaLevel = msaa_level;
 	if (msaa_level == 0)
 	{
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -582,7 +617,12 @@ void GlRenderer::SetAnisotropicFilter(int level)
 
 	glCreateSamplers(1, &m_TextureSampler);
 
-	glSamplerParameterf(m_TextureSampler, GL_TEXTURE_WRAP_S, GL_REPEAT);
-	glSamplerParameterf(m_TextureSampler, GL_TEXTURE_WRAP_T, GL_REPEAT);
 	glSamplerParameterf(m_TextureSampler, GL_TEXTURE_MAX_ANISOTROPY, static_cast<GLfloat>(level));
+	glSamplerParameterf(m_TextureSampler, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+	glSamplerParameterf(m_TextureSampler, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+}
+
+void GlRenderer::SetVync(bool enable)
+{
+	m_Vsync = enable;
 }

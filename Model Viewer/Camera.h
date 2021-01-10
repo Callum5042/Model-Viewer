@@ -33,11 +33,14 @@ public:
 	constexpr DirectX::XMMATRIX GetView() { return m_View; }
 	constexpr DirectX::XMMATRIX GetProjection() { return m_Projection; }
 
+	constexpr DirectX::XMFLOAT3 GetPosition() { return m_Position; }
+
 	// Inherited via ICamera
 	void SetPitchAndYaw(float pitch, float yaw) override;
 	virtual void SetFov(float fov) override;
 
 private:
+	DirectX::XMFLOAT3 m_Position;
 	DirectX::XMMATRIX m_View;
 	DirectX::XMMATRIX m_Projection;
 
@@ -55,6 +58,8 @@ public:
 
 	constexpr glm::mat4 GetView() { return m_View; }
 	constexpr glm::mat4 GetProjection() { return m_Projection; }
+
+	constexpr glm::vec3 GetPosition() { return m_Position; }
 
 	void Resize(int width, int height);
 

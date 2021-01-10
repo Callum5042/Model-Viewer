@@ -163,14 +163,14 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <None Include="Data Files\Shaders\FragmentShader.glsl">
-      <Filter>Shaders Files\GLSL</Filter>
-    </None>
     <None Include="Data Files\Shaders\VertexShader.glsl">
       <Filter>Shaders Files\GLSL</Filter>
     </None>
     <None Include="Data Files\Shaders\Header.hlsli">
       <Filter>Shaders Files\HLSL</Filter>
+    </None>
+    <None Include="Data Files\Shaders\FragmentShader.glsl">
+      <Filter>Shaders Files\GLSL</Filter>
     </None>
   </ItemGroup>
   <ItemGroup>

@@ -137,8 +137,8 @@ bool Application::Init()
 	std::reverse(m_AntiAliasingLevelsText.begin(), m_AntiAliasingLevelsText.end());
 
 	// Get current MSAA level
-	auto level = m_Renderer->GetCurrentMsaaLevel();
-	level = 0;
+	auto level = m_Renderer->GetMaxMsaaLevel();
+	level = 8;
 	if (level == 0)
 	{
 		m_CurrentAntiAliasingLevel = "Off";
@@ -158,8 +158,10 @@ bool Application::Init()
 		m_TextureFilteringLevelsText.push_back(str);
 	}
 
-	m_CurrentTextureFilterLevel = "x1";
-	m_Renderer->SetAnisotropicFilter(1);
+	int max_anisotropic_filtering = m_Renderer->GetMaxAnisotropicFilterLevel();
+	m_CurrentTextureFilterLevel = "x" + std::to_string(max_anisotropic_filtering);
+	m_Renderer->SetAnisotropicFilter(max_anisotropic_filtering);
+	m_Renderer->SetVync(m_Vsync);
 
 	return true;
 }
@@ -283,6 +285,12 @@ void Application::RenderGui()
 			}
 
 			ImGui::EndCombo();
+		}
+
+		// Vsync
+		if (ImGui::Checkbox("Vsync", &m_Vsync))
+		{
+			m_Renderer->SetVync(m_Vsync);
 		}
 
 		ImGui::PopItemWidth();
@@ -451,7 +459,7 @@ void Application::OnResize(int width, int height)
 void Application::OnKeyPressed(SDL_Scancode scancode)
 {
 #pragma warning(pop)
-	if (scancode == SDL_SCANCODE_1)
+	if (scancode == SDL_SCANCODE_1 || scancode == SDL_SCANCODE_KP_1)
 	{
 		m_Wireframe = !m_Wireframe;
 		m_Renderer->ToggleWireframe(m_Wireframe);
