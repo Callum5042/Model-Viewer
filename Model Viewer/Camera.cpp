@@ -28,7 +28,7 @@ void Camera::SetPitchAndYaw(float pitch, float yaw)
 	auto yaw_radians = DirectX::XMConvertToRadians(yaw);
 
 	// Calculate rotation matrix from pitch and yaw
-	auto position = DirectX::XMVectorSet(0.0f, 0.0f, -8.0f, 0.0f);
+	auto position = DirectX::XMVectorSet(0.0f, 0.0f, m_Radius, 0.0f);
 	auto camRotationMatrix = DirectX::XMMatrixRotationRollPitchYaw(pitch_radians, yaw_radians, 0);
 	position = XMVector3TransformCoord(position, camRotationMatrix);
 	XMStoreFloat3(&m_Position, position);
@@ -69,7 +69,7 @@ void GlCamera::SetPitchAndYaw(float pitch, float yaw)
 	auto yaw_radians = glm::radians(yaw);
 
 	// Calculate rotation matrix from pitch and yaw
-	glm::vec4 position(0.0f, 0.0f, -8.0f, 0.0f);
+	glm::vec4 position(0.0f, 0.0f, m_Radius, 0.0f);
 	auto rotationMatrix = glm::yawPitchRoll(yaw_radians, pitch_radians, 0.0f);
 	position = rotationMatrix * position;
 

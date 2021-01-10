@@ -100,8 +100,8 @@ bool DxModel::Load()
 
 
 	//if (!ModelLoader::Load("Data Files/Models/simple.glb", m_MeshData.get()))
-	//if (!ModelLoader::Load("Data Files/Models/complex_post.glb", m_MeshData.get()))
-	if (!ModelLoader::Load("Data Files/Models/crate.glb", m_MeshData.get()))
+	if (!ModelLoader::Load("Data Files/Models/complex_post.glb", m_MeshData.get()))
+	//if (!ModelLoader::Load("Data Files/Models/crate.glb", m_MeshData.get()))
 	{
 		return false;
 	}

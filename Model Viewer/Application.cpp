@@ -493,7 +493,11 @@ void Application::OnMouseReleased(const MouseData& mouse)
 
 void Application::OnMouseWheel(const MouseData& mouse)
 {
-	m_Fov -= static_cast<int>(mouse.y);
+	//m_Fov -= static_cast<int>(mouse.y);
 	m_Fov = std::clamp<float>(m_Fov, 1.0f, 180.0f);
-	m_Camera->SetFov(m_Fov);
+
+	static float radius = -8.0f;
+	radius += static_cast<int>(mouse.y);
+	m_Camera->SetRadius(radius);
+	m_Camera->SetPitchAndYaw(m_Pitch, m_Yaw);
 }

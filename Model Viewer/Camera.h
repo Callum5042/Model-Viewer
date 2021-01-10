@@ -21,6 +21,9 @@ public:
 
 	// Set field of view
 	virtual void SetFov(float fov) = 0;
+
+	// Update radius
+	virtual void SetRadius(float radius) = 0;
 };
 
 class Camera : public ICamera
@@ -39,6 +42,11 @@ public:
 	void SetPitchAndYaw(float pitch, float yaw) override;
 	virtual void SetFov(float fov) override;
 
+	virtual void SetRadius(float radius) override
+	{
+		m_Radius = radius;
+	}
+
 private:
 	DirectX::XMFLOAT3 m_Position;
 	DirectX::XMMATRIX m_View;
@@ -48,6 +56,8 @@ private:
 
 	int m_WindowWidth = 0;
 	int m_WindowHeight = 0;
+
+	float m_Radius = -8.0f;
 };
 
 class GlCamera : public ICamera
@@ -67,6 +77,11 @@ public:
 	virtual void SetPitchAndYaw(float pitch, float yaw) override;
 	virtual void SetFov(float fov) override;
 
+	virtual void SetRadius(float radius) override
+	{
+		m_Radius = radius;
+	}
+
 private:
 	glm::vec3 m_Position = glm::vec3(0, 0, -5);
 	glm::mat4 m_View = glm::mat4(1.0f);
@@ -76,4 +91,6 @@ private:
 	int m_WindowHeight = 0;
 
 	float m_FOV = 0.0f;
+
+	float m_Radius = -8.0f;
 };
