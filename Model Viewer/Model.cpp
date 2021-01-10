@@ -6,6 +6,7 @@
 #include <DirectXMath.h>
 #include "DDSTextureLoader.h"
 #include "LoadTextureDDS.h"
+#include "ModelLoader.h"
 
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
@@ -57,40 +58,53 @@ DxModel::~DxModel()
 bool DxModel::Load()
 {
 	m_MeshData = std::make_unique<MeshData>();
-	std::ifstream file("Data Files/Models/test.bin", std::ios::binary);
-	if (!file.is_open())
+	//std::ifstream file("Data Files/Models/test.bin", std::ios::binary);
+	//if (!file.is_open())
+	//{
+	//	std::cerr << "Big error\n";
+	//}
+
+	//// Parse header
+	//char magic_number[3];
+	//file.read(magic_number, 3);
+
+	//// Get vertex count
+	//auto vertex_count = 0;
+	//file.read((char*)&vertex_count, sizeof(vertex_count));
+
+	//// Get index count
+	//auto index_count = 0;
+	//file.read((char*)&index_count, sizeof(index_count));
+
+	//// Get vertices
+	//auto vertex_stride = sizeof(Vertex) * vertex_count;
+	//auto vertices = new Vertex[vertex_count];
+	//file.read((char*)vertices, vertex_stride);
+
+	//// Get indices
+	//auto index_stride = sizeof(UINT) * index_count;
+	//auto indices = new UINT[index_count];
+	//file.read((char*)indices, index_stride);
+
+	//// Copy to MeshData vectors
+	//m_MeshData->vertices.assign(&vertices[0], &vertices[vertex_count]);
+	//m_MeshData->indices.assign(&indices[0], &indices[index_count]);
+
+	//Subset subset;
+	//subset.baseVertex = 0;
+	//subset.totalIndex = index_count;
+	//m_MeshData->subsets.push_back(subset);
+
+	//delete[] vertices;
+	//delete[] indices;
+
+
+	//if (!ModelLoader::Load("Data Files/Models/simple.glb", m_MeshData.get()))
+	//if (!ModelLoader::Load("Data Files/Models/complex_post.glb", m_MeshData.get()))
+	if (!ModelLoader::Load("Data Files/Models/crate.glb", m_MeshData.get()))
 	{
-		std::cerr << "Big error\n";
+		return false;
 	}
-
-	// Parse header
-	char magic_number[3];
-	file.read(magic_number, 3);
-
-	// Get vertex count
-	auto vertex_count = 0;
-	file.read((char*)&vertex_count, sizeof(vertex_count));
-
-	// Get index count
-	auto index_count = 0;
-	file.read((char*)&index_count, sizeof(index_count));
-
-	// Get vertices
-	auto vertex_stride = sizeof(Vertex) * vertex_count;
-	auto vertices = new Vertex[vertex_count];
-	file.read((char*)vertices, vertex_stride);
-
-	// Get indices
-	auto index_stride = sizeof(UINT) * index_count;
-	auto indices = new UINT[index_count];
-	file.read((char*)indices, index_stride);
-
-	// Copy to MeshData vectors
-	m_MeshData->vertices.assign(&vertices[0], &vertices[vertex_count]);
-	m_MeshData->indices.assign(&indices[0], &indices[index_count]);
-
-	delete[] vertices;
-	delete[] indices;
 
 
 	//////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -204,7 +218,10 @@ void DxModel::Render(ICamera* camera)
 	m_Renderer->GetDeviceContext()->UpdateSubresource(m_LightBuffer.Get(), 0, nullptr, &lightBuffer, 0, 0);
 
 	// Render geometry
-	m_Renderer->GetDeviceContext()->DrawIndexed(static_cast<UINT>(m_MeshData->indices.size()), 0, 0);
+	for (auto& subset : m_MeshData->subsets)
+	{
+		m_Renderer->GetDeviceContext()->DrawIndexed(subset.totalIndex, subset.startIndex, subset.baseVertex);
+	}
 }
 
 GlModel::GlModel(IShader* shader)
@@ -384,4 +401,99 @@ void GlModel::Render(ICamera* camera)
 	// Draw
 	glBindVertexArray(m_VertexArrayObject);
 	glDrawElements(GL_TRIANGLES, static_cast<GLsizei>(m_MeshData->indices.size()), GL_UNSIGNED_INT, nullptr);
+}
+
+float BoneAnimation::GetStartTime() const
+{
+	// Keyframes are sorted by time, so first keyframe gives start time.
+	return Keyframes.front().TimePos;
+}
+
+float BoneAnimation::GetEndTime() const
+{
+	// Keyframes are sorted by time, so last keyframe gives end time.
+	return Keyframes.back().TimePos;
+}
+
+void BoneAnimation::Interpolate(float t, DirectX::XMMATRIX& M) const
+{
+	if (t <= Keyframes.front().TimePos)
+	{
+		DirectX::XMVECTOR S = XMLoadFloat3(&Keyframes.front().Scale);
+		DirectX::XMVECTOR P = XMLoadFloat3(&Keyframes.front().Translation);
+		DirectX::XMVECTOR Q = XMLoadFloat4(&Keyframes.front().RotationQuat);
+
+		DirectX::XMVECTOR zero = DirectX::XMVectorSet(0.0f, 0.0f, 0.0f, 1.0f);
+		M = DirectX::XMMatrixAffineTransformation(S, zero, Q, P);
+		//XMStoreFloat4x4(&M, DirectX::XMMatrixAffineTransformation(S, zero, Q, P));
+	}
+	else if (t >= Keyframes.back().TimePos)
+	{
+		DirectX::XMVECTOR S = XMLoadFloat3(&Keyframes.back().Scale);
+		DirectX::XMVECTOR P = XMLoadFloat3(&Keyframes.back().Translation);
+		DirectX::XMVECTOR Q = XMLoadFloat4(&Keyframes.back().RotationQuat);
+
+		DirectX::XMVECTOR zero = DirectX::XMVectorSet(0.0f, 0.0f, 0.0f, 1.0f);
+		M = DirectX::XMMatrixAffineTransformation(S, zero, Q, P);
+		//XMStoreFloat4x4(&M, DirectX::XMMatrixAffineTransformation(S, zero, Q, P));
+	}
+	else
+	{
+		for (UINT i = 0; i < Keyframes.size() - 1; ++i)
+		{
+			if (t >= Keyframes[i].TimePos && t <= Keyframes[i + 1].TimePos)
+			{
+				float lerpPercent = (t - Keyframes[i].TimePos) / (Keyframes[i + 1].TimePos - Keyframes[i].TimePos);
+
+				DirectX::XMVECTOR s0 = XMLoadFloat3(&Keyframes[i].Scale);
+				DirectX::XMVECTOR s1 = XMLoadFloat3(&Keyframes[i + 1].Scale);
+
+				DirectX::XMVECTOR p0 = XMLoadFloat3(&Keyframes[i].Translation);
+				DirectX::XMVECTOR p1 = XMLoadFloat3(&Keyframes[i + 1].Translation);
+
+				DirectX::XMVECTOR q0 = XMLoadFloat4(&Keyframes[i].RotationQuat);
+				DirectX::XMVECTOR q1 = XMLoadFloat4(&Keyframes[i + 1].RotationQuat);
+
+				DirectX::XMVECTOR S = DirectX::XMVectorLerp(s0, s1, lerpPercent);
+				DirectX::XMVECTOR P = DirectX::XMVectorLerp(p0, p1, lerpPercent);
+				DirectX::XMVECTOR Q = DirectX::XMQuaternionSlerp(q0, q1, lerpPercent);
+
+				DirectX::XMVECTOR zero = DirectX::XMVectorSet(0.0f, 0.0f, 0.0f, 1.0f);
+				M = DirectX::XMMatrixAffineTransformation(S, zero, Q, P);
+				break;
+			}
+		}
+	}
+}
+
+float AnimationClip::GetClipStartTime() const
+{
+	// Find smallest start time over all bones in this clip.
+	float t = FLT_MAX;
+	for (UINT i = 0; i < BoneAnimations.size(); ++i)
+	{
+		t = std::min(t, BoneAnimations[i].GetStartTime());
+	}
+
+	return t;
+}
+
+float AnimationClip::GetClipEndTime() const
+{
+	// Find largest end time over all bones in this clip.
+	float t = 0.0f;
+	for (UINT i = 0; i < BoneAnimations.size(); ++i)
+	{
+		t = std::max(t, BoneAnimations[i].GetEndTime());
+	}
+
+	return t;
+}
+
+void AnimationClip::Interpolate(float t, std::vector<DirectX::XMMATRIX>& boneTransforms) const
+{
+	for (UINT i = 0; i < BoneAnimations.size(); ++i)
+	{
+		BoneAnimations[i].Interpolate(t, boneTransforms[i]);
+	}
 }

@@ -1,6 +1,8 @@
 #pragma once
 
 #include "Pch.h"
+#include <map>
+#include <DirectXMath.h>
 class IRenderer;
 class DxRenderer;
 class Camera;
@@ -63,6 +65,67 @@ struct Vertex
 	BiTangent bi_tangent = {};
 };
 
+struct BoneInfo
+{
+	int parentId = 0;
+	std::string name;
+	std::string parentName;
+	DirectX::XMMATRIX offset;
+};
+
+struct Subset
+{
+	unsigned totalIndex = 0;
+	unsigned startIndex = 0;
+	unsigned baseVertex = 0;
+};
+
+///<summary>
+	/// A Keyframe defines the bone transformation at an instant in time.
+	///</summary>
+struct Keyframe
+{
+	Keyframe() = default;
+	virtual ~Keyframe() = default;
+
+	float TimePos = 0.0f;
+	DirectX::XMFLOAT3 Translation = DirectX::XMFLOAT3(0.0f, 0.0f, 0.0f);
+	DirectX::XMFLOAT3 Scale = DirectX::XMFLOAT3(1.0f, 1.0f, 1.0f);
+	DirectX::XMFLOAT4 RotationQuat = DirectX::XMFLOAT4(0.0f, 0.0f, 0.0f, 1.0f);
+};
+
+///<summary>
+/// A BoneAnimation is defined by a list of keyframes.  For time
+/// values inbetween two keyframes, we interpolate between the
+/// two nearest keyframes that bound the time.  
+///
+/// We assume an animation always has two keyframes.
+///</summary>
+struct BoneAnimation
+{
+	float GetStartTime() const;
+	float GetEndTime() const;
+
+	void Interpolate(float t, DirectX::XMMATRIX& M) const;
+
+	std::vector<Keyframe> Keyframes;
+};
+
+///<summary>
+/// Examples of AnimationClips are "Walk", "Run", "Attack", "Defend".
+/// An AnimationClip requires a BoneAnimation for every bone to form
+/// the animation clip.    
+///</summary>
+struct AnimationClip
+{
+	float GetClipStartTime() const;
+	float GetClipEndTime() const;
+
+	void Interpolate(float t, std::vector<DirectX::XMMATRIX>& boneTransforms)const;
+
+	std::vector<BoneAnimation> BoneAnimations;
+};
+
 struct MeshData
 {
 	MeshData() = default;
@@ -70,6 +133,9 @@ struct MeshData
 
 	std::vector<Vertex> vertices;
 	std::vector<UINT> indices;
+	std::vector<Subset> subsets;
+	std::vector<BoneInfo> bones;
+	std::map<std::string, AnimationClip> animations;
 };
 
 class IModel
