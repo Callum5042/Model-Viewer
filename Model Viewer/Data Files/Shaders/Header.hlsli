@@ -35,6 +35,12 @@ cbuffer DirectionalLightBuffer : register(b1)
 	matrix mLightProj;
 };
 
+// Bone constant buffer
+cbuffer BoneBuffer : register(b2)
+{
+	matrix cBoneTransform[96];
+}
+
 // Texture data
 SamplerState gSamplerAnisotropic : register(s0);
 Texture2D gTextureDiffuse : register(t0);
@@ -51,6 +57,8 @@ struct VertexInput
 	float3 Normal : NORMAL;
 	float3 Tangent : TANGENT;
 	float3 BitTangent : BITTANGENT;
+	float4 weight : WEIGHT;
+	int4 bone : BONE;
 };
 
 // Pixel shader input

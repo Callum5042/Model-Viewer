@@ -22,6 +22,7 @@ private:
 
 	// Core functions
 	bool Init();
+	void Update(float dt);
 	void Render();
 
 	// Dear ImGui rendering function

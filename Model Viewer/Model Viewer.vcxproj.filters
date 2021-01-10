@@ -93,6 +93,9 @@
     <ClCompile Include="LoadTextureDDS.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="ModelLoader.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Window.h">
@@ -159,6 +162,9 @@
       <Filter>Third Party\DDSTextureLoader</Filter>
     </ClInclude>
     <ClInclude Include="LoadTextureDDS.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ModelLoader.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
