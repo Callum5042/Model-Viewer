@@ -18,26 +18,16 @@ namespace
 {
 	glm::mat4 DXMatrixToGLM(const DirectX::XMMATRIX& dx_matrix)
 	{
-		// Decompose
-		DirectX::XMVECTOR vscale, vquat, vpos;
-		DirectX::XMMatrixDecompose(&vscale, &vquat, &vpos, dx_matrix);
+		DirectX::XMFLOAT4X4 m;
+		DirectX::XMStoreFloat4x4(&m, dx_matrix);
 
-		DirectX::XMFLOAT3 scale;
-		DirectX::XMFLOAT3 pos;
-		DirectX::XMFLOAT4 quat;
-		DirectX::XMStoreFloat4(&quat, vquat);
-		DirectX::XMStoreFloat3(&pos, vpos);
-		DirectX::XMStoreFloat3(&scale, vscale);
+		glm::mat4 mat(
+			m._11, m._21, m._31, m._41,
+			m._12, m._22, m._32, m._42,
+			m._13, m._23, m._33, m._43,
+			m._14, m._24, m._34, m._44);
 
-		// Build GLM
-		glm::quat gl_quat(quat.x, quat.y, quat.z, quat.z);
-
-		glm::mat4 gl_matrix(1.0f);
-		gl_matrix = glm::toMat4(gl_quat);
-		gl_matrix = glm::scale(gl_matrix, glm::vec3(scale.x, scale.y, scale.z));
-		gl_matrix = glm::translate(gl_matrix, glm::vec3(pos.x, pos.y, pos.z));
-
-		return gl_matrix;
+		return mat;
 	}
 }
 
@@ -92,10 +82,7 @@ DxModel::~DxModel()
 bool DxModel::Load(const std::string& path)
 {
 	m_MeshData = std::make_unique<MeshData>();
-
-	//if (!ModelLoader::Load("Data Files/Models/simple.glb", m_MeshData.get()))
 	if (!ModelLoader::Load(path, m_MeshData.get()))
-	//if (!ModelLoader::Load("Data Files/Models/crate.glb", m_MeshData.get()))
 	{
 		return false;
 	}
@@ -417,6 +404,7 @@ void GlModel::Update(float dt)
 		}
 
 		// Transform bone
+		std::vector<glm::mat4> tranforms;
 		for (size_t i = 0; i < m_MeshData->bones.size(); i++)
 		{
 			DirectX::XMMATRIX offset = m_MeshData->bones[i].offset;
@@ -425,17 +413,17 @@ void GlModel::Update(float dt)
 			auto transform = DirectX::XMMatrixTranspose(matrix);
 
 			auto glm_matrix = DXMatrixToGLM(transform);
-
-			std::string name = "gBoneTransform[" + std::to_string(i) + "]";
-			auto bone_pos = glGetUniformLocation(m_Shader->GetShaderId(), name.c_str());
-			glUniformMatrix4fv(bone_pos, 1, GL_FALSE, glm::value_ptr(glm_matrix));
+			tranforms.push_back(glm_matrix);
 		}
+
+		auto bone_pos = glGetUniformLocation(m_Shader->GetShaderId(), "gBoneTransform");
+		glUniformMatrix4fv(bone_pos, tranforms.size(), GL_TRUE, glm::value_ptr(tranforms[0]));
 	}
 	else
 	{
 		auto glm_matrix = glm::mat4(1.0f);
 
-		std::string name = "gBoneTransform[0]";
+		std::string name = "gBoneTransform";
 		auto bone_pos = glGetUniformLocation(m_Shader->GetShaderId(), name.c_str());
 		glUniformMatrix4fv(bone_pos, 1, GL_TRUE, glm::value_ptr(glm_matrix));
 	}
@@ -452,8 +440,10 @@ void GlModel::Render(ICamera* camera)
 {
 	auto glCamera = reinterpret_cast<GlCamera*>(camera);
 
+	glm::mat4 world_matrix = glm::mat4(1.0f);
+
 	GlWorld world = {};
-	world.world = glm::mat4(1.0f);
+	world.world = world_matrix;
 	world.view = glCamera->GetView();
 	world.proj = glCamera->GetProjection();
 
