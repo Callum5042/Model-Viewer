@@ -189,9 +189,9 @@
     <ClInclude Include="Window.h" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="Data Files\Shaders\FragmentShader.glsl" />
+    <None Include="Data Files\Shaders\FragmentShader.fs" />
     <None Include="Data Files\Shaders\Header.hlsli" />
-    <None Include="Data Files\Shaders\VertexShader.glsl" />
+    <None Include="Data Files\Shaders\VertexShader.vs" />
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="Data Files\Shaders\PixelShader.hlsl">

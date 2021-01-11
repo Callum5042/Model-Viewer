@@ -1,4 +1,4 @@
-#version 450 core
+#version 420 core
 
 uniform vec4 gDirectionLight, gDiffuseLight, gAmbientLight, gSpecularLight, gCameraPos;
 

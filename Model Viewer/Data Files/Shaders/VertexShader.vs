@@ -36,6 +36,9 @@ void main()
 
     // Bone
     vec3 position = vec3(0.0f, 0.0f, 0.0f);
+    vec3 normal = vec3(0.0f, 0.0f, 0.0f);
+    vec3 tangent = vec3(0.0f, 0.0f, 0.0f);
+    vec3 bi_tangent = vec3(0.0f, 0.0f, 0.0f);
     for (int i = 0; i < 4; i++)
     {
         float weight = weights[i];
@@ -43,6 +46,9 @@ void main()
         mat4 transform = gBoneTransform[bone_index];
 
         position += weight * (vec4(vPosition, 1.0f) * transform).xyz;
+        normal += weight * vNormal * mat3(transform);
+        tangent += weight * vTangent * mat3(transform);
+		bi_tangent += weight * vBiTangent * mat3(transform);
     }
 
     // Position
@@ -56,13 +62,13 @@ void main()
     fUV = vUV;
 
     // Lights
-    fNormal = (vNormal * inverse(mat3(gWorld))).xyz;
+    fNormal = (normal * inverse(mat3(gWorld))).xyz;
     fNormal = normalize(fNormal);
 
     // Normals
-    fTangent = (vec4(vTangent, 1.0f) * inverse(gWorld)).xyz;
+    fTangent = (vec4(tangent, 1.0f) * inverse(gWorld)).xyz;
     fTangent = normalize(fTangent);
 
-    fBiTangent = (vec4(vBiTangent, 1.0f) * inverse(gWorld)).xyz;
+    fBiTangent = (vec4(bi_tangent, 1.0f) * inverse(gWorld)).xyz;
     fBiTangent = normalize(fBiTangent);
 }

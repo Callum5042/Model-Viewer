@@ -8,11 +8,10 @@
 #include "LoadTextureDDS.h"
 #include "ModelLoader.h"
 
+#define GLM_FORCE_PURE
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
-#include <glm/gtc/quaternion.hpp>
-#include <glm/gtx/quaternion.hpp>
 
 namespace
 {
@@ -26,6 +25,7 @@ namespace
 			m._12, m._22, m._32, m._42,
 			m._13, m._23, m._33, m._43,
 			m._14, m._24, m._34, m._44);
+
 
 		return mat;
 	}
@@ -362,21 +362,6 @@ bool GlModel::Load(const std::string& path)
 
 void GlModel::Update(float dt)
 {
-	// Transform bone
-	/*std::vector<glm::mat4> glm;
-	for (size_t i = 0; i < 96; i++)
-	{
-		glm.push_back(glm::mat4(1.0f));
-	}
-
-	auto bone_pos = glGetUniformLocation(m_Shader->GetShaderId(), "gBoneTransform");
-	glUniformMatrix4fv(bone_pos, glm.size(), GL_TRUE, glm::value_ptr(glm[0]));*/
-
-	/*auto glm_matrix = glm::mat4(1.0f);
-	std::string name = "identity[1]";
-	auto bone_pos = glGetUniformLocation(m_Shader->GetShaderId(), name.c_str());
-	glUniformMatrix4fv(bone_pos, 1, GL_TRUE, glm::value_ptr(glm_matrix));*/
-
 	static float TimeInSeconds = 0.0f;
 	TimeInSeconds += dt * 100.0f;
 

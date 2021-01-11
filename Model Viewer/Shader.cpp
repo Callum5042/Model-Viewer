@@ -96,8 +96,8 @@ GlShader::~GlShader()
 bool GlShader::Create()
 {
 	m_ShaderId = glCreateProgram();
-	m_VertexShader = LoadVertexShader("Data Files/Shaders/VertexShader.glsl");
-	m_FragmentShader = LoadFragmentShader("Data Files/Shaders/FragmentShader.glsl");
+	m_VertexShader = LoadVertexShader("Data Files/Shaders/VertexShader.vs");
+	m_FragmentShader = LoadFragmentShader("Data Files/Shaders/FragmentShader.fs");
 
 	// Link
 	glAttachShader(m_ShaderId, m_VertexShader);
