@@ -563,7 +563,7 @@ bool GlRenderer::CreateAntiAliasingTarget(int msaa_level, int window_width, int 
 	err = glGetError();
 	if (err != GL_NO_ERROR)
 	{
-		std::cout << "Error\n";
+		std::cout << "Error: " << err;
 	}
 
 	// Stencil buffer

@@ -192,7 +192,7 @@ public:
 	virtual ~GlModel();
 
 	bool Load(const std::string& path) override;
-	void Update(float dt) override {}
+	void Update(float dt) override;
 	void Render(ICamera* camera) override;
 
 private:

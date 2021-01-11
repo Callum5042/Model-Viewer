@@ -11,6 +11,35 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
+#include <glm/gtc/quaternion.hpp>
+#include <glm/gtx/quaternion.hpp>
+
+namespace
+{
+	glm::mat4 DXMatrixToGLM(const DirectX::XMMATRIX& dx_matrix)
+	{
+		// Decompose
+		DirectX::XMVECTOR vscale, vquat, vpos;
+		DirectX::XMMatrixDecompose(&vscale, &vquat, &vpos, dx_matrix);
+
+		DirectX::XMFLOAT3 scale;
+		DirectX::XMFLOAT3 pos;
+		DirectX::XMFLOAT4 quat;
+		DirectX::XMStoreFloat4(&quat, vquat);
+		DirectX::XMStoreFloat3(&pos, vpos);
+		DirectX::XMStoreFloat3(&scale, vscale);
+
+		// Build GLM
+		glm::quat gl_quat(quat.x, quat.y, quat.z, quat.z);
+
+		glm::mat4 gl_matrix(1.0f);
+		gl_matrix = glm::toMat4(gl_quat);
+		gl_matrix = glm::scale(gl_matrix, glm::vec3(scale.x, scale.y, scale.z));
+		gl_matrix = glm::translate(gl_matrix, glm::vec3(pos.x, pos.y, pos.z));
+
+		return gl_matrix;
+	}
+}
 
 __declspec(align(16)) struct ShaderMaterial
 {
@@ -122,8 +151,6 @@ bool DxModel::Load(const std::string& path)
 	bone_bd.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
 
 	DX::ThrowIfFailed(m_Renderer->GetDevice()->CreateBuffer(&bone_bd, nullptr, m_BoneConstantBuffer.ReleaseAndGetAddressOf()));
-
-
 
 	return true;
 }
@@ -262,7 +289,6 @@ bool GlModel::Load(const std::string& path)
 {
 	m_MeshData = std::make_unique<MeshData>();
 	if (!ModelLoader::Load(path, m_MeshData.get()))
-	//if (!ModelLoader::Load("Data Files/Models/crate.glb", m_MeshData.get()))
 	{
 		return false;
 	}
@@ -287,26 +313,32 @@ bool GlModel::Load(const std::string& path)
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), 0);
 	glEnableVertexAttribArray(0);
 
-	glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, sizeof(Vertex), (GLvoid*)(3 * sizeof(GL_FLOAT)));
+	glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, sizeof(Vertex), (GLvoid*)(12));
 	glEnableVertexAttribArray(1);
 
-	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (GLvoid*)(7 * sizeof(GL_FLOAT)));
+	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (GLvoid*)(28));
 	glEnableVertexAttribArray(2);
 
-	glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (GLvoid*)(9 * sizeof(GL_FLOAT)));
+	glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (GLvoid*)(36));
 	glEnableVertexAttribArray(3);
 
-	glVertexAttribPointer(4, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (GLvoid*)(12 * sizeof(GL_FLOAT)));
+	glVertexAttribPointer(4, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (GLvoid*)(48));
 	glEnableVertexAttribArray(4);
 
-	glVertexAttribPointer(5, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (GLvoid*)(15 * sizeof(GL_FLOAT)));
+	glVertexAttribPointer(5, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (GLvoid*)(60));
 	glEnableVertexAttribArray(5);
 
-	glVertexAttribPointer(6, 4, GL_FLOAT, GL_FALSE, sizeof(Vertex), (GLvoid*)(18 * sizeof(GL_FLOAT)));
+	glVertexAttribPointer(6, 4, GL_FLOAT, GL_FALSE, sizeof(Vertex), (GLvoid*)(72));
 	glEnableVertexAttribArray(6);
 
-	glVertexAttribPointer(7, 4, GL_INT, GL_FALSE, sizeof(Vertex), (GLvoid*)(22 * sizeof(GL_INT)));
+	glVertexAttribIPointer(7, 4, GL_INT, sizeof(Vertex), (GLvoid*)(88));
 	glEnableVertexAttribArray(7);
+
+	GLenum err = glGetError();
+	if (err != GL_NO_ERROR)
+	{
+		std::cout << "Error 123: " << err;
+	}
 
 	// Load diffuse texture
 	Rove::LoadDDS diffuse_dds;
@@ -339,6 +371,74 @@ bool GlModel::Load(const std::string& path)
 	glBindTextureUnit(1, m_NormalTextureId);
 
 	return true;
+}
+
+void GlModel::Update(float dt)
+{
+	// Transform bone
+	/*std::vector<glm::mat4> glm;
+	for (size_t i = 0; i < 96; i++)
+	{
+		glm.push_back(glm::mat4(1.0f));
+	}
+
+	auto bone_pos = glGetUniformLocation(m_Shader->GetShaderId(), "gBoneTransform");
+	glUniformMatrix4fv(bone_pos, glm.size(), GL_TRUE, glm::value_ptr(glm[0]));*/
+
+	/*auto glm_matrix = glm::mat4(1.0f);
+	std::string name = "identity[1]";
+	auto bone_pos = glGetUniformLocation(m_Shader->GetShaderId(), name.c_str());
+	glUniformMatrix4fv(bone_pos, 1, GL_TRUE, glm::value_ptr(glm_matrix));*/
+
+	static float TimeInSeconds = 0.0f;
+	TimeInSeconds += dt * 100.0f;
+
+	auto numBones = m_MeshData->bones.size();
+	std::vector<DirectX::XMMATRIX> toParentTransforms(numBones);
+
+	// Animation
+	auto clip = m_MeshData->animations.find("Take1");
+	if (clip != m_MeshData->animations.end())
+	{
+		clip->second.Interpolate(TimeInSeconds, toParentTransforms);
+		if (TimeInSeconds > clip->second.GetClipEndTime())
+		{
+			TimeInSeconds = 0.0f;
+		}
+
+		// Transform to root
+		std::vector<DirectX::XMMATRIX> toRootTransforms(numBones);
+		toRootTransforms[0] = toParentTransforms[0];
+		for (UINT i = 1; i < numBones; ++i)
+		{
+			DirectX::XMMATRIX toParent = toParentTransforms[i];
+			DirectX::XMMATRIX parentToRoot = toRootTransforms[m_MeshData->bones[i].parentId];
+			toRootTransforms[i] = XMMatrixMultiply(toParent, parentToRoot);
+		}
+
+		// Transform bone
+		for (size_t i = 0; i < m_MeshData->bones.size(); i++)
+		{
+			DirectX::XMMATRIX offset = m_MeshData->bones[i].offset;
+			DirectX::XMMATRIX toRoot = toRootTransforms[i];
+			DirectX::XMMATRIX matrix = DirectX::XMMatrixMultiply(offset, toRoot);
+			auto transform = DirectX::XMMatrixTranspose(matrix);
+
+			auto glm_matrix = DXMatrixToGLM(transform);
+
+			std::string name = "gBoneTransform[" + std::to_string(i) + "]";
+			auto bone_pos = glGetUniformLocation(m_Shader->GetShaderId(), name.c_str());
+			glUniformMatrix4fv(bone_pos, 1, GL_FALSE, glm::value_ptr(glm_matrix));
+		}
+	}
+	else
+	{
+		auto glm_matrix = glm::mat4(1.0f);
+
+		std::string name = "gBoneTransform[0]";
+		auto bone_pos = glGetUniformLocation(m_Shader->GetShaderId(), name.c_str());
+		glUniformMatrix4fv(bone_pos, 1, GL_TRUE, glm::value_ptr(glm_matrix));
+	}
 }
 
 struct GlWorld

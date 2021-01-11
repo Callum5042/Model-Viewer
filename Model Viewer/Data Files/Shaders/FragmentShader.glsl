@@ -6,7 +6,7 @@ layout (location = 0) out vec4 color;
 layout (binding = 0) uniform sampler2D diffuse_texture;
 layout (binding = 1) uniform sampler2D normal_texture;
 
-in vec4 fPosition;
+in vec3 fPosition;
 in vec4 fColour;
 in vec2 fUV;
 in vec3 fNormal;
@@ -27,7 +27,7 @@ vec4 CalculateDirectionalLighting(vec3 bumped_normal)
 	vec4 ambient_light = gAmbientLight * ambient;
 
 	// Specular lighting
-	vec3 viewDir = normalize(gCameraPos.xyz - fPosition.xyz);
+	vec3 viewDir = normalize(gCameraPos.xyz - fPosition);
 	vec3 reflectDir = reflect(-lightVec, bumped_normal);
 
 	float spec = pow(max(dot(viewDir, reflectDir), 0.0), gSpecularLight.w * specular.w);
