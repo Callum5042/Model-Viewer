@@ -52,7 +52,6 @@ private:
 	std::unique_ptr<IModel> m_Model = nullptr;
 
 
-	std::unique_ptr<GlCamera> m_GlCamera = nullptr;
 	std::unique_ptr<Camera> m_DxCamera = nullptr;
 
 	// Rendering API switch

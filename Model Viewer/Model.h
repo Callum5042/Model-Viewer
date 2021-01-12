@@ -153,7 +153,7 @@ public:
 
 	virtual bool Load(const std::string& path) = 0;
 	virtual void Update(float dt) = 0;
-	virtual void Render(Camera* camera, GlCamera* glCamera) = 0;
+	virtual void Render(Camera* camera) = 0;
 };
 
 class DxModel : public IModel
@@ -164,7 +164,7 @@ public:
 
 	bool Load(const std::string& path) override;
 	void Update(float dt) override;
-	void Render(Camera* camera, GlCamera* glCamera) override;
+	void Render(Camera* camera) override;
 
 private:
 	DxRenderer* m_Renderer = nullptr;
@@ -194,7 +194,7 @@ public:
 
 	bool Load(const std::string& path) override;
 	void Update(float dt) override;
-	void Render(Camera* camera, GlCamera* glCamera) override;
+	void Render(Camera* camera) override;
 
 private:
 	GlShader* m_Shader = nullptr;

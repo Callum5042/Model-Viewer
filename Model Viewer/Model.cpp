@@ -189,10 +189,8 @@ void DxModel::Update(float dt)
 	m_Renderer->GetDeviceContext()->UpdateSubresource(m_BoneConstantBuffer.Get(), 0, nullptr, &bone_buffer, 0, 0);
 }
 
-void DxModel::Render(Camera* camera, GlCamera* glCamera)
+void DxModel::Render(Camera* camera)
 {
-	auto dxCamera = reinterpret_cast<Camera*>(camera);
-
 	// Bind the vertex buffer
 	UINT stride = sizeof(Vertex);
 	UINT offset = 0;
@@ -210,8 +208,8 @@ void DxModel::Render(Camera* camera, GlCamera* glCamera)
 
 	ConstantBuffer cb = {};
 	cb.world = DirectX::XMMatrixTranspose(world);
-	cb.view = DirectX::XMMatrixTranspose(dxCamera->GetView());
-	cb.projection = DirectX::XMMatrixTranspose(dxCamera->GetProjection());
+	cb.view = DirectX::XMMatrixTranspose(camera->GetView());
+	cb.projection = DirectX::XMMatrixTranspose(camera->GetProjection());
 	cb.worldInverse = DirectX::XMMatrixInverse(nullptr, world);
 	cb.texture = DirectX::XMMatrixIdentity();
 
@@ -237,7 +235,7 @@ void DxModel::Render(Camera* camera, GlCamera* glCamera)
 	auto direction = DirectX::XMFLOAT4(-0.8f, -0.5f, 0.5f, 1.0f);
 
 	LightBuffer lightBuffer = {};
-	lightBuffer.mDirectionalLight.mCameraPos = dxCamera->GetPosition();
+	lightBuffer.mDirectionalLight.mCameraPos = camera->GetPosition();
 	lightBuffer.mDirectionalLight.mDiffuse = diffuse;
 	lightBuffer.mDirectionalLight.mAmbient = ambient;
 	lightBuffer.mDirectionalLight.mSpecular = specular;
@@ -418,14 +416,7 @@ struct GlWorld
 	glm::mat4 proj;
 };
 
-#include <glm/gtx/string_cast.hpp>
-std::ostream& operator<<(std::ostream& os, glm::mat4 m)
-{
-	os << glm::to_string(m);
-	return os;
-}
-
-void GlModel::Render(Camera* camera, GlCamera* glCamera)
+void GlModel::Render(Camera* camera)
 {
 	glm::mat4 world_matrix = glm::mat4(1.0f);
 
