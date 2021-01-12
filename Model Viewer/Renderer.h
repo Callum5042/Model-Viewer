@@ -30,7 +30,10 @@ public:
 	IRenderer() = default;
 	virtual ~IRenderer() = default;
 
+	// Create renderer
 	virtual bool Create(Window* window) = 0;
+
+	// Resize renderer
 	virtual void Resize(int width, int height) = 0;
 
 	// Clear buffers
@@ -42,8 +45,10 @@ public:
 	// Rendering API
 	virtual RenderAPI GetRenderAPI() = 0;
 
-	// Query hardware
+	// Query GPU name
 	virtual const std::string& GetName() = 0;
+
+	// Query GPU video memory in bytes
 	virtual SIZE_T GetVRAM() = 0;
 
 	// Toggle wireframe rendering

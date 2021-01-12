@@ -1,19 +1,26 @@
 #pragma once
 
 #include "EventDispatcher.h"
-#include "Window.h"
-#include "Renderer.h"
 #include "Timer.h"
-#include "Model.h"
-#include "Camera.h"
 #include "Shader.h"
 
+// Forward declarions
+class Window;
+class IRenderer;
+class IModel;
+class ICamera;
+class IShader;
+
+// Core application
 class Application : public QuitListener, public WindowListener, public KeyboardListener, public MouseListener
 {
 public:
 	Application();
 	virtual ~Application();
+	Application& operator=(const Application&) = delete;
+	Application(const Application&) = delete;
 
+	// Application entry point. Returns 0 on exit success
 	int Execute();
 
 private:

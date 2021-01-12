@@ -2,6 +2,7 @@
 
 #include "Pch.h"
 
+// Mouse data
 struct MouseData
 {
 	int x = 0;
@@ -11,6 +12,7 @@ struct MouseData
 	Uint32 state = 0;
 };
 
+// Window events
 class WindowListener
 {
 public:
@@ -19,6 +21,7 @@ public:
 	virtual void OnResize(int width, int height) {}
 };
 
+// Quit events
 class QuitListener
 {
 public:
@@ -27,6 +30,7 @@ public:
 	virtual void OnQuit() {};
 };
 
+// Keyboard events
 class KeyboardListener
 {
 public:
@@ -37,6 +41,7 @@ public:
 	virtual void OnKeyPressed(SDL_Scancode scancode) {};
 };
 
+// Mouse events
 class MouseListener
 {
 public:
@@ -49,12 +54,16 @@ public:
 	virtual void OnMouseWheel(const MouseData& mouse) {};
 };
 
-class EventDispatcher
+// Event dispatcher. Will process events and forward the event to all attached objects
+class EventDispatcher final
 {
 public:
-	EventDispatcher() = default;
+	EventDispatcher() noexcept = default;
 	virtual ~EventDispatcher() = default;
+	EventDispatcher& operator=(const EventDispatcher&) = delete;
+	EventDispatcher(const EventDispatcher&) = delete;
 
+	// Process events in the queue
 	void Poll();
 
 	void Attach(WindowListener* listener) { m_WindowListeners.push_back(listener); }

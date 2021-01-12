@@ -2,6 +2,7 @@
 
 #include "Renderer.h"
 
+// Shader interface
 class IShader
 {
 public:
@@ -12,6 +13,7 @@ public:
 	virtual void Use() = 0;
 };
 
+// Direct3D 11 shader
 class DxShader : public IShader
 {
 public:
@@ -32,6 +34,7 @@ private:
 	bool CreatePixelShader(const std::string& pixel_shader_path);
 };
 
+// OpenGL 4 shader
 class GlShader : public IShader
 {
 public:

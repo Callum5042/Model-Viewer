@@ -16,7 +16,7 @@
 #include <memory>
 #include <sstream>
 #include <locale>
-#include <codecvt>        // std::codecvt_utf8
+#include <codecvt> // std::codecvt_utf8
 #include <cstdint>
 #include <array>
 #include <bitset>

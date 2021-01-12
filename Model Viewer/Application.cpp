@@ -2,6 +2,8 @@
 #include "Application.h"
 #include "Gui.h"
 #include "Shader.h"
+#include "Model.h"
+#include "Camera.h"
 
 Application::Application()
 {
