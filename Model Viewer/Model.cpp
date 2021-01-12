@@ -8,28 +8,6 @@
 #include "LoadTextureDDS.h"
 #include "ModelLoader.h"
 
-#define GLM_FORCE_PURE
-#include <glm/glm.hpp>
-#include <glm/gtc/matrix_transform.hpp>
-#include <glm/gtc/type_ptr.hpp>
-
-namespace
-{
-	glm::mat4 DXMatrixToGLM(const DirectX::XMMATRIX& dx_matrix)
-	{
-		DirectX::XMFLOAT4X4 m;
-		DirectX::XMStoreFloat4x4(&m, dx_matrix);
-
-		glm::mat4 mat(
-			m._11, m._21, m._31, m._41,
-			m._12, m._22, m._32, m._42,
-			m._13, m._23, m._33, m._43,
-			m._14, m._24, m._34, m._44);
-
-		return mat;
-	}
-}
-
 __declspec(align(16)) struct ShaderMaterial
 {
 	DirectX::XMFLOAT4 mDiffuse;
@@ -386,7 +364,7 @@ void GlModel::Update(float dt)
 		}
 
 		// Transform bone
-		std::vector<glm::mat4> tranforms;
+		std::vector<DirectX::XMMATRIX> tranforms;
 		for (size_t i = 0; i < m_MeshData->bones.size(); i++)
 		{
 			DirectX::XMMATRIX offset = m_MeshData->bones[i].offset;
@@ -394,36 +372,33 @@ void GlModel::Update(float dt)
 			DirectX::XMMATRIX matrix = DirectX::XMMatrixMultiply(offset, toRoot);
 			auto transform = DirectX::XMMatrixTranspose(matrix);
 
-			auto glm_matrix = DXMatrixToGLM(transform);
-			tranforms.push_back(glm_matrix);
+			tranforms.push_back(transform);
 		}
 
 		auto bone_pos = glGetUniformLocation(m_Shader->GetShaderId(), "gBoneTransform");
-		glUniformMatrix4fv(bone_pos, static_cast<GLsizei>(tranforms.size()), GL_TRUE, glm::value_ptr(tranforms[0]));
+		glUniformMatrix4fv(bone_pos, static_cast<GLsizei>(tranforms.size()), GL_FALSE, reinterpret_cast<float*>(&tranforms[0]));
 	}
 	else
 	{
-		auto glm_matrix = glm::mat4(1.0f);
+		auto matrix = DirectX::XMMatrixIdentity();
 		auto bone_pos = glGetUniformLocation(m_Shader->GetShaderId(), "gBoneTransform");
-		glUniformMatrix4fv(bone_pos, 1, GL_TRUE, glm::value_ptr(glm_matrix));
+		glUniformMatrix4fv(bone_pos, 1, GL_FALSE, reinterpret_cast<float*>(&matrix));
 	}
 }
 
 struct GlWorld
 {
-	glm::mat4 world;
-	glm::mat4 view;
-	glm::mat4 proj;
+	DirectX::XMMATRIX world;
+	DirectX::XMMATRIX view;
+	DirectX::XMMATRIX proj;
 };
 
 void GlModel::Render(Camera* camera)
 {
-	glm::mat4 world_matrix = glm::mat4(1.0f);
-
 	GlWorld world = {};
-	world.world = world_matrix;
-	world.proj = DXMatrixToGLM(camera->GetProjection());
-	world.view = DXMatrixToGLM(camera->GetView());
+	world.world = DirectX::XMMatrixIdentity();
+	world.proj = DirectX::XMMatrixTranspose(camera->GetProjection());
+	world.view = DirectX::XMMatrixTranspose(camera->GetView());
 
 	// Update shader transform
 	auto world_location = glGetUniformBlockIndex(m_Shader->GetShaderId(), "cWorld");
@@ -444,25 +419,24 @@ void GlModel::Render(Camera* camera)
 
 	// The light man
 	auto gDirectionLight = glGetUniformLocation(m_Shader->GetShaderId(), "gDirectionLight");
-	glm::vec4 direction_light(-0.8f, -0.5f, 0.5f, 1.0f);
-	glUniform4fv(gDirectionLight, 1, glm::value_ptr(direction_light));
+	DirectX::XMFLOAT4 direction_light(-0.8f, -0.5f, 0.5f, 1.0f);
+	glUniform4fv(gDirectionLight, 1, reinterpret_cast<float*>(&direction_light));
 
 	auto gDiffuseLight = glGetUniformLocation(m_Shader->GetShaderId(), "gDiffuseLight");
-	glm::vec4 diffuse_light(1.0f, 1.0f, 1.0f, 1.0f);
-	glUniform4fv(gDiffuseLight, 1, glm::value_ptr(diffuse_light));
+	DirectX::XMFLOAT4 diffuse_light(1.0f, 1.0f, 1.0f, 1.0f);
+	glUniform4fv(gDiffuseLight, 1, reinterpret_cast<float*>(&diffuse_light));
 
 	auto gAmbientLightLoc = glGetUniformLocation(m_Shader->GetShaderId(), "gAmbientLight");
-	glm::vec4 ambient_light(0.5f, 0.5f, 0.5f, 1.0f);
-	glUniform4fv(gAmbientLightLoc, 1, glm::value_ptr(ambient_light));
+	DirectX::XMFLOAT4 ambient_light(0.5f, 0.5f, 0.5f, 1.0f);
+	glUniform4fv(gAmbientLightLoc, 1, reinterpret_cast<float*>(&ambient_light));
 
 	auto gSpecularLight = glGetUniformLocation(m_Shader->GetShaderId(), "gSpecularLight");
-	glm::vec4 specular_light(0.1f, 0.1f, 0.1f, 32.0f);
-	glUniform4fv(gSpecularLight, 1, glm::value_ptr(specular_light));
+	DirectX::XMFLOAT4 specular_light(0.1f, 0.1f, 0.1f, 32.0f);
+	glUniform4fv(gSpecularLight, 1, reinterpret_cast<float*>(&specular_light));
 
 	auto gCameraPos = glGetUniformLocation(m_Shader->GetShaderId(), "gCameraPos");
 	auto cameraPos = camera->GetPosition();
-	auto camera_pos = glm::vec3(cameraPos.x, cameraPos.y, cameraPos.z);
-	glUniform4fv(gCameraPos, 1, glm::value_ptr(camera_pos));
+	glUniform4fv(gCameraPos, 1, reinterpret_cast<float*>(&cameraPos));
 
 	// Draw
 	glBindVertexArray(m_VertexArrayObject);
@@ -536,7 +510,7 @@ float AnimationClip::GetClipStartTime() const
 	float t = FLT_MAX;
 	for (UINT i = 0; i < BoneAnimations.size(); ++i)
 	{
-		t = std::min(t, BoneAnimations[i].GetStartTime());
+		t = std::min<float>(t, BoneAnimations[i].GetStartTime());
 	}
 
 	return t;
@@ -548,7 +522,7 @@ float AnimationClip::GetClipEndTime() const
 	float t = 0.0f;
 	for (UINT i = 0; i < BoneAnimations.size(); ++i)
 	{
-		t = std::max(t, BoneAnimations[i].GetEndTime());
+		t = std::max<float>(t, BoneAnimations[i].GetEndTime());
 	}
 
 	return t;
