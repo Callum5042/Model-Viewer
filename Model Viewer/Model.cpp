@@ -507,8 +507,8 @@ void BoneAnimation::Interpolate(float t, DirectX::XMMATRIX& M) const
 float AnimationClip::GetClipStartTime() const
 {
 	// Find smallest start time over all bones in this clip.
-	float t = FLT_MAX;
-	for (UINT i = 0; i < BoneAnimations.size(); ++i)
+	auto t = FLT_MAX;
+	for (auto i = 0u; i < BoneAnimations.size(); ++i)
 	{
 		t = std::min<float>(t, BoneAnimations[i].GetStartTime());
 	}
@@ -519,8 +519,8 @@ float AnimationClip::GetClipStartTime() const
 float AnimationClip::GetClipEndTime() const
 {
 	// Find largest end time over all bones in this clip.
-	float t = 0.0f;
-	for (UINT i = 0; i < BoneAnimations.size(); ++i)
+	auto t = 0.0f;
+	for (auto i = 0u; i < BoneAnimations.size(); ++i)
 	{
 		t = std::max<float>(t, BoneAnimations[i].GetEndTime());
 	}
@@ -530,7 +530,7 @@ float AnimationClip::GetClipEndTime() const
 
 void AnimationClip::Interpolate(float t, std::vector<DirectX::XMMATRIX>& boneTransforms) const
 {
-	for (UINT i = 0; i < BoneAnimations.size(); ++i)
+	for (auto i = 0u; i < BoneAnimations.size(); ++i)
 	{
 		BoneAnimations[i].Interpolate(t, boneTransforms[i]);
 	}
