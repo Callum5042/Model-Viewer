@@ -1,9 +1,8 @@
 #include "Pch.h"
 #include "Camera.h"
 #include <algorithm>
-using namespace DirectX;
 
-Camera::Camera(int width, int height, float fov) : m_WindowWidth(width), m_WindowHeight(height), m_FOV(fov)
+Camera::Camera(int width, int height, float fov) noexcept : m_WindowWidth(width), m_WindowHeight(height), m_FOV(fov)
 {
 	SetFov(fov);
 	Resize(width, height);
@@ -22,6 +21,10 @@ void Camera::Resize(int width, int height)
 
 void Camera::SetPitchAndYaw(float pitch, float yaw)
 {
+	// Cache pitch and yaw for when the radius is changed
+	m_Pitch = pitch;
+	m_Yaw = yaw;
+
 	// Convert degrees to radians
 	auto pitch_radians = DirectX::XMConvertToRadians(pitch);
 	auto yaw_radians = DirectX::XMConvertToRadians(yaw);
@@ -43,4 +46,10 @@ void Camera::SetFov(float fov)
 {
 	m_FOV = fov;
 	Resize(m_WindowWidth, m_WindowHeight);
+}
+
+void Camera::SetRadius(float radius)
+{
+	m_Radius = radius;
+	SetPitchAndYaw(m_Pitch, m_Yaw);
 }

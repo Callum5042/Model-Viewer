@@ -508,5 +508,4 @@ void Application::OnMouseWheel(const MouseData& mouse)
 
 	m_Radius += static_cast<int>(mouse.y);
 	m_DxCamera->SetRadius(m_Radius);
-	m_DxCamera->SetPitchAndYaw(m_Pitch, m_Yaw);
 }
