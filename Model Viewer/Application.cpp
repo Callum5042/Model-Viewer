@@ -6,7 +6,6 @@
 Application::Application()
 {
 	m_EventDispatcher = std::make_unique<EventDispatcher>();
-
 	m_ModelPath = "Data Files/Models/complex_post.glb";
 
 	auto startup = RenderAPI::OPENGL;
@@ -20,7 +19,7 @@ Application::Application()
 	}
 	else if (startup == RenderAPI::OPENGL)
 	{
-		m_Window = std::make_unique<OpenGLWindow>();
+		m_Window = std::make_unique<GLWindow>();
 		m_Renderer = std::make_unique<GlRenderer>();
 		m_Shader = std::make_unique<GlShader>();
 		m_Camera = std::make_unique<GlCamera>(800, 600, m_Fov);
@@ -341,7 +340,7 @@ void Application::ChangeRenderAPI()
 		}
 		else if (m_SwitchRenderAPI == RenderAPI::OPENGL)
 		{
-			m_Window = std::make_unique<OpenGLWindow>();
+			m_Window = std::make_unique<GLWindow>();
 			m_Renderer = std::make_unique<GlRenderer>();
 			m_Shader = std::make_unique<GlShader>();
 			m_Camera = std::make_unique<GlCamera>(window_width, window_height, m_Fov);

@@ -20,18 +20,18 @@ bool Gui::Init(Window* window, IRenderer* renderer)
         if (!ImGui_ImplSDL2_InitForD3D(window->GetSdlWindow()))
             return false;
 
-        DxRenderer* dxRenderer = reinterpret_cast<DxRenderer*>(renderer);
+        auto dxRenderer = reinterpret_cast<DxRenderer*>(renderer);
         if (!ImGui_ImplDX11_Init(dxRenderer->GetDevice().Get(), dxRenderer->GetDeviceContext().Get()))
             return false;
     }
     else if (renderer->GetRenderAPI() == RenderAPI::OPENGL)
     {
-        OpenGLWindow* glWindow = reinterpret_cast<OpenGLWindow*>(window);
+        auto glWindow = reinterpret_cast<GLWindow*>(window);
 
         if (!ImGui_ImplSDL2_InitForOpenGL(glWindow->GetSdlWindow(), glWindow->GetOpenGLContext()))
             return false;
 
-        GlRenderer* glRenderer = reinterpret_cast<GlRenderer*>(renderer);
+        auto glRenderer = reinterpret_cast<GlRenderer*>(renderer);
         if (!ImGui_ImplOpenGL3_Init())
             return false;
     }
