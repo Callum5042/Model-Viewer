@@ -216,7 +216,7 @@ void DxModel::Render(ICamera* camera)
 	cb.worldInverse = DirectX::XMMatrixInverse(nullptr, world);
 	cb.texture = DirectX::XMMatrixIdentity();
 
-	ShaderMaterial material;
+	ShaderMaterial material = {};
 	material.mDiffuse = DirectX::XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
 	material.mAmbient = DirectX::XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
 	material.mSpecular = DirectX::XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
@@ -402,14 +402,12 @@ void GlModel::Update(float dt)
 		}
 
 		auto bone_pos = glGetUniformLocation(m_Shader->GetShaderId(), "gBoneTransform");
-		glUniformMatrix4fv(bone_pos, tranforms.size(), GL_TRUE, glm::value_ptr(tranforms[0]));
+		glUniformMatrix4fv(bone_pos, static_cast<GLsizei>(tranforms.size()), GL_TRUE, glm::value_ptr(tranforms[0]));
 	}
 	else
 	{
 		auto glm_matrix = glm::mat4(1.0f);
-
-		std::string name = "gBoneTransform";
-		auto bone_pos = glGetUniformLocation(m_Shader->GetShaderId(), name.c_str());
+		auto bone_pos = glGetUniformLocation(m_Shader->GetShaderId(), "gBoneTransform");
 		glUniformMatrix4fv(bone_pos, 1, GL_TRUE, glm::value_ptr(glm_matrix));
 	}
 }
@@ -509,18 +507,20 @@ void BoneAnimation::Interpolate(float t, DirectX::XMMATRIX& M) const
 	{
 		for (UINT i = 0; i < Keyframes.size() - 1; ++i)
 		{
-			if (t >= Keyframes[i].TimePos && t <= Keyframes[i + 1].TimePos)
+			// Typedef to stop the compiler from moaning about arithmetic overflow 
+			typedef std::vector<Keyframe, std::allocator<Keyframe>>::size_type KeyframeSize;
+			if (t >= Keyframes[i].TimePos && t <= Keyframes[static_cast<KeyframeSize>(i) + 1].TimePos)
 			{
-				float lerpPercent = (t - Keyframes[i].TimePos) / (Keyframes[i + 1].TimePos - Keyframes[i].TimePos);
+				float lerpPercent = (t - Keyframes[i].TimePos) / (Keyframes[static_cast<KeyframeSize>(i) + 1].TimePos - Keyframes[i].TimePos);
 
 				DirectX::XMVECTOR s0 = XMLoadFloat3(&Keyframes[i].Scale);
-				DirectX::XMVECTOR s1 = XMLoadFloat3(&Keyframes[i + 1].Scale);
+				DirectX::XMVECTOR s1 = XMLoadFloat3(&Keyframes[static_cast<std::vector<Keyframe, std::allocator<Keyframe>>::size_type>(i) + 1].Scale);
 
 				DirectX::XMVECTOR p0 = XMLoadFloat3(&Keyframes[i].Translation);
-				DirectX::XMVECTOR p1 = XMLoadFloat3(&Keyframes[i + 1].Translation);
+				DirectX::XMVECTOR p1 = XMLoadFloat3(&Keyframes[static_cast<KeyframeSize>(i) + 1].Translation);
 
 				DirectX::XMVECTOR q0 = XMLoadFloat4(&Keyframes[i].RotationQuat);
-				DirectX::XMVECTOR q1 = XMLoadFloat4(&Keyframes[i + 1].RotationQuat);
+				DirectX::XMVECTOR q1 = XMLoadFloat4(&Keyframes[static_cast<KeyframeSize>(i) + 1].RotationQuat);
 
 				DirectX::XMVECTOR S = DirectX::XMVectorLerp(s0, s1, lerpPercent);
 				DirectX::XMVECTOR P = DirectX::XMVectorLerp(p0, p1, lerpPercent);
