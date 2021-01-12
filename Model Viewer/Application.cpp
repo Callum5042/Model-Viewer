@@ -16,7 +16,8 @@ Application::Application()
 		m_Window = std::make_unique<Window>();
 		m_Renderer = std::make_unique<DxRenderer>();
 		m_Shader = std::make_unique<DxShader>(m_Renderer.get());
-		m_Camera = std::make_unique<Camera>(800, 600, m_Fov);
+		m_DxCamera = std::make_unique<Camera>(800, 600, m_Fov);
+		m_GlCamera = std::make_unique<GlCamera>(800, 600, m_Fov);
 		m_Model = std::make_unique<DxModel>(m_Renderer.get());
 	}
 	else if (startup == RenderAPI::OPENGL)
@@ -24,7 +25,8 @@ Application::Application()
 		m_Window = std::make_unique<GLWindow>();
 		m_Renderer = std::make_unique<GlRenderer>();
 		m_Shader = std::make_unique<GlShader>();
-		m_Camera = std::make_unique<GlCamera>(800, 600, m_Fov);
+		m_DxCamera = std::make_unique<Camera>(800, 600, m_Fov);
+		m_GlCamera = std::make_unique<GlCamera>(800, 600, m_Fov);
 		m_Model = std::make_unique<GlModel>(m_Shader.get());
 	}
 }
@@ -132,8 +134,10 @@ bool Application::Init()
 	}
 
 	QueryHardwareInfo();
-	m_Camera->SetRadius(m_Radius);
-	m_Camera->SetPitchAndYaw(m_Pitch, m_Yaw);
+	m_DxCamera->SetRadius(m_Radius);
+	m_GlCamera->SetRadius(m_Radius);
+	m_DxCamera->SetPitchAndYaw(m_Pitch, m_Yaw);
+	m_GlCamera->SetPitchAndYaw(m_Pitch, m_Yaw);
 
 	// Check MSAA levels
 	m_AntiAliasingLevelsText.clear();
@@ -180,7 +184,7 @@ void Application::Render()
 {
 	m_Renderer->Clear();
 	m_Shader->Use();
-	m_Model->Render(m_Camera.get());
+	m_Model->Render(m_DxCamera.get(), m_GlCamera.get());
 	RenderGui();
 	m_Renderer->Present();
 }
@@ -329,7 +333,8 @@ void Application::ChangeRenderAPI()
 		m_Renderer.reset();
 		m_Model.reset();
 		m_Shader.reset();
-		m_Camera.reset();
+		m_DxCamera.reset();
+		m_GlCamera.reset();
 
 		// Switch Rendering API
 		if (m_SwitchRenderAPI == RenderAPI::DIRECTX)
@@ -337,7 +342,8 @@ void Application::ChangeRenderAPI()
 			m_Window = std::make_unique<Window>();
 			m_Renderer = std::make_unique<DxRenderer>();
 			m_Shader = std::make_unique<DxShader>(m_Renderer.get());
-			m_Camera = std::make_unique<Camera>(window_width, window_height, m_Fov);
+			m_DxCamera = std::make_unique<Camera>(800, 600, m_Fov);
+			m_GlCamera = std::make_unique<GlCamera>(800, 600, m_Fov);
 			m_Model = std::make_unique<DxModel>(m_Renderer.get());
 		}
 		else if (m_SwitchRenderAPI == RenderAPI::OPENGL)
@@ -345,7 +351,8 @@ void Application::ChangeRenderAPI()
 			m_Window = std::make_unique<GLWindow>();
 			m_Renderer = std::make_unique<GlRenderer>();
 			m_Shader = std::make_unique<GlShader>();
-			m_Camera = std::make_unique<GlCamera>(window_width, window_height, m_Fov);
+			m_DxCamera = std::make_unique<Camera>(800, 600, m_Fov);
+			m_GlCamera = std::make_unique<GlCamera>(800, 600, m_Fov);
 			m_Model = std::make_unique<GlModel>(m_Shader.get());
 		}
 
@@ -461,7 +468,8 @@ void Application::OnQuit()
 void Application::OnResize(int width, int height)
 {
 	m_Renderer->Resize(width, height);
-	m_Camera->Resize(width, height);
+	m_DxCamera->Resize(width, height);
+	m_GlCamera->Resize(width, height);
 }
 
 #pragma warning(push)
@@ -489,7 +497,8 @@ void Application::OnMouseMove(const MouseData& mouse)
 		m_Yaw = (m_Yaw < 0.0f ? 360.0f : m_Yaw);
 		m_Pitch = std::clamp<float>(m_Pitch, -89, 89);
 
-		m_Camera->SetPitchAndYaw(m_Pitch, m_Yaw);
+		m_GlCamera->SetPitchAndYaw(m_Pitch, m_Yaw);
+		m_DxCamera->SetPitchAndYaw(m_Pitch, m_Yaw);
 	}
 }
 
@@ -507,6 +516,9 @@ void Application::OnMouseWheel(const MouseData& mouse)
 	m_Fov = std::clamp<float>(m_Fov, 1.0f, 180.0f);
 
 	m_Radius += static_cast<int>(mouse.y);
-	m_Camera->SetRadius(m_Radius);
-	m_Camera->SetPitchAndYaw(m_Pitch, m_Yaw);
+	m_DxCamera->SetRadius(m_Radius);
+	m_DxCamera->SetPitchAndYaw(m_Pitch, m_Yaw);
+	
+	m_GlCamera->SetRadius(m_Radius);
+	m_GlCamera->SetPitchAndYaw(m_Pitch, m_Yaw);
 }

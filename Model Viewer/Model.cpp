@@ -26,7 +26,6 @@ namespace
 			m._13, m._23, m._33, m._43,
 			m._14, m._24, m._34, m._44);
 
-
 		return mat;
 	}
 }
@@ -190,7 +189,7 @@ void DxModel::Update(float dt)
 	m_Renderer->GetDeviceContext()->UpdateSubresource(m_BoneConstantBuffer.Get(), 0, nullptr, &bone_buffer, 0, 0);
 }
 
-void DxModel::Render(ICamera* camera)
+void DxModel::Render(Camera* camera, GlCamera* glCamera)
 {
 	auto dxCamera = reinterpret_cast<Camera*>(camera);
 
@@ -419,16 +418,21 @@ struct GlWorld
 	glm::mat4 proj;
 };
 
-void GlModel::Render(ICamera* camera)
+#include <glm/gtx/string_cast.hpp>
+std::ostream& operator<<(std::ostream& os, glm::mat4 m)
 {
-	auto glCamera = reinterpret_cast<GlCamera*>(camera);
+	os << glm::to_string(m);
+	return os;
+}
 
+void GlModel::Render(Camera* camera, GlCamera* glCamera)
+{
 	glm::mat4 world_matrix = glm::mat4(1.0f);
 
 	GlWorld world = {};
 	world.world = world_matrix;
-	world.view = glCamera->GetView();
-	world.proj = glCamera->GetProjection();
+	world.proj = DXMatrixToGLM(camera->GetProjection());
+	world.view = DXMatrixToGLM(camera->GetView());
 
 	// Update shader transform
 	auto world_location = glGetUniformBlockIndex(m_Shader->GetShaderId(), "cWorld");
@@ -465,8 +469,9 @@ void GlModel::Render(ICamera* camera)
 	glUniform4fv(gSpecularLight, 1, glm::value_ptr(specular_light));
 
 	auto gCameraPos = glGetUniformLocation(m_Shader->GetShaderId(), "gCameraPos");
-	auto cameraPos = glCamera->GetPosition();
-	glUniform4fv(gCameraPos, 1, glm::value_ptr(cameraPos));
+	auto cameraPos = camera->GetPosition();
+	auto camera_pos = glm::vec3(cameraPos.x, cameraPos.y, cameraPos.z);
+	glUniform4fv(gCameraPos, 1, glm::value_ptr(camera_pos));
 
 	// Draw
 	glBindVertexArray(m_VertexArrayObject);

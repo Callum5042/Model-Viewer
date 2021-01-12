@@ -10,6 +10,7 @@ class ICamera;
 class GlShader;
 class IShader;
 class GlCamera;
+class Camera;
 
 struct Position
 {
@@ -152,7 +153,7 @@ public:
 
 	virtual bool Load(const std::string& path) = 0;
 	virtual void Update(float dt) = 0;
-	virtual void Render(ICamera* camera) = 0;
+	virtual void Render(Camera* camera, GlCamera* glCamera) = 0;
 };
 
 class DxModel : public IModel
@@ -163,7 +164,7 @@ public:
 
 	bool Load(const std::string& path) override;
 	void Update(float dt) override;
-	void Render(ICamera* camera) override;
+	void Render(Camera* camera, GlCamera* glCamera) override;
 
 private:
 	DxRenderer* m_Renderer = nullptr;
@@ -193,7 +194,7 @@ public:
 
 	bool Load(const std::string& path) override;
 	void Update(float dt) override;
-	void Render(ICamera* camera) override;
+	void Render(Camera* camera, GlCamera* glCamera) override;
 
 private:
 	GlShader* m_Shader = nullptr;

@@ -38,7 +38,6 @@ public:
 
 	constexpr DirectX::XMFLOAT3 GetPosition() { return m_Position; }
 
-	// Inherited via ICamera
 	void SetPitchAndYaw(float pitch, float yaw) override;
 	virtual void SetFov(float fov) override;
 
