@@ -108,6 +108,9 @@ public:
 	// Apply index buffer
 	virtual void ApplyIndexBuffer(IndexBuffer* index_buffer) = 0;
 
+	// Set primitive topology
+	virtual void SetPrimitiveTopology() = 0;
+
 	// Rendering API
 	virtual RenderAPI GetRenderAPI() = 0;
 
@@ -162,6 +165,9 @@ public:
 
 	// Apply index buffer
 	virtual void ApplyIndexBuffer(IndexBuffer* index_buffer) override;
+
+	// Set primitive topology
+	virtual void SetPrimitiveTopology() override;
 
 	// Direct3D specific data
 	constexpr ComPtr<ID3D11Device>& GetDevice() { return m_Device; }
@@ -266,6 +272,9 @@ public:
 	// Apply index buffer
 	virtual void ApplyIndexBuffer(IndexBuffer* index_buffer) override;
 
+	// Set primitive topology
+	virtual void SetPrimitiveTopology() override;
+
 	RenderAPI GetRenderAPI() { return RenderAPI::OPENGL; }
 
 	const std::string& GetName() override { return m_DeviceName; }
@@ -312,4 +321,7 @@ private:
 
 	// Vsync
 	bool m_Vsync = false;
+
+	// Topology
+	int m_PrimitiveTopology = 0;
 };

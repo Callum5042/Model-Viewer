@@ -159,9 +159,6 @@ void DxModel::Render(Camera* camera)
 	// Bind the index buffer
 	m_Renderer->ApplyIndexBuffer(m_IndexBuffer.get());
 
-	// Set topology
-	m_Renderer->GetDeviceContext()->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-
 	// Set buffer
 	auto world = DirectX::XMMatrixIdentity();
 
@@ -206,6 +203,9 @@ void DxModel::Render(Camera* camera)
 	m_Renderer->GetDeviceContext()->VSSetConstantBuffers(1, 1, m_LightBuffer.GetAddressOf());
 	m_Renderer->GetDeviceContext()->PSSetConstantBuffers(1, 1, m_LightBuffer.GetAddressOf());
 	m_Renderer->GetDeviceContext()->UpdateSubresource(m_LightBuffer.Get(), 0, nullptr, &lightBuffer, 0, 0);
+
+	// Set topology
+	m_Renderer->SetPrimitiveTopology();
 
 	// Render geometry
 	for (auto& subset : m_MeshData->subsets)
@@ -378,6 +378,7 @@ void GlModel::Render(Camera* camera)
 
 	// Draw
 	m_Renderer->ApplyVertexBuffer(m_VertexBuffer.get());
+	m_Renderer->SetPrimitiveTopology();
 	for (auto& subset : m_MeshData->subsets)
 	{
 		glDrawElementsBaseVertex(GL_TRIANGLES, subset.totalIndex, GL_UNSIGNED_INT, nullptr, subset.baseVertex);

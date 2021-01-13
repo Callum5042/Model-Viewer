@@ -184,6 +184,11 @@ void DxRenderer::ApplyIndexBuffer(IndexBuffer* index_buffer)
 	m_DeviceContext->IASetIndexBuffer(buffer->buffer.Get(), DXGI_FORMAT_R32_UINT, 0);
 }
 
+void DxRenderer::SetPrimitiveTopology()
+{
+	m_DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+}
+
 void DxRenderer::ToggleWireframe(bool wireframe)
 {
 	if (wireframe)
@@ -588,6 +593,12 @@ std::unique_ptr<IndexBuffer> GlRenderer::CreateIndexBuffer(const std::vector<UIN
 void GlRenderer::ApplyIndexBuffer(IndexBuffer* index_buffer)
 {
 	// OpenGL doesn't require us to specific bind the index buffer, since it will bind it to the currently bound vertex array object
+}
+
+void GlRenderer::SetPrimitiveTopology()
+{
+	// Remember primitive topology as it's part of the OpenGL draw function
+	m_PrimitiveTopology = GL_TRIANGLES;
 }
 
 void GlRenderer::ToggleWireframe(bool wireframe)
