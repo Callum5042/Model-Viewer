@@ -210,7 +210,7 @@ void DxModel::Render(Camera* camera)
 	// Render geometry
 	for (auto& subset : m_MeshData->subsets)
 	{
-		m_Renderer->GetDeviceContext()->DrawIndexed(subset.totalIndex, subset.startIndex, subset.baseVertex);
+		m_Renderer->DrawIndex(subset.totalIndex, subset.startIndex, subset.baseVertex);
 	}
 }
 
@@ -381,7 +381,7 @@ void GlModel::Render(Camera* camera)
 	m_Renderer->SetPrimitiveTopology();
 	for (auto& subset : m_MeshData->subsets)
 	{
-		glDrawElementsBaseVertex(GL_TRIANGLES, subset.totalIndex, GL_UNSIGNED_INT, nullptr, subset.baseVertex);
+		m_Renderer->DrawIndex(subset.totalIndex, subset.startIndex, subset.baseVertex);
 	}
 }
 

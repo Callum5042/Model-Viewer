@@ -96,6 +96,9 @@ public:
 	// Present back buffer to screen
 	virtual void Present() = 0;
 
+	// Draw indices
+	virtual void DrawIndex(UINT total_indices, UINT start_index, UINT base_vertex) = 0;
+
 	// Create vertex buffer
 	virtual std::unique_ptr<VertexBuffer> CreateVertexBuffer(const std::vector<Vertex>& vertices) = 0;
 
@@ -153,6 +156,9 @@ public:
 
 	void Clear();
 	void Present();
+
+	// Draw indices
+	virtual void DrawIndex(UINT total_indices, UINT start_index, UINT base_vertex) override;
 
 	// Create vertex buffer
 	std::unique_ptr<VertexBuffer> CreateVertexBuffer(const std::vector<Vertex>& vertices) override;
@@ -259,6 +265,9 @@ public:
 
 	void Clear() override;
 	void Present() override;
+
+	// Draw indices
+	virtual void DrawIndex(UINT total_indices, UINT start_index, UINT base_vertex) override;
 
 	// Create vertex buffer
 	std::unique_ptr<VertexBuffer> CreateVertexBuffer(const std::vector<Vertex>& vertices) override;

@@ -136,6 +136,11 @@ void DxRenderer::Present()
 	}
 }
 
+void DxRenderer::DrawIndex(UINT total_indices, UINT start_index, UINT base_vertex)
+{
+	m_DeviceContext->DrawIndexed(total_indices, start_index, base_vertex);
+}
+
 std::unique_ptr<VertexBuffer> DxRenderer::CreateVertexBuffer(const std::vector<Vertex>& vertices)
 {
 	auto vertex_buffer = std::make_unique<DXVertexBuffer>();
@@ -553,6 +558,11 @@ void GlRenderer::Present()
 
 	SDL_GL_SetSwapInterval(static_cast<int>(m_Vsync));
 	SDL_GL_SwapWindow(m_Window->GetSdlWindow());
+}
+
+void GlRenderer::DrawIndex(UINT total_indices, UINT start_index, UINT base_vertex)
+{
+	glDrawElementsBaseVertex(m_PrimitiveTopology, total_indices, GL_UNSIGNED_INT, nullptr, base_vertex);
 }
 
 std::unique_ptr<VertexBuffer> GlRenderer::CreateVertexBuffer(const std::vector<Vertex>& vertices)
