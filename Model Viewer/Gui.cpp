@@ -20,7 +20,7 @@ bool Gui::Init(Window* window, IRenderer* renderer)
         if (!ImGui_ImplSDL2_InitForD3D(window->GetSdlWindow()))
             return false;
 
-        auto dxRenderer = reinterpret_cast<DxRenderer*>(renderer);
+        auto dxRenderer = reinterpret_cast<DXRenderer*>(renderer);
         if (!ImGui_ImplDX11_Init(dxRenderer->GetDevice().Get(), dxRenderer->GetDeviceContext().Get()))
             return false;
     }
@@ -31,7 +31,7 @@ bool Gui::Init(Window* window, IRenderer* renderer)
         if (!ImGui_ImplSDL2_InitForOpenGL(glWindow->GetSdlWindow(), glWindow->GetOpenGLContext()))
             return false;
 
-        auto glRenderer = reinterpret_cast<GlRenderer*>(renderer);
+        auto glRenderer = reinterpret_cast<GLRenderer*>(renderer);
         if (!ImGui_ImplOpenGL3_Init())
             return false;
     }

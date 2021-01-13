@@ -24,7 +24,7 @@ public:
 	void Use() override;
 
 private:
-	DxRenderer* m_Renderer = nullptr;
+	DXRenderer* m_Renderer = nullptr;
 
 	ComPtr<ID3D11InputLayout> m_VertexLayout = nullptr;
 	ComPtr<ID3D11VertexShader> m_VertexShader = nullptr;

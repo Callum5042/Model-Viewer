@@ -13,7 +13,7 @@ HWND DX::GetHwnd(Window* window)
 	return wmInfo.info.win.window;
 }
 
-DxRenderer::~DxRenderer()
+DXRenderer::~DXRenderer()
 {
 #ifdef _DEBUG
 	ComPtr<ID3D11Debug> debug = nullptr;
@@ -22,7 +22,7 @@ DxRenderer::~DxRenderer()
 #endif
 }
 
-bool DxRenderer::Create(Window* window)
+bool DXRenderer::Create(Window* window)
 {
 	auto width = window->GetWidth();
 	auto height = window->GetHeight();
@@ -82,7 +82,7 @@ bool DxRenderer::Create(Window* window)
 	return true;
 }
 
-void DxRenderer::Resize(int width, int height)
+void DXRenderer::Resize(int width, int height)
 {
 	m_RenderTarget.ReleaseAndGetAddressOf();
 	m_DepthStencilView.ReleaseAndGetAddressOf();
@@ -98,7 +98,7 @@ void DxRenderer::Resize(int width, int height)
 	SetViewport(width, height);
 }
 
-void DxRenderer::Clear()
+void DXRenderer::Clear()
 {
 	if (m_UseMsaa)
 	{
@@ -117,7 +117,7 @@ void DxRenderer::Clear()
 	m_DeviceContext->PSSetSamplers(1, 1, m_ShadowSampler.GetAddressOf());
 }
 
-void DxRenderer::Present()
+void DXRenderer::Present()
 {
 	if (m_UseMsaa)
 	{
@@ -138,12 +138,12 @@ void DxRenderer::Present()
 	}
 }
 
-void DxRenderer::DrawIndex(UINT total_indices, UINT start_index, UINT base_vertex)
+void DXRenderer::DrawIndex(UINT total_indices, UINT start_index, UINT base_vertex)
 {
 	m_DeviceContext->DrawIndexed(total_indices, start_index, base_vertex);
 }
 
-std::unique_ptr<VertexBuffer> DxRenderer::CreateVertexBuffer(const std::vector<Vertex>& vertices)
+std::unique_ptr<VertexBuffer> DXRenderer::CreateVertexBuffer(const std::vector<Vertex>& vertices)
 {
 	auto vertex_buffer = std::make_unique<DXVertexBuffer>();
 
@@ -159,7 +159,7 @@ std::unique_ptr<VertexBuffer> DxRenderer::CreateVertexBuffer(const std::vector<V
 	return std::move(vertex_buffer);
 }
 
-void DxRenderer::ApplyVertexBuffer(VertexBuffer* buffer)
+void DXRenderer::ApplyVertexBuffer(VertexBuffer* buffer)
 {
 	UINT stride = sizeof(Vertex);
 	UINT offset = 0;
@@ -168,7 +168,7 @@ void DxRenderer::ApplyVertexBuffer(VertexBuffer* buffer)
 	m_DeviceContext->IASetVertexBuffers(0, 1, vertex_buffer->buffer.GetAddressOf(), &stride, &offset);
 }
 
-std::unique_ptr<IndexBuffer> DxRenderer::CreateIndexBuffer(const std::vector<UINT>& indices)
+std::unique_ptr<IndexBuffer> DXRenderer::CreateIndexBuffer(const std::vector<UINT>& indices)
 {
 	auto index_buffer = std::make_unique<DXIndexBuffer>();
 
@@ -185,18 +185,18 @@ std::unique_ptr<IndexBuffer> DxRenderer::CreateIndexBuffer(const std::vector<UIN
 	return std::move(index_buffer);
 }
 
-void DxRenderer::ApplyIndexBuffer(IndexBuffer* index_buffer)
+void DXRenderer::ApplyIndexBuffer(IndexBuffer* index_buffer)
 {
 	auto buffer = reinterpret_cast<DXIndexBuffer*>(index_buffer);
 	m_DeviceContext->IASetIndexBuffer(buffer->buffer.Get(), DXGI_FORMAT_R32_UINT, 0);
 }
 
-void DxRenderer::SetPrimitiveTopology()
+void DXRenderer::SetPrimitiveTopology()
 {
 	m_DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 }
 
-std::unique_ptr<Texture2D> DxRenderer::CreateTexture2D(const std::string& path)
+std::unique_ptr<Texture2D> DXRenderer::CreateTexture2D(const std::string& path)
 {
 	auto texture = std::make_unique<DXTexture2D>();
 
@@ -209,13 +209,13 @@ std::unique_ptr<Texture2D> DxRenderer::CreateTexture2D(const std::string& path)
 	return std::move(texture);
 }
 
-void DxRenderer::ApplyTexture2D(UINT slot, Texture2D* resource)
+void DXRenderer::ApplyTexture2D(UINT slot, Texture2D* resource)
 {
 	auto res = reinterpret_cast<DXTexture2D*>(resource);
 	m_DeviceContext->PSSetShaderResources(slot, 1, res->resource.GetAddressOf());
 }
 
-void DxRenderer::ToggleWireframe(bool wireframe)
+void DXRenderer::ToggleWireframe(bool wireframe)
 {
 	if (wireframe)
 	{
@@ -227,7 +227,7 @@ void DxRenderer::ToggleWireframe(bool wireframe)
 	}
 }
 
-void DxRenderer::QueryHardwareInfo()
+void DXRenderer::QueryHardwareInfo()
 {
 	std::vector<ComPtr<IDXGIAdapter>> adapters;
 	ComPtr<IDXGIAdapter> adapter = nullptr;
@@ -278,7 +278,7 @@ void DxRenderer::QueryHardwareInfo()
 	}
 }
 
-bool DxRenderer::CreateDevice()
+bool DXRenderer::CreateDevice()
 {
 	D3D_FEATURE_LEVEL featureLevels[] =
 	{
@@ -299,7 +299,7 @@ bool DxRenderer::CreateDevice()
 	return true;
 }
 
-bool DxRenderer::CreateSwapChain(Window* window, int width, int height)
+bool DXRenderer::CreateSwapChain(Window* window, int width, int height)
 {
 	auto hwnd = DX::GetHwnd(window);
 
@@ -355,7 +355,7 @@ bool DxRenderer::CreateSwapChain(Window* window, int width, int height)
 	return true;
 }
 
-bool DxRenderer::CreateRenderTargetAndDepthStencilView(int width, int height)
+bool DXRenderer::CreateRenderTargetAndDepthStencilView(int width, int height)
 {
 	// Render target view
 	DX::Check(m_SwapChain->GetBuffer(0, __uuidof(ID3D11Resource), reinterpret_cast<void**>(m_RenderTarget.GetAddressOf())));
@@ -381,7 +381,7 @@ bool DxRenderer::CreateRenderTargetAndDepthStencilView(int width, int height)
 	return true;
 }
 
-void DxRenderer::SetViewport(int width, int height)
+void DXRenderer::SetViewport(int width, int height)
 {
 	m_Viewport.Width = static_cast<float>(width);
 	m_Viewport.Height = static_cast<float>(height);
@@ -393,7 +393,7 @@ void DxRenderer::SetViewport(int width, int height)
 	m_DeviceContext->RSSetViewports(1, &m_Viewport);
 }
 
-bool DxRenderer::CreateAntiAliasingTarget(int msaa_level, int window_width, int window_height)
+bool DXRenderer::CreateAntiAliasingTarget(int msaa_level, int window_width, int window_height)
 {
 	m_CurrentMsaaLevel = msaa_level;
 	if (msaa_level == 0)
@@ -426,12 +426,12 @@ bool DxRenderer::CreateAntiAliasingTarget(int msaa_level, int window_width, int 
 	return true;
 }
 
-int DxRenderer::GetMaxAnisotropicFilterLevel()
+int DXRenderer::GetMaxAnisotropicFilterLevel()
 {
 	return D3D11_REQ_MAXANISOTROPY;
 }
 
-void DxRenderer::SetAnisotropicFilter(int level)
+void DXRenderer::SetAnisotropicFilter(int level)
 {
 	D3D11_SAMPLER_DESC samplerDesc = {};
 	samplerDesc.Filter = D3D11_FILTER_ANISOTROPIC;
@@ -447,12 +447,12 @@ void DxRenderer::SetAnisotropicFilter(int level)
 	DX::Check(m_Device->CreateSamplerState(&samplerDesc, &m_AnisotropicSampler));
 }
 
-void DxRenderer::SetVync(bool enable)
+void DXRenderer::SetVync(bool enable)
 {
 	m_Vsync = enable;
 }
 
-void DxRenderer::CreateRasterStateSolid()
+void DXRenderer::CreateRasterStateSolid()
 {
 	D3D11_RASTERIZER_DESC rasterizerState = {};
 	rasterizerState.AntialiasedLineEnable = true;
@@ -469,7 +469,7 @@ void DxRenderer::CreateRasterStateSolid()
 	DX::Check(m_Device->CreateRasterizerState(&rasterizerState, m_RasterStateSolid.ReleaseAndGetAddressOf()));
 }
 
-void DxRenderer::CreateRasterStateWireframe()
+void DXRenderer::CreateRasterStateWireframe()
 {
 	D3D11_RASTERIZER_DESC rasterizerState = {};
 	rasterizerState.AntialiasedLineEnable = true;
@@ -486,7 +486,7 @@ void DxRenderer::CreateRasterStateWireframe()
 	DX::Check(m_Device->CreateRasterizerState(&rasterizerState, m_RasterStateWireframe.ReleaseAndGetAddressOf()));
 }
 
-GlRenderer::~GlRenderer()
+GLRenderer::~GLRenderer()
 {
 	glDeleteSamplers(1, &m_TextureSampler);
 	glDeleteTextures(1, &m_BackBuffer);
@@ -494,7 +494,7 @@ GlRenderer::~GlRenderer()
 	glDeleteRenderbuffers(1, &m_DepthBuffer);
 }
 
-bool GlRenderer::Create(Window* window)
+bool GLRenderer::Create(Window* window)
 {
 	m_Window = window;
 
@@ -530,13 +530,13 @@ bool GlRenderer::Create(Window* window)
 	return true;
 }
 
-void GlRenderer::Resize(int width, int height)
+void GLRenderer::Resize(int width, int height)
 {
 	CreateAntiAliasingTarget(m_CurrentMsaaLevel, width, height);
 	glViewport(0, 0, width, height);
 }
 
-void GlRenderer::Clear()
+void GLRenderer::Clear()
 {
 	static const GLfloat blue[] = { 0.274509817f, 0.509803951f, 0.705882370f, 1.000000000f };
 	static GLfloat depth = 1.0f;
@@ -559,7 +559,7 @@ void GlRenderer::Clear()
 	glBindSampler(1, m_TextureSampler);
 }
 
-void GlRenderer::Present()
+void GLRenderer::Present()
 {
 	if (m_UseMsaa)
 	{
@@ -576,12 +576,12 @@ void GlRenderer::Present()
 	SDL_GL_SwapWindow(m_Window->GetSdlWindow());
 }
 
-void GlRenderer::DrawIndex(UINT total_indices, UINT start_index, UINT base_vertex)
+void GLRenderer::DrawIndex(UINT total_indices, UINT start_index, UINT base_vertex)
 {
 	glDrawElementsBaseVertex(m_PrimitiveTopology, total_indices, GL_UNSIGNED_INT, nullptr, base_vertex);
 }
 
-std::unique_ptr<VertexBuffer> GlRenderer::CreateVertexBuffer(const std::vector<Vertex>& vertices)
+std::unique_ptr<VertexBuffer> GLRenderer::CreateVertexBuffer(const std::vector<Vertex>& vertices)
 {
 	auto vertex_buffer = std::make_unique<GLVertexBuffer>();
 
@@ -599,13 +599,13 @@ std::unique_ptr<VertexBuffer> GlRenderer::CreateVertexBuffer(const std::vector<V
 	return std::move(vertex_buffer);
 }
 
-void GlRenderer::ApplyVertexBuffer(VertexBuffer* vertex_buffer)
+void GLRenderer::ApplyVertexBuffer(VertexBuffer* vertex_buffer)
 {
 	auto buffer = reinterpret_cast<GLVertexBuffer*>(vertex_buffer);
 	glBindVertexArray(buffer->vertexArrayObject);
 }
 
-std::unique_ptr<IndexBuffer> GlRenderer::CreateIndexBuffer(const std::vector<UINT>& indices)
+std::unique_ptr<IndexBuffer> GLRenderer::CreateIndexBuffer(const std::vector<UINT>& indices)
 {
 	auto buffer = std::make_unique<GLIndexBuffer>();
 
@@ -616,18 +616,18 @@ std::unique_ptr<IndexBuffer> GlRenderer::CreateIndexBuffer(const std::vector<UIN
 	return std::move(buffer);
 }
 
-void GlRenderer::ApplyIndexBuffer(IndexBuffer* index_buffer)
+void GLRenderer::ApplyIndexBuffer(IndexBuffer* index_buffer)
 {
 	// OpenGL doesn't require us to specific bind the index buffer, since it will bind it to the currently bound vertex array object
 }
 
-void GlRenderer::SetPrimitiveTopology()
+void GLRenderer::SetPrimitiveTopology()
 {
 	// Remember primitive topology as it's part of the OpenGL draw function
 	m_PrimitiveTopology = GL_TRIANGLES;
 }
 
-std::unique_ptr<Texture2D> GlRenderer::CreateTexture2D(const std::string& path)
+std::unique_ptr<Texture2D> GLRenderer::CreateTexture2D(const std::string& path)
 {
 	auto resource = std::make_unique<GLTexture2D>();
 
@@ -646,13 +646,13 @@ std::unique_ptr<Texture2D> GlRenderer::CreateTexture2D(const std::string& path)
 	return std::move(resource);
 }
 
-void GlRenderer::ApplyTexture2D(UINT slot, Texture2D* resource)
+void GLRenderer::ApplyTexture2D(UINT slot, Texture2D* resource)
 {
 	auto res = reinterpret_cast<GLTexture2D*>(resource);
 	glBindTextureUnit(slot, res->resource);
 }
 
-void GlRenderer::ToggleWireframe(bool wireframe)
+void GLRenderer::ToggleWireframe(bool wireframe)
 {
 	if (wireframe)
 	{
@@ -664,7 +664,7 @@ void GlRenderer::ToggleWireframe(bool wireframe)
 	}
 }
 
-void GlRenderer::QueryHardwareInfo()
+void GLRenderer::QueryHardwareInfo()
 {
 	std::string vendor = (char*)glGetString(GL_VENDOR);
 	m_DeviceName = (char*)glGetString(GL_RENDERER);
@@ -685,7 +685,7 @@ void GlRenderer::QueryHardwareInfo()
 	}
 }
 
-bool GlRenderer::CreateAntiAliasingTarget(int msaa_level, int window_width, int window_height)
+bool GLRenderer::CreateAntiAliasingTarget(int msaa_level, int window_width, int window_height)
 {
 	glDeleteRenderbuffers(1, &m_DepthBuffer);
 	glDeleteTextures(1, &m_BackBuffer);
@@ -751,14 +751,14 @@ bool GlRenderer::CreateAntiAliasingTarget(int msaa_level, int window_width, int 
 	return true;
 }
 
-int GlRenderer::GetMaxAnisotropicFilterLevel()
+int GLRenderer::GetMaxAnisotropicFilterLevel()
 {
 	auto max_anisotrophic = 0;
 	glGetIntegerv(GL_MAX_TEXTURE_MAX_ANISOTROPY, &max_anisotrophic);
 	return max_anisotrophic;
 }
 
-void GlRenderer::SetAnisotropicFilter(int level)
+void GLRenderer::SetAnisotropicFilter(int level)
 {
 	if (level == 0)
 	{
@@ -773,7 +773,7 @@ void GlRenderer::SetAnisotropicFilter(int level)
 	glSamplerParameterf(m_TextureSampler, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 }
 
-void GlRenderer::SetVync(bool enable)
+void GLRenderer::SetVync(bool enable)
 {
 	m_Vsync = enable;
 }

@@ -6,7 +6,7 @@
 
 DxShader::DxShader(IRenderer* renderer)
 {
-	m_Renderer = reinterpret_cast<DxRenderer*>(renderer);
+	m_Renderer = reinterpret_cast<DXRenderer*>(renderer);
 }
 
 bool DxShader::Create()

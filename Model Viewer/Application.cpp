@@ -15,7 +15,7 @@ Application::Application()
 	if (startup == RenderAPI::DIRECTX)
 	{
 		m_Window = std::make_unique<Window>();
-		m_Renderer = std::make_unique<DxRenderer>();
+		m_Renderer = std::make_unique<DXRenderer>();
 		m_Shader = std::make_unique<DxShader>(m_Renderer.get());
 		m_DxCamera = std::make_unique<Camera>(800, 600, m_Fov);
 		m_Model = std::make_unique<DxModel>(m_Renderer.get());
@@ -23,7 +23,7 @@ Application::Application()
 	else if (startup == RenderAPI::OPENGL)
 	{
 		m_Window = std::make_unique<GLWindow>();
-		m_Renderer = std::make_unique<GlRenderer>();
+		m_Renderer = std::make_unique<GLRenderer>();
 		m_Shader = std::make_unique<GlShader>();
 		m_DxCamera = std::make_unique<Camera>(800, 600, m_Fov);
 		m_Model = std::make_unique<GlModel>(m_Renderer.get(), m_Shader.get());
@@ -336,7 +336,7 @@ void Application::ChangeRenderAPI()
 		if (m_SwitchRenderAPI == RenderAPI::DIRECTX)
 		{
 			m_Window = std::make_unique<Window>();
-			m_Renderer = std::make_unique<DxRenderer>();
+			m_Renderer = std::make_unique<DXRenderer>();
 			m_Shader = std::make_unique<DxShader>(m_Renderer.get());
 			m_DxCamera = std::make_unique<Camera>(800, 600, m_Fov);
 			m_Model = std::make_unique<DxModel>(m_Renderer.get());
@@ -344,7 +344,7 @@ void Application::ChangeRenderAPI()
 		else if (m_SwitchRenderAPI == RenderAPI::OPENGL)
 		{
 			m_Window = std::make_unique<GLWindow>();
-			m_Renderer = std::make_unique<GlRenderer>();
+			m_Renderer = std::make_unique<GLRenderer>();
 			m_Shader = std::make_unique<GlShader>();
 			m_DxCamera = std::make_unique<Camera>(800, 600, m_Fov);
 			m_Model = std::make_unique<GlModel>(m_Renderer.get(), m_Shader.get());

@@ -49,7 +49,7 @@ _declspec(align(16)) struct BoneBuffer
 
 DxModel::DxModel(IRenderer* renderer)
 {
-	m_Renderer = reinterpret_cast<DxRenderer*>(renderer);
+	m_Renderer = reinterpret_cast<DXRenderer*>(renderer);
 }
 
 DxModel::~DxModel()

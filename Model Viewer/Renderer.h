@@ -174,11 +174,11 @@ public:
 	virtual void SetVync(bool enable) = 0;
 };
 
-class DxRenderer : public IRenderer
+class DXRenderer : public IRenderer
 {
 public:
-	DxRenderer() = default;
-	virtual ~DxRenderer();
+	DXRenderer() = default;
+	virtual ~DXRenderer();
 
 	bool Create(Window* window);
 	void Resize(int width, int height);
@@ -289,11 +289,11 @@ private:
 	bool m_Vsync = false;
 };
 
-class GlRenderer : public IRenderer
+class GLRenderer : public IRenderer
 {
 public:
-	GlRenderer() = default;
-	virtual ~GlRenderer();
+	GLRenderer() = default;
+	virtual ~GLRenderer();
 
 	bool Create(Window* window) override;
 	void Resize(int width, int height) override;

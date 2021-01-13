@@ -4,7 +4,7 @@
 #include <map>
 #include <DirectXMath.h>
 class IRenderer;
-class DxRenderer;
+class DXRenderer;
 class Camera;
 class ICamera;
 class GlShader;
@@ -171,7 +171,7 @@ public:
 	void Render(Camera* camera) override;
 
 private:
-	DxRenderer* m_Renderer = nullptr;
+	DXRenderer* m_Renderer = nullptr;
 	std::unique_ptr<MeshData> m_MeshData = nullptr;
 
 	// Model buffers
