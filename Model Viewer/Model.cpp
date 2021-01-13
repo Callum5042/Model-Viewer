@@ -65,15 +65,7 @@ bool DxModel::Load(const std::string& path)
 	}
 
 	// Create vertex buffer
-	D3D11_BUFFER_DESC vbd = {};
-	vbd.Usage = D3D11_USAGE_DEFAULT;
-	vbd.ByteWidth = static_cast<UINT>(sizeof(Vertex) * m_MeshData->vertices.size());
-	vbd.BindFlags = D3D11_BIND_VERTEX_BUFFER;
-
-	D3D11_SUBRESOURCE_DATA vInitData = {};
-	vInitData.pSysMem = &m_MeshData->vertices[0];
-
-	DX::ThrowIfFailed(m_Renderer->GetDevice()->CreateBuffer(&vbd, &vInitData, m_VertexBuffer.ReleaseAndGetAddressOf()));
+	m_VertexBuffer = m_Renderer->CreateVertexBuffer(m_MeshData->vertices);
 
 	// Create index buffer
 	D3D11_BUFFER_DESC ibd = {};
@@ -82,9 +74,9 @@ bool DxModel::Load(const std::string& path)
 	ibd.BindFlags = D3D11_BIND_INDEX_BUFFER;
 
 	D3D11_SUBRESOURCE_DATA iInitData = {};
-	iInitData.pSysMem = &m_MeshData->indices[0];
+	iInitData.pSysMem = m_MeshData->indices.data();
 
-	DX::ThrowIfFailed(m_Renderer->GetDevice()->CreateBuffer(&ibd, &iInitData, m_IndexBuffer.ReleaseAndGetAddressOf()));
+	DX::Check(m_Renderer->GetDevice()->CreateBuffer(&ibd, &iInitData, m_IndexBuffer.ReleaseAndGetAddressOf()));
 
 	// Constant buffer
 	D3D11_BUFFER_DESC bd = {};
@@ -92,13 +84,13 @@ bool DxModel::Load(const std::string& path)
 	bd.ByteWidth = sizeof(ConstantBuffer);
 	bd.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
 
-	DX::ThrowIfFailed(m_Renderer->GetDevice()->CreateBuffer(&bd, nullptr, m_ConstantBuffer.ReleaseAndGetAddressOf()));
+	DX::Check(m_Renderer->GetDevice()->CreateBuffer(&bd, nullptr, m_ConstantBuffer.ReleaseAndGetAddressOf()));
 
 	// Load mr texture
 	ComPtr<ID3D11Resource> resource = nullptr;
-	DX::ThrowIfFailed(DirectX::CreateDDSTextureFromFile(m_Renderer->GetDevice().Get(), L"Data Files\\Textures\\crate_diffuse.dds", resource.ReleaseAndGetAddressOf(), m_DiffuseTexture.ReleaseAndGetAddressOf()));
+	DX::Check(DirectX::CreateDDSTextureFromFile(m_Renderer->GetDevice().Get(), L"Data Files\\Textures\\crate_diffuse.dds", resource.ReleaseAndGetAddressOf(), m_DiffuseTexture.ReleaseAndGetAddressOf()));
 
-	DX::ThrowIfFailed(DirectX::CreateDDSTextureFromFile(m_Renderer->GetDevice().Get(), L"Data Files\\Textures\\crate_normal.dds", resource.ReleaseAndGetAddressOf(), m_NormalTexture.ReleaseAndGetAddressOf()));
+	DX::Check(DirectX::CreateDDSTextureFromFile(m_Renderer->GetDevice().Get(), L"Data Files\\Textures\\crate_normal.dds", resource.ReleaseAndGetAddressOf(), m_NormalTexture.ReleaseAndGetAddressOf()));
 
 	// Mr sun
 	D3D11_BUFFER_DESC lbd = {};
@@ -106,7 +98,7 @@ bool DxModel::Load(const std::string& path)
 	lbd.ByteWidth = sizeof(LightBuffer);
 	lbd.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
 
-	DX::ThrowIfFailed(m_Renderer->GetDevice()->CreateBuffer(&lbd, nullptr, m_LightBuffer.GetAddressOf()));
+	DX::Check(m_Renderer->GetDevice()->CreateBuffer(&lbd, nullptr, m_LightBuffer.GetAddressOf()));
 
 	// Mr bone buffer
 	D3D11_BUFFER_DESC bone_bd = {};
@@ -114,7 +106,7 @@ bool DxModel::Load(const std::string& path)
 	bone_bd.ByteWidth = sizeof(BoneBuffer);
 	bone_bd.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
 
-	DX::ThrowIfFailed(m_Renderer->GetDevice()->CreateBuffer(&bone_bd, nullptr, m_BoneConstantBuffer.ReleaseAndGetAddressOf()));
+	DX::Check(m_Renderer->GetDevice()->CreateBuffer(&bone_bd, nullptr, m_BoneConstantBuffer.ReleaseAndGetAddressOf()));
 
 	return true;
 }
@@ -170,10 +162,7 @@ void DxModel::Update(float dt)
 void DxModel::Render(Camera* camera)
 {
 	// Bind the vertex buffer
-	UINT stride = sizeof(Vertex);
-	UINT offset = 0;
-
-	m_Renderer->GetDeviceContext()->IASetVertexBuffers(0, 1, m_VertexBuffer.GetAddressOf(), &stride, &offset);
+	m_Renderer->ApplyVertexBuffer(m_VertexBuffer.get());
 
 	// Bind the index buffer
 	m_Renderer->GetDeviceContext()->IASetIndexBuffer(m_IndexBuffer.Get(), DXGI_FORMAT_R32_UINT, 0);
@@ -233,8 +222,9 @@ void DxModel::Render(Camera* camera)
 	}
 }
 
-GlModel::GlModel(IShader* shader)
+GlModel::GlModel(IRenderer* renderer, IShader* shader)
 {
+	m_Renderer = renderer;
 	m_Shader = reinterpret_cast<GlShader*>(shader);
 }
 
@@ -242,8 +232,6 @@ GlModel::~GlModel()
 {
 	glDeleteTextures(1, &m_NormalTextureId);
 	glDeleteTextures(1, &m_DiffuseTextureId);
-	glDeleteVertexArrays(1, &m_VertexArrayObject);
-	glDeleteBuffers(1, &m_VertexBuffer);
 	glDeleteBuffers(1, &m_IndexBuffer);
 }
 
@@ -256,51 +244,12 @@ bool GlModel::Load(const std::string& path)
 	}
 
 	// Vertex Array Object
-	glCreateVertexArrays(1, &m_VertexArrayObject);
-	glBindVertexArray(m_VertexArrayObject);
-
-	// Vertex Buffer
-	glCreateBuffers(1, &m_VertexBuffer);
-	glBindBuffer(GL_ARRAY_BUFFER, m_VertexBuffer);
-
-	glNamedBufferStorage(m_VertexBuffer, sizeof(Vertex) * m_MeshData->vertices.size(), nullptr, GL_DYNAMIC_STORAGE_BIT);
-	glNamedBufferSubData(m_VertexBuffer, 0, sizeof(Vertex) * m_MeshData->vertices.size(), &m_MeshData->vertices[0]);
+	m_VertexBuffer = m_Renderer->CreateVertexBuffer(m_MeshData->vertices);
 
 	// Index Buffer
 	glCreateBuffers(1, &m_IndexBuffer);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_IndexBuffer);
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(GLuint) * m_MeshData->indices.size(), &m_MeshData->indices[0], GL_STATIC_DRAW);
-
-	// Something pipeline
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), 0);
-	glEnableVertexAttribArray(0);
-
-	glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, sizeof(Vertex), (GLvoid*)(12));
-	glEnableVertexAttribArray(1);
-
-	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (GLvoid*)(28));
-	glEnableVertexAttribArray(2);
-
-	glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (GLvoid*)(36));
-	glEnableVertexAttribArray(3);
-
-	glVertexAttribPointer(4, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (GLvoid*)(48));
-	glEnableVertexAttribArray(4);
-
-	glVertexAttribPointer(5, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (GLvoid*)(60));
-	glEnableVertexAttribArray(5);
-
-	glVertexAttribPointer(6, 4, GL_FLOAT, GL_FALSE, sizeof(Vertex), (GLvoid*)(72));
-	glEnableVertexAttribArray(6);
-
-	glVertexAttribIPointer(7, 4, GL_INT, sizeof(Vertex), (GLvoid*)(88));
-	glEnableVertexAttribArray(7);
-
-	GLenum err = glGetError();
-	if (err != GL_NO_ERROR)
-	{
-		std::cout << "Error 123: " << err;
-	}
 
 	// Load diffuse texture
 	Rove::LoadDDS diffuse_dds;
@@ -439,8 +388,11 @@ void GlModel::Render(Camera* camera)
 	glUniform4fv(gCameraPos, 1, reinterpret_cast<float*>(&cameraPos));
 
 	// Draw
-	glBindVertexArray(m_VertexArrayObject);
-	glDrawElements(GL_TRIANGLES, static_cast<GLsizei>(m_MeshData->indices.size()), GL_UNSIGNED_INT, nullptr);
+	m_Renderer->ApplyVertexBuffer(m_VertexBuffer.get());
+	for (auto& subset : m_MeshData->subsets)
+	{
+		glDrawElementsBaseVertex(GL_TRIANGLES, subset.totalIndex, GL_UNSIGNED_INT, nullptr, subset.baseVertex);
+	}
 }
 
 float BoneAnimation::GetStartTime() const
@@ -507,10 +459,10 @@ void BoneAnimation::Interpolate(float t, DirectX::XMMATRIX& M) const
 float AnimationClip::GetClipStartTime() const
 {
 	// Find smallest start time over all bones in this clip.
-	auto t = FLT_MAX;
+	auto t = std::numeric_limits<float>::max();
 	for (auto i = 0u; i < BoneAnimations.size(); ++i)
 	{
-		t = std::min<float>(t, BoneAnimations[i].GetStartTime());
+		t = std::min(t, BoneAnimations[i].GetStartTime());
 	}
 
 	return t;
@@ -522,7 +474,7 @@ float AnimationClip::GetClipEndTime() const
 	auto t = 0.0f;
 	for (auto i = 0u; i < BoneAnimations.size(); ++i)
 	{
-		t = std::max<float>(t, BoneAnimations[i].GetEndTime());
+		t = std::max(t, BoneAnimations[i].GetEndTime());
 	}
 
 	return t;
@@ -535,3 +487,45 @@ void AnimationClip::Interpolate(float t, std::vector<DirectX::XMMATRIX>& boneTra
 		BoneAnimations[i].Interpolate(t, boneTransforms[i]);
 	}
 }
+
+//Model::Model(IRenderer* renderer) : m_Renderer(renderer)
+//{
+//}
+//
+//bool Model::Load(const std::string& path)
+//{
+//	m_MeshData = std::make_unique<MeshData>();
+//	if (!ModelLoader::Load(path, m_MeshData.get()))
+//	{
+//		return false;
+//	}
+//
+//	// Create vertex buffer
+//	m_Renderer->CreateVertexBuffer(m_MeshData->vertices);
+//
+//	// Create index buffer
+//
+//
+//	// Create constant buffers
+//
+//	return true;
+//}
+//
+//void Model::Update(float dt)
+//{
+//
+//}
+//
+//void Model::Render()
+//{
+//	// Apply Vertex Buffer
+//	// Apply Index Bufer
+//	// Apply primitive geometry type
+//	// Pass constant values 
+//
+//	for (auto& subset : m_MeshData->subsets)
+//	{
+//		// Draw indices for each subset
+//	}
+//}
+// 

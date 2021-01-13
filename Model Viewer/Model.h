@@ -11,6 +11,7 @@ class GlShader;
 class IShader;
 class GlCamera;
 class Camera;
+struct VertexBuffer;
 
 struct Position
 {
@@ -171,7 +172,7 @@ private:
 	std::unique_ptr<MeshData> m_MeshData = nullptr;
 
 	// Model buffers
-	ComPtr<ID3D11Buffer> m_VertexBuffer = nullptr;
+	//ComPtr<ID3D11Buffer> m_VertexBuffer = nullptr;
 	ComPtr<ID3D11Buffer> m_IndexBuffer = nullptr;
 	ComPtr<ID3D11Buffer> m_ConstantBuffer = nullptr;
 
@@ -184,12 +185,14 @@ private:
 
 	// Bones
 	ComPtr<ID3D11Buffer> m_BoneConstantBuffer = nullptr;
+
+	std::unique_ptr<VertexBuffer> m_VertexBuffer = nullptr;
 };
 
 class GlModel : public IModel
 {
 public:
-	GlModel(IShader* shader);
+	GlModel(IRenderer* renderer, IShader* shader);
 	virtual ~GlModel();
 
 	bool Load(const std::string& path) override;
@@ -197,13 +200,16 @@ public:
 	void Render(Camera* camera) override;
 
 private:
+	IRenderer* m_Renderer = nullptr;
 	GlShader* m_Shader = nullptr;
 	std::unique_ptr<MeshData> m_MeshData = nullptr;
 
 	// Mode buffers
-	GLuint m_VertexArrayObject = 0;
-	GLuint m_VertexBuffer = 0;
+	//GLuint m_VertexArrayObject = 0;
+	//GLuint m_VertexBuffer = 0;
 	GLuint m_IndexBuffer = 0;
+
+	std::unique_ptr<VertexBuffer> m_VertexBuffer = nullptr;
 
 	// Texture resourcees
 	GLuint m_DiffuseTextureId = 0;

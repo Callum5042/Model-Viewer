@@ -24,6 +24,10 @@
 #include <fstream>
 #include <unordered_map>
 #include <chrono>
+#include <optional>
 
 #include <SDL.h>
 #include <SDL_syswm.h>
+
+#undef min
+#undef max

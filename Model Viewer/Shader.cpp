@@ -2,6 +2,7 @@
 #include "Shader.h"
 #include <SDL_messagebox.h>
 #include <fstream>
+#include "Model.h"
 
 DxShader::DxShader(IRenderer* renderer)
 {
@@ -46,7 +47,7 @@ bool DxShader::CreateVertexShader(const std::string& vertex_shader_path)
 	auto vertexbuffer = new char[vertexsize];
 	vertexFile.read(vertexbuffer, vertexsize);
 
-	DX::ThrowIfFailed(m_Renderer->GetDevice()->CreateVertexShader(vertexbuffer, vertexsize, nullptr, m_VertexShader.ReleaseAndGetAddressOf()));
+	DX::Check(m_Renderer->GetDevice()->CreateVertexShader(vertexbuffer, vertexsize, nullptr, m_VertexShader.ReleaseAndGetAddressOf()));
 
 	D3D11_INPUT_ELEMENT_DESC layout[] =
 	{
@@ -61,7 +62,7 @@ bool DxShader::CreateVertexShader(const std::string& vertex_shader_path)
 	};
 
 	UINT numElements = ARRAYSIZE(layout);
-	DX::ThrowIfFailed(m_Renderer->GetDevice()->CreateInputLayout(layout, numElements, vertexbuffer, vertexsize, m_VertexLayout.ReleaseAndGetAddressOf()));
+	DX::Check(m_Renderer->GetDevice()->CreateInputLayout(layout, numElements, vertexbuffer, vertexsize, m_VertexLayout.ReleaseAndGetAddressOf()));
 
 	delete[] vertexbuffer;
 	return true;
@@ -83,7 +84,7 @@ bool DxShader::CreatePixelShader(const std::string& pixel_shader_path)
 	auto pixelbuffer = new char[pixelsize];
 	pixelFile.read(pixelbuffer, pixelsize);
 
-	DX::ThrowIfFailed(m_Renderer->GetDevice()->CreatePixelShader(pixelbuffer, pixelsize, nullptr, m_PixelShader.ReleaseAndGetAddressOf()));
+	DX::Check(m_Renderer->GetDevice()->CreatePixelShader(pixelbuffer, pixelsize, nullptr, m_PixelShader.ReleaseAndGetAddressOf()));
 
 	delete[] pixelbuffer;
 	return true;
@@ -109,6 +110,31 @@ bool GlShader::Create()
 
 void GlShader::Use()
 {
+	// Something pipeline
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), 0);
+	glEnableVertexAttribArray(0);
+
+	glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, sizeof(Vertex), (GLvoid*)(12));
+	glEnableVertexAttribArray(1);
+
+	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (GLvoid*)(28));
+	glEnableVertexAttribArray(2);
+
+	glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (GLvoid*)(36));
+	glEnableVertexAttribArray(3);
+
+	glVertexAttribPointer(4, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (GLvoid*)(48));
+	glEnableVertexAttribArray(4);
+
+	glVertexAttribPointer(5, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (GLvoid*)(60));
+	glEnableVertexAttribArray(5);
+
+	glVertexAttribPointer(6, 4, GL_FLOAT, GL_FALSE, sizeof(Vertex), (GLvoid*)(72));
+	glEnableVertexAttribArray(6);
+
+	glVertexAttribIPointer(7, 4, GL_INT, sizeof(Vertex), (GLvoid*)(88));
+	glEnableVertexAttribArray(7);
+
 	glUseProgram(m_ShaderId);
 }
 

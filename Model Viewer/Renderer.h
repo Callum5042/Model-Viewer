@@ -1,10 +1,12 @@
 #pragma once
 
 #include "Window.h"
+struct Vertex;
 
 namespace DX
 {
-	inline void ThrowIfFailed(HRESULT hr)
+	// Throws an exception if the Direct3D function failed
+	inline void Check(HRESULT hr)
 	{
 #ifdef _DEBUG
 		if (FAILED(hr))
@@ -14,9 +16,11 @@ namespace DX
 #endif
 	}
 
+	// Returns the Win32 handle from the window
 	HWND GetHwnd(Window* window);
 }
 
+// Rendering API's
 enum class RenderAPI
 {
 	NONE,
@@ -24,6 +28,21 @@ enum class RenderAPI
 	OPENGL
 };
 
+// Vertex buffer
+struct VertexBuffer { };
+
+struct DXVertexBuffer : public VertexBuffer
+{
+	ComPtr<ID3D11Buffer> buffer = nullptr;
+};
+
+struct GLVertexBuffer : public VertexBuffer
+{
+	GLuint vertexArrayObject = 0;
+	GLuint buffer = 0;
+};
+
+// Base rendering class
 class IRenderer
 {
 public:
@@ -42,6 +61,12 @@ public:
 	// Present back buffer to screen
 	virtual void Present() = 0;
 
+	// Create vertex buffer
+	virtual std::unique_ptr<VertexBuffer> CreateVertexBuffer(const std::vector<Vertex>& vertices) = 0;
+
+	// Apply vertex buffer to pipeline
+	virtual void ApplyVertexBuffer(VertexBuffer* vertex_buffer) = 0;
+
 	// Rendering API
 	virtual RenderAPI GetRenderAPI() = 0;
 
@@ -54,16 +79,22 @@ public:
 	// Toggle wireframe rendering
 	virtual void ToggleWireframe(bool wireframe) = 0;
 
-	// Anti-aliasing
+	// Create anti-aliasing backbuffer
 	virtual bool CreateAntiAliasingTarget(int msaa_level, int window_width, int window_height) = 0;
+
+	// Get a list of all supported MSAA levels
 	virtual const std::vector<int>& GetSupportMsaaLevels() = 0;
+
+	// Get the max supported MSAA level
 	virtual int GetMaxMsaaLevel() = 0;
 
-	// Texture filtering
+	// Get the anisotropic filter level
 	virtual int GetMaxAnisotropicFilterLevel() = 0;
+
+	// Set the anisotropic filter level
 	virtual void SetAnisotropicFilter(int level) = 0;
 
-	// Vsync
+	// Enable V-sync
 	virtual void SetVync(bool enable) = 0;
 };
 
@@ -78,6 +109,12 @@ public:
 
 	void Clear();
 	void Present();
+
+	// Create vertex buffer
+	std::unique_ptr<VertexBuffer> CreateVertexBuffer(const std::vector<Vertex>& vertices) override;
+
+	// Apply vertex buffer
+	void ApplyVertexBuffer(VertexBuffer* vertex_buffer) override;
 
 	// Direct3D specific data
 	constexpr ComPtr<ID3D11Device>& GetDevice() { return m_Device; }
@@ -169,6 +206,12 @@ public:
 
 	void Clear() override;
 	void Present() override;
+
+	// Create vertex buffer
+	std::unique_ptr<VertexBuffer> CreateVertexBuffer(const std::vector<Vertex>& vertices) override;
+
+	// Apply vertex buffer
+	void ApplyVertexBuffer(VertexBuffer* vertex_buffer) override;
 
 	RenderAPI GetRenderAPI() { return RenderAPI::OPENGL; }
 

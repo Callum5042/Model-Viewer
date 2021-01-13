@@ -8,7 +8,8 @@
 Application::Application()
 {
 	m_EventDispatcher = std::make_unique<EventDispatcher>();
-	m_ModelPath = "Data Files/Models/complex_post.glb";
+	//m_ModelPath = "Data Files/Models/complex_post.glb";
+	m_ModelPath = "Data Files/Models/simple.glb";
 
 	auto startup = RenderAPI::OPENGL;
 	if (startup == RenderAPI::DIRECTX)
@@ -25,7 +26,7 @@ Application::Application()
 		m_Renderer = std::make_unique<GlRenderer>();
 		m_Shader = std::make_unique<GlShader>();
 		m_DxCamera = std::make_unique<Camera>(800, 600, m_Fov);
-		m_Model = std::make_unique<GlModel>(m_Shader.get());
+		m_Model = std::make_unique<GlModel>(m_Renderer.get(), m_Shader.get());
 	}
 }
 
@@ -346,7 +347,7 @@ void Application::ChangeRenderAPI()
 			m_Renderer = std::make_unique<GlRenderer>();
 			m_Shader = std::make_unique<GlShader>();
 			m_DxCamera = std::make_unique<Camera>(800, 600, m_Fov);
-			m_Model = std::make_unique<GlModel>(m_Shader.get());
+			m_Model = std::make_unique<GlModel>(m_Renderer.get(), m_Shader.get());
 		}
 
 		Init();
