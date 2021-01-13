@@ -77,6 +77,29 @@ struct GLIndexBuffer : public IndexBuffer
 	GLuint buffer = 0;
 };
 
+// Texture
+struct Texture2D
+{
+	virtual ~Texture2D() = default;
+};
+
+// DirectX Texture
+struct DXTexture2D : public Texture2D
+{
+	ComPtr<ID3D11ShaderResourceView> resource = nullptr;
+};
+
+// OpenGL Texture
+struct GLTexture2D : public Texture2D
+{
+	virtual ~GLTexture2D() 
+	{
+		glDeleteTextures(1, &resource);
+	}
+
+	GLuint resource = 0;
+};
+
 // Base rendering class
 class IRenderer
 {
@@ -113,6 +136,12 @@ public:
 
 	// Set primitive topology
 	virtual void SetPrimitiveTopology() = 0;
+
+	// Create texture 2D
+	virtual std::unique_ptr<Texture2D> CreateTexture2D(const std::string& path) = 0;
+
+	// Apply texture 2D
+	virtual void ApplyTexture2D(UINT slot, Texture2D* resource) = 0;
 
 	// Rendering API
 	virtual RenderAPI GetRenderAPI() = 0;
@@ -174,6 +203,12 @@ public:
 
 	// Set primitive topology
 	virtual void SetPrimitiveTopology() override;
+
+	// Create texture 2D
+	virtual std::unique_ptr<Texture2D> CreateTexture2D(const std::string& path) override;
+
+	// Apply texture 2D
+	virtual void ApplyTexture2D(UINT slot, Texture2D* resource) override;
 
 	// Direct3D specific data
 	constexpr ComPtr<ID3D11Device>& GetDevice() { return m_Device; }
@@ -283,6 +318,12 @@ public:
 
 	// Set primitive topology
 	virtual void SetPrimitiveTopology() override;
+
+	// Create texture 2D
+	virtual std::unique_ptr<Texture2D> CreateTexture2D(const std::string& path) override;
+
+	// Apply texture 2D
+	virtual void ApplyTexture2D(UINT slot, Texture2D* resource) override;
 
 	RenderAPI GetRenderAPI() { return RenderAPI::OPENGL; }
 

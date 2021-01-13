@@ -14,6 +14,7 @@ class Camera;
 
 struct VertexBuffer;
 struct IndexBuffer;
+struct Texture2D;
 
 struct Position
 {
@@ -179,8 +180,8 @@ private:
 	ComPtr<ID3D11Buffer> m_ConstantBuffer = nullptr;
 
 	// Texture resources
-	ComPtr<ID3D11ShaderResourceView> m_DiffuseTexture = nullptr;
-	ComPtr<ID3D11ShaderResourceView> m_NormalTexture = nullptr;
+	std::unique_ptr<Texture2D> m_DiffuseTexture = nullptr;
+	std::unique_ptr<Texture2D> m_NormalTexture = nullptr;
 
 	// Light
 	ComPtr<ID3D11Buffer> m_LightBuffer = nullptr;
@@ -212,6 +213,6 @@ private:
 	std::unique_ptr<IndexBuffer> m_IndexBuffer = nullptr;
 
 	// Texture resourcees
-	GLuint m_DiffuseTextureId = 0;
-	GLuint m_NormalTextureId = 0;
+	std::unique_ptr<Texture2D> m_DiffuseTexture = nullptr;
+	std::unique_ptr<Texture2D> m_NormalTexture = nullptr;
 };

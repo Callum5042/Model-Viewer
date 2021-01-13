@@ -70,6 +70,10 @@ bool DxModel::Load(const std::string& path)
 	// Create index buffer
 	m_IndexBuffer = m_Renderer->CreateIndexBuffer(m_MeshData->indices);
 
+	// Load mr texture
+	m_DiffuseTexture = m_Renderer->CreateTexture2D("Data Files/Textures/crate_diffuse.dds");
+	m_NormalTexture = m_Renderer->CreateTexture2D("Data Files/Textures/crate_normal.dds");
+
 	// Constant buffer
 	D3D11_BUFFER_DESC bd = {};
 	bd.Usage = D3D11_USAGE_DEFAULT;
@@ -77,12 +81,6 @@ bool DxModel::Load(const std::string& path)
 	bd.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
 
 	DX::Check(m_Renderer->GetDevice()->CreateBuffer(&bd, nullptr, m_ConstantBuffer.ReleaseAndGetAddressOf()));
-
-	// Load mr texture
-	ComPtr<ID3D11Resource> resource = nullptr;
-	DX::Check(DirectX::CreateDDSTextureFromFile(m_Renderer->GetDevice().Get(), L"Data Files\\Textures\\crate_diffuse.dds", resource.ReleaseAndGetAddressOf(), m_DiffuseTexture.ReleaseAndGetAddressOf()));
-
-	DX::Check(DirectX::CreateDDSTextureFromFile(m_Renderer->GetDevice().Get(), L"Data Files\\Textures\\crate_normal.dds", resource.ReleaseAndGetAddressOf(), m_NormalTexture.ReleaseAndGetAddressOf()));
 
 	// Mr sun
 	D3D11_BUFFER_DESC lbd = {};
@@ -181,8 +179,8 @@ void DxModel::Render(Camera* camera)
 	m_Renderer->GetDeviceContext()->UpdateSubresource(m_ConstantBuffer.Get(), 0, nullptr, &cb, 0, 0);
 
 	// Texture
-	m_Renderer->GetDeviceContext()->PSSetShaderResources(0, 1, m_DiffuseTexture.GetAddressOf());
-	m_Renderer->GetDeviceContext()->PSSetShaderResources(1, 1, m_NormalTexture.GetAddressOf());
+	m_Renderer->ApplyTexture2D(0, m_DiffuseTexture.get());
+	m_Renderer->ApplyTexture2D(1, m_NormalTexture.get());
 
 	// Light up me life
 	auto diffuse = DirectX::XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
@@ -222,8 +220,6 @@ GlModel::GlModel(IRenderer* renderer, IShader* shader)
 
 GlModel::~GlModel()
 {
-	glDeleteTextures(1, &m_NormalTextureId);
-	glDeleteTextures(1, &m_DiffuseTextureId);
 }
 
 bool GlModel::Load(const std::string& path)
@@ -241,34 +237,8 @@ bool GlModel::Load(const std::string& path)
 	m_IndexBuffer = m_Renderer->CreateIndexBuffer(m_MeshData->indices);
 
 	// Load diffuse texture
-	Rove::LoadDDS diffuse_dds;
-	std::string diffuse_texture_path = "Data Files\\Textures\\crate_diffuse.dds";
-	diffuse_dds.Load(std::move(diffuse_texture_path));
-
-	glCreateTextures(GL_TEXTURE_2D, 1, &m_DiffuseTextureId);
-	glTextureStorage2D(m_DiffuseTextureId, diffuse_dds.MipmapCount(), diffuse_dds.Format(), diffuse_dds.Width(), diffuse_dds.Height());
-
-	for (auto& mipmap : diffuse_dds.mipmaps)
-	{
-		glCompressedTextureSubImage2D(m_DiffuseTextureId, mipmap.level, 0, 0, mipmap.width, mipmap.height, diffuse_dds.Format(), mipmap.texture_size, mipmap.data);
-	}
-
-	glBindTextureUnit(0, m_DiffuseTextureId);
-
-	// Load normal texture
-	Rove::LoadDDS normal_dds;
-	std::string normal_texture_path = "Data Files\\Textures\\crate_normal.dds";
-	normal_dds.Load(std::move(normal_texture_path));
-
-	glCreateTextures(GL_TEXTURE_2D, 1, &m_NormalTextureId);
-	glTextureStorage2D(m_NormalTextureId, normal_dds.MipmapCount(), normal_dds.Format(), normal_dds.Width(), normal_dds.Height());
-
-	for (auto& mipmap : normal_dds.mipmaps)
-	{
-		glCompressedTextureSubImage2D(m_NormalTextureId, mipmap.level, 0, 0, mipmap.width, mipmap.height, normal_dds.Format(), mipmap.texture_size, mipmap.data);
-	}
-
-	glBindTextureUnit(1, m_NormalTextureId);
+	m_DiffuseTexture = m_Renderer->CreateTexture2D("Data Files/Textures/crate_diffuse.dds");
+	m_NormalTexture = m_Renderer->CreateTexture2D("Data Files/Textures/crate_normal.dds");
 
 	return true;
 }
@@ -379,6 +349,10 @@ void GlModel::Render(Camera* camera)
 	// Draw
 	m_Renderer->ApplyVertexBuffer(m_VertexBuffer.get());
 	m_Renderer->SetPrimitiveTopology();
+
+	m_Renderer->ApplyTexture2D(0, m_DiffuseTexture.get());
+	m_Renderer->ApplyTexture2D(1, m_NormalTexture.get());
+
 	for (auto& subset : m_MeshData->subsets)
 	{
 		m_Renderer->DrawIndex(subset.totalIndex, subset.startIndex, subset.baseVertex);
@@ -477,45 +451,3 @@ void AnimationClip::Interpolate(float t, std::vector<DirectX::XMMATRIX>& boneTra
 		BoneAnimations[i].Interpolate(t, boneTransforms[i]);
 	}
 }
-
-//Model::Model(IRenderer* renderer) : m_Renderer(renderer)
-//{
-//}
-//
-//bool Model::Load(const std::string& path)
-//{
-//	m_MeshData = std::make_unique<MeshData>();
-//	if (!ModelLoader::Load(path, m_MeshData.get()))
-//	{
-//		return false;
-//	}
-//
-//	// Create vertex buffer
-//	m_Renderer->CreateVertexBuffer(m_MeshData->vertices);
-//
-//	// Create index buffer
-//
-//
-//	// Create constant buffers
-//
-//	return true;
-//}
-//
-//void Model::Update(float dt)
-//{
-//
-//}
-//
-//void Model::Render()
-//{
-//	// Apply Vertex Buffer
-//	// Apply Index Bufer
-//	// Apply primitive geometry type
-//	// Pass constant values 
-//
-//	for (auto& subset : m_MeshData->subsets)
-//	{
-//		// Draw indices for each subset
-//	}
-//}
-// 

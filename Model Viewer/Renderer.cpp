@@ -2,6 +2,8 @@
 #include "Renderer.h"
 #include <DirectXColors.h>
 #include "Model.h"
+#include "LoadTextureDDS.h" // OpenGL built with care
+#include "DDSTextureLoader.h" // DirectX from microsoft
 
 HWND DX::GetHwnd(Window* window)
 {
@@ -192,6 +194,23 @@ void DxRenderer::ApplyIndexBuffer(IndexBuffer* index_buffer)
 void DxRenderer::SetPrimitiveTopology()
 {
 	m_DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+}
+
+std::unique_ptr<Texture2D> DxRenderer::CreateTexture2D(const std::string& path)
+{
+	auto texture = std::make_unique<DXTexture2D>();
+
+	ComPtr<ID3D11Resource> resource = nullptr;
+	DX::Check(DirectX::CreateDDSTextureFromFile(m_Device.Get(), L"Data Files\\Textures\\crate_diffuse.dds", 
+		resource.ReleaseAndGetAddressOf(), texture->resource.ReleaseAndGetAddressOf()));
+
+	return std::move(texture);
+}
+
+void DxRenderer::ApplyTexture2D(UINT slot, Texture2D* resource)
+{
+	auto res = reinterpret_cast<DXTexture2D*>(resource);
+	m_DeviceContext->PSSetShaderResources(slot, 1, res->resource.GetAddressOf());
 }
 
 void DxRenderer::ToggleWireframe(bool wireframe)
@@ -489,11 +508,6 @@ bool GlRenderer::Create(Window* window)
 		return false;
 	}
 
-#ifdef _DEBUG
-	auto glewVersion = glewGetString(GLEW_VERSION);
-	std::cout << "Glew: " << glewVersion << '\n';
-#endif
-
 	glEnable(GL_DEBUG_OUTPUT);
 
 	QueryHardwareInfo();
@@ -609,6 +623,31 @@ void GlRenderer::SetPrimitiveTopology()
 {
 	// Remember primitive topology as it's part of the OpenGL draw function
 	m_PrimitiveTopology = GL_TRIANGLES;
+}
+
+std::unique_ptr<Texture2D> GlRenderer::CreateTexture2D(const std::string& path)
+{
+	auto resource = std::make_unique<GLTexture2D>();
+
+	Rove::LoadDDS dds;
+	std::string normal_texture_path = path;
+	dds.Load(std::move(normal_texture_path));
+
+	glCreateTextures(GL_TEXTURE_2D, 1, &resource->resource);
+	glTextureStorage2D(resource->resource, dds.MipmapCount(), dds.Format(), dds.Width(), dds.Height());
+
+	for (auto& mipmap : dds.mipmaps)
+	{
+		glCompressedTextureSubImage2D(resource->resource, mipmap.level, 0, 0, mipmap.width, mipmap.height, dds.Format(), mipmap.texture_size, mipmap.data);
+	}
+
+	return std::move(resource);
+}
+
+void GlRenderer::ApplyTexture2D(UINT slot, Texture2D* resource)
+{
+	auto res = reinterpret_cast<GLTexture2D*>(resource);
+	glBindTextureUnit(slot, res->resource);
 }
 
 void GlRenderer::ToggleWireframe(bool wireframe)
