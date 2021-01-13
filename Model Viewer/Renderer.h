@@ -29,16 +29,51 @@ enum class RenderAPI
 };
 
 // Vertex buffer
-struct VertexBuffer { };
+struct VertexBuffer 
+{ 
+	virtual ~VertexBuffer() = default;
+};
 
+// DirectX vertex buffer
 struct DXVertexBuffer : public VertexBuffer
 {
 	ComPtr<ID3D11Buffer> buffer = nullptr;
 };
 
+// OpenGL vertex buffer. Also creates the vertex array object so must be called before the index buffer
 struct GLVertexBuffer : public VertexBuffer
 {
+	GLVertexBuffer() = default;
+	virtual ~GLVertexBuffer()
+	{
+		glDeleteBuffers(1, &buffer);
+		glDeleteVertexArrays(1, &vertexArrayObject);
+	}
+
 	GLuint vertexArrayObject = 0;
+	GLuint buffer = 0;
+};
+
+// Index buffer
+struct IndexBuffer
+{
+	virtual ~IndexBuffer() = default;
+};
+
+// DirectX index buffer
+struct DXIndexBuffer : public IndexBuffer
+{
+	ComPtr<ID3D11Buffer> buffer = nullptr;
+};
+
+// OpenGL index buffer - must be created after the vertex buffer due to the vertex array object being created within the vertex buffer
+struct GLIndexBuffer : public IndexBuffer
+{
+	virtual ~GLIndexBuffer() 
+	{
+		glDeleteBuffers(1, &buffer);
+	}
+
 	GLuint buffer = 0;
 };
 
@@ -66,6 +101,12 @@ public:
 
 	// Apply vertex buffer to pipeline
 	virtual void ApplyVertexBuffer(VertexBuffer* vertex_buffer) = 0;
+
+	// Create index buffer
+	virtual std::unique_ptr<IndexBuffer> CreateIndexBuffer(const std::vector<UINT>& indices) = 0;
+
+	// Apply index buffer
+	virtual void ApplyIndexBuffer(IndexBuffer* index_buffer) = 0;
 
 	// Rendering API
 	virtual RenderAPI GetRenderAPI() = 0;
@@ -115,6 +156,12 @@ public:
 
 	// Apply vertex buffer
 	void ApplyVertexBuffer(VertexBuffer* vertex_buffer) override;
+
+	// Create index buffer
+	virtual std::unique_ptr<IndexBuffer> CreateIndexBuffer(const std::vector<UINT>& indices) override;
+
+	// Apply index buffer
+	virtual void ApplyIndexBuffer(IndexBuffer* index_buffer) override;
 
 	// Direct3D specific data
 	constexpr ComPtr<ID3D11Device>& GetDevice() { return m_Device; }
@@ -212,6 +259,12 @@ public:
 
 	// Apply vertex buffer
 	void ApplyVertexBuffer(VertexBuffer* vertex_buffer) override;
+
+	// Create index buffer
+	virtual std::unique_ptr<IndexBuffer> CreateIndexBuffer(const std::vector<UINT>& indices) override;
+
+	// Apply index buffer
+	virtual void ApplyIndexBuffer(IndexBuffer* index_buffer) override;
 
 	RenderAPI GetRenderAPI() { return RenderAPI::OPENGL; }
 

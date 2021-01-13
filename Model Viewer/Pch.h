@@ -10,6 +10,15 @@
 	using Microsoft::WRL::ComPtr;
 #endif
 
+// dunno if we want this tbh - not currently used
+#ifndef NOEXCEPT
+#ifdef _DEBUG
+	#define NOEXCEPT noexcept
+#else
+#define NOTHROW
+	#endif
+#endif
+
 #include <string>
 #include <vector>
 #include <iostream>

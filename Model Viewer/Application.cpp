@@ -11,7 +11,7 @@ Application::Application()
 	//m_ModelPath = "Data Files/Models/complex_post.glb";
 	m_ModelPath = "Data Files/Models/simple.glb";
 
-	auto startup = RenderAPI::OPENGL;
+	auto startup = RenderAPI::DIRECTX;
 	if (startup == RenderAPI::DIRECTX)
 	{
 		m_Window = std::make_unique<Window>();

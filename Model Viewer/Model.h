@@ -11,7 +11,9 @@ class GlShader;
 class IShader;
 class GlCamera;
 class Camera;
+
 struct VertexBuffer;
+struct IndexBuffer;
 
 struct Position
 {
@@ -173,7 +175,7 @@ private:
 
 	// Model buffers
 	//ComPtr<ID3D11Buffer> m_VertexBuffer = nullptr;
-	ComPtr<ID3D11Buffer> m_IndexBuffer = nullptr;
+	//ComPtr<ID3D11Buffer> m_IndexBuffer = nullptr;
 	ComPtr<ID3D11Buffer> m_ConstantBuffer = nullptr;
 
 	// Texture resources
@@ -187,6 +189,7 @@ private:
 	ComPtr<ID3D11Buffer> m_BoneConstantBuffer = nullptr;
 
 	std::unique_ptr<VertexBuffer> m_VertexBuffer = nullptr;
+	std::unique_ptr<IndexBuffer> m_IndexBuffer = nullptr;
 };
 
 class GlModel : public IModel
@@ -205,11 +208,8 @@ private:
 	std::unique_ptr<MeshData> m_MeshData = nullptr;
 
 	// Mode buffers
-	//GLuint m_VertexArrayObject = 0;
-	//GLuint m_VertexBuffer = 0;
-	GLuint m_IndexBuffer = 0;
-
 	std::unique_ptr<VertexBuffer> m_VertexBuffer = nullptr;
+	std::unique_ptr<IndexBuffer> m_IndexBuffer = nullptr;
 
 	// Texture resourcees
 	GLuint m_DiffuseTextureId = 0;

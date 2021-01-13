@@ -161,6 +161,29 @@ void DxRenderer::ApplyVertexBuffer(VertexBuffer* buffer)
 	m_DeviceContext->IASetVertexBuffers(0, 1, vertex_buffer->buffer.GetAddressOf(), &stride, &offset);
 }
 
+std::unique_ptr<IndexBuffer> DxRenderer::CreateIndexBuffer(const std::vector<UINT>& indices)
+{
+	auto index_buffer = std::make_unique<DXIndexBuffer>();
+
+	D3D11_BUFFER_DESC ibd = {};
+	ibd.Usage = D3D11_USAGE_DEFAULT;
+	ibd.ByteWidth = static_cast<UINT>(sizeof(UINT) * indices.size());
+	ibd.BindFlags = D3D11_BIND_INDEX_BUFFER;
+
+	D3D11_SUBRESOURCE_DATA iInitData = {};
+	iInitData.pSysMem = indices.data();
+
+	DX::Check(m_Device->CreateBuffer(&ibd, &iInitData, index_buffer->buffer.ReleaseAndGetAddressOf()));
+
+	return std::move(index_buffer);
+}
+
+void DxRenderer::ApplyIndexBuffer(IndexBuffer* index_buffer)
+{
+	auto buffer = reinterpret_cast<DXIndexBuffer*>(index_buffer);
+	m_DeviceContext->IASetIndexBuffer(buffer->buffer.Get(), DXGI_FORMAT_R32_UINT, 0);
+}
+
 void DxRenderer::ToggleWireframe(bool wireframe)
 {
 	if (wireframe)
@@ -549,6 +572,22 @@ void GlRenderer::ApplyVertexBuffer(VertexBuffer* vertex_buffer)
 {
 	auto buffer = reinterpret_cast<GLVertexBuffer*>(vertex_buffer);
 	glBindVertexArray(buffer->vertexArrayObject);
+}
+
+std::unique_ptr<IndexBuffer> GlRenderer::CreateIndexBuffer(const std::vector<UINT>& indices)
+{
+	auto buffer = std::make_unique<GLIndexBuffer>();
+
+	glCreateBuffers(1, &buffer->buffer);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, buffer->buffer);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(GLuint) * indices.size(), indices.data(), GL_STATIC_DRAW);
+
+	return std::move(buffer);
+}
+
+void GlRenderer::ApplyIndexBuffer(IndexBuffer* index_buffer)
+{
+	// OpenGL doesn't require us to specific bind the index buffer, since it will bind it to the currently bound vertex array object
 }
 
 void GlRenderer::ToggleWireframe(bool wireframe)

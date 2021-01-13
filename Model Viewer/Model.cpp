@@ -68,15 +68,7 @@ bool DxModel::Load(const std::string& path)
 	m_VertexBuffer = m_Renderer->CreateVertexBuffer(m_MeshData->vertices);
 
 	// Create index buffer
-	D3D11_BUFFER_DESC ibd = {};
-	ibd.Usage = D3D11_USAGE_DEFAULT;
-	ibd.ByteWidth = static_cast<UINT>(sizeof(UINT) * m_MeshData->indices.size());
-	ibd.BindFlags = D3D11_BIND_INDEX_BUFFER;
-
-	D3D11_SUBRESOURCE_DATA iInitData = {};
-	iInitData.pSysMem = m_MeshData->indices.data();
-
-	DX::Check(m_Renderer->GetDevice()->CreateBuffer(&ibd, &iInitData, m_IndexBuffer.ReleaseAndGetAddressOf()));
+	m_IndexBuffer = m_Renderer->CreateIndexBuffer(m_MeshData->indices);
 
 	// Constant buffer
 	D3D11_BUFFER_DESC bd = {};
@@ -165,7 +157,7 @@ void DxModel::Render(Camera* camera)
 	m_Renderer->ApplyVertexBuffer(m_VertexBuffer.get());
 
 	// Bind the index buffer
-	m_Renderer->GetDeviceContext()->IASetIndexBuffer(m_IndexBuffer.Get(), DXGI_FORMAT_R32_UINT, 0);
+	m_Renderer->ApplyIndexBuffer(m_IndexBuffer.get());
 
 	// Set topology
 	m_Renderer->GetDeviceContext()->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
@@ -232,7 +224,6 @@ GlModel::~GlModel()
 {
 	glDeleteTextures(1, &m_NormalTextureId);
 	glDeleteTextures(1, &m_DiffuseTextureId);
-	glDeleteBuffers(1, &m_IndexBuffer);
 }
 
 bool GlModel::Load(const std::string& path)
@@ -247,9 +238,7 @@ bool GlModel::Load(const std::string& path)
 	m_VertexBuffer = m_Renderer->CreateVertexBuffer(m_MeshData->vertices);
 
 	// Index Buffer
-	glCreateBuffers(1, &m_IndexBuffer);
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_IndexBuffer);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(GLuint) * m_MeshData->indices.size(), &m_MeshData->indices[0], GL_STATIC_DRAW);
+	m_IndexBuffer = m_Renderer->CreateIndexBuffer(m_MeshData->indices);
 
 	// Load diffuse texture
 	Rove::LoadDDS diffuse_dds;
