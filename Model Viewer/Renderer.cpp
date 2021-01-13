@@ -200,9 +200,11 @@ std::unique_ptr<Texture2D> DxRenderer::CreateTexture2D(const std::string& path)
 {
 	auto texture = std::make_unique<DXTexture2D>();
 
+	std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
+	std::wstring wide_path = converter.from_bytes(path);
+
 	ComPtr<ID3D11Resource> resource = nullptr;
-	DX::Check(DirectX::CreateDDSTextureFromFile(m_Device.Get(), L"Data Files\\Textures\\crate_diffuse.dds", 
-		resource.ReleaseAndGetAddressOf(), texture->resource.ReleaseAndGetAddressOf()));
+	DX::Check(DirectX::CreateDDSTextureFromFile(m_Device.Get(), wide_path.c_str(), resource.ReleaseAndGetAddressOf(), texture->resource.ReleaseAndGetAddressOf()));
 
 	return std::move(texture);
 }
