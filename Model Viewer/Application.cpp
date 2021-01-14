@@ -7,9 +7,10 @@
 
 Application::Application()
 {
-	m_EventDispatcher = std::make_unique<EventDispatcher>();
 	m_ModelPath = "Data Files/Models/complex_post.glb";
 	//m_ModelPath = "Data Files/Models/simple.glb";
+
+	m_EventDispatcher = std::make_unique<EventDispatcher>();
 
 	auto startup = RenderAPI::DIRECTX;
 	if (startup == RenderAPI::DIRECTX)
@@ -17,17 +18,16 @@ Application::Application()
 		m_Window = std::make_unique<Window>();
 		m_Renderer = std::make_unique<DXRenderer>();
 		m_Shader = std::make_unique<DXShader>(m_Renderer.get());
-		m_DxCamera = std::make_unique<Camera>(800, 600, m_Fov);
-		m_Model = std::make_unique<Model>(m_Renderer.get(), m_Shader.get());
 	}
 	else if (startup == RenderAPI::OPENGL)
 	{
 		m_Window = std::make_unique<GLWindow>();
 		m_Renderer = std::make_unique<GLRenderer>();
 		m_Shader = std::make_unique<GLShader>(m_Renderer.get());
-		m_DxCamera = std::make_unique<Camera>(800, 600, m_Fov);
-		m_Model = std::make_unique<Model>(m_Renderer.get(), m_Shader.get());
 	}
+
+	m_DxCamera = std::make_unique<Camera>(800, 600, m_Fov);
+	m_Model = std::make_unique<Model>(m_Renderer.get(), m_Shader.get());
 }
 
 Application::~Application()
@@ -50,6 +50,7 @@ int Application::Execute()
 		return -1;
 	}
 
+	// Register events
 	m_EventDispatcher->Attach(static_cast<QuitListener*>(this));
 	m_EventDispatcher->Attach(static_cast<WindowListener*>(this));
 	m_EventDispatcher->Attach(static_cast<KeyboardListener*>(this));
@@ -379,17 +380,16 @@ void Application::ChangeRenderAPI()
 			m_Window = std::make_unique<Window>();
 			m_Renderer = std::make_unique<DXRenderer>();
 			m_Shader = std::make_unique<DXShader>(m_Renderer.get());
-			m_DxCamera = std::make_unique<Camera>(800, 600, m_Fov);
-			m_Model = std::make_unique<Model>(m_Renderer.get(), m_Shader.get());
 		}
 		else if (m_SwitchRenderAPI == RenderAPI::OPENGL)
 		{
 			m_Window = std::make_unique<GLWindow>();
 			m_Renderer = std::make_unique<GLRenderer>();
 			m_Shader = std::make_unique<GLShader>(m_Renderer.get());
-			m_DxCamera = std::make_unique<Camera>(800, 600, m_Fov);
-			m_Model = std::make_unique<Model>(m_Renderer.get(), m_Shader.get());
 		}
+
+		m_DxCamera = std::make_unique<Camera>(800, 600, m_Fov);
+		m_Model = std::make_unique<Model>(m_Renderer.get(), m_Shader.get());
 
 		Init();
 
