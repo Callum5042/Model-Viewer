@@ -1,6 +1,9 @@
 #include "Pch.h"
 #include "Renderer.h"
 #include <DirectXColors.h>
+#include "Model.h"
+#include "LoadTextureDDS.h" // OpenGL built with care
+#include "DDSTextureLoader.h" // DirectX from microsoft
 
 HWND DX::GetHwnd(Window* window)
 {
@@ -10,7 +13,7 @@ HWND DX::GetHwnd(Window* window)
 	return wmInfo.info.win.window;
 }
 
-DxRenderer::~DxRenderer()
+DXRenderer::~DXRenderer()
 {
 #ifdef _DEBUG
 	ComPtr<ID3D11Debug> debug = nullptr;
@@ -19,7 +22,7 @@ DxRenderer::~DxRenderer()
 #endif
 }
 
-bool DxRenderer::Create(Window* window)
+bool DXRenderer::Create(Window* window)
 {
 	auto width = window->GetWidth();
 	auto height = window->GetHeight();
@@ -45,7 +48,7 @@ bool DxRenderer::Create(Window* window)
 	for (int i = max_sample_count; i >= 2; i /= 2)
 	{
 		auto quality_levels = 0u;
-		DX::ThrowIfFailed(m_Device->CheckMultisampleQualityLevels(DXGI_FORMAT_R8G8B8A8_UNORM, i, &quality_levels));
+		DX::Check(m_Device->CheckMultisampleQualityLevels(DXGI_FORMAT_R8G8B8A8_UNORM, i, &quality_levels));
 		if (quality_levels != 0)
 		{
 			if (m_MaxMsaaLevel == 0) 
@@ -74,12 +77,12 @@ bool DxRenderer::Create(Window* window)
 	comparisonSamplerDesc.ComparisonFunc = D3D11_COMPARISON_LESS_EQUAL;
 	comparisonSamplerDesc.Filter = D3D11_FILTER_COMPARISON_ANISOTROPIC;
 
-	DX::ThrowIfFailed(m_Device->CreateSamplerState(&comparisonSamplerDesc, &m_ShadowSampler));
+	DX::Check(m_Device->CreateSamplerState(&comparisonSamplerDesc, &m_ShadowSampler));
 
 	return true;
 }
 
-void DxRenderer::Resize(int width, int height)
+void DXRenderer::Resize(int width, int height)
 {
 	m_RenderTarget.ReleaseAndGetAddressOf();
 	m_DepthStencilView.ReleaseAndGetAddressOf();
@@ -89,13 +92,13 @@ void DxRenderer::Resize(int width, int height)
 	m_MsaaDepthStencilView.ReleaseAndGetAddressOf();
 	m_MsaaRenderTargetView.ReleaseAndGetAddressOf();
 
-	DX::ThrowIfFailed(m_SwapChain->ResizeBuffers(2, width, height, DXGI_FORMAT_R8G8B8A8_UNORM, 0));
+	DX::Check(m_SwapChain->ResizeBuffers(2, width, height, DXGI_FORMAT_R8G8B8A8_UNORM, 0));
 	CreateRenderTargetAndDepthStencilView(width, height);
 	CreateAntiAliasingTarget(m_CurrentMsaaLevel, width, height);
 	SetViewport(width, height);
 }
 
-void DxRenderer::Clear()
+void DXRenderer::Clear()
 {
 	if (m_UseMsaa)
 	{
@@ -114,7 +117,7 @@ void DxRenderer::Clear()
 	m_DeviceContext->PSSetSamplers(1, 1, m_ShadowSampler.GetAddressOf());
 }
 
-void DxRenderer::Present()
+void DXRenderer::Present()
 {
 	if (m_UseMsaa)
 	{
@@ -127,15 +130,92 @@ void DxRenderer::Present()
 	if (swapChain1 != nullptr)
 	{
 		DXGI_PRESENT_PARAMETERS presentParameters = {};
-		DX::ThrowIfFailed(swapChain1->Present1(static_cast<int>(m_Vsync), 0, &presentParameters));
+		DX::Check(swapChain1->Present1(static_cast<int>(m_Vsync), 0, &presentParameters));
 	}
 	else
 	{
-		DX::ThrowIfFailed(m_SwapChain->Present(static_cast<int>(m_Vsync), 0));
+		DX::Check(m_SwapChain->Present(static_cast<int>(m_Vsync), 0));
 	}
 }
 
-void DxRenderer::ToggleWireframe(bool wireframe)
+void DXRenderer::DrawIndex(UINT total_indices, UINT start_index, UINT base_vertex)
+{
+	m_DeviceContext->DrawIndexed(total_indices, start_index, base_vertex);
+}
+
+std::unique_ptr<VertexBuffer> DXRenderer::CreateVertexBuffer(const std::vector<Vertex>& vertices)
+{
+	auto vertex_buffer = std::make_unique<DXVertexBuffer>();
+
+	D3D11_BUFFER_DESC vertexbuffer_desc = {};
+	vertexbuffer_desc.Usage = D3D11_USAGE_DEFAULT;
+	vertexbuffer_desc.ByteWidth = static_cast<UINT>(sizeof(Vertex) * vertices.size());
+	vertexbuffer_desc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
+
+	D3D11_SUBRESOURCE_DATA vertexbuffer_data = {};
+	vertexbuffer_data.pSysMem = vertices.data();
+	DX::Check(m_Device->CreateBuffer(&vertexbuffer_desc, &vertexbuffer_data, vertex_buffer->buffer.ReleaseAndGetAddressOf()));
+
+	return std::move(vertex_buffer);
+}
+
+void DXRenderer::ApplyVertexBuffer(VertexBuffer* buffer)
+{
+	UINT stride = sizeof(Vertex);
+	UINT offset = 0;
+
+	auto vertex_buffer = reinterpret_cast<DXVertexBuffer*>(buffer);
+	m_DeviceContext->IASetVertexBuffers(0, 1, vertex_buffer->buffer.GetAddressOf(), &stride, &offset);
+}
+
+std::unique_ptr<IndexBuffer> DXRenderer::CreateIndexBuffer(const std::vector<UINT>& indices)
+{
+	auto index_buffer = std::make_unique<DXIndexBuffer>();
+
+	D3D11_BUFFER_DESC ibd = {};
+	ibd.Usage = D3D11_USAGE_DEFAULT;
+	ibd.ByteWidth = static_cast<UINT>(sizeof(UINT) * indices.size());
+	ibd.BindFlags = D3D11_BIND_INDEX_BUFFER;
+
+	D3D11_SUBRESOURCE_DATA iInitData = {};
+	iInitData.pSysMem = indices.data();
+
+	DX::Check(m_Device->CreateBuffer(&ibd, &iInitData, index_buffer->buffer.ReleaseAndGetAddressOf()));
+
+	return std::move(index_buffer);
+}
+
+void DXRenderer::ApplyIndexBuffer(IndexBuffer* index_buffer)
+{
+	auto buffer = reinterpret_cast<DXIndexBuffer*>(index_buffer);
+	m_DeviceContext->IASetIndexBuffer(buffer->buffer.Get(), DXGI_FORMAT_R32_UINT, 0);
+}
+
+void DXRenderer::SetPrimitiveTopology()
+{
+	m_DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+}
+
+std::unique_ptr<Texture2D> DXRenderer::CreateTexture2D(const std::string& path)
+{
+	auto texture = std::make_unique<DXTexture2D>();
+
+	std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
+	std::wstring wide_path = converter.from_bytes(path);
+
+	ComPtr<ID3D11Resource> resource = nullptr;
+	DX::Check(DirectX::CreateDDSTextureFromFile(m_Device.Get(), wide_path.c_str(), resource.ReleaseAndGetAddressOf(), texture->resource.ReleaseAndGetAddressOf()));
+
+	return std::move(texture);
+}
+
+void DXRenderer::ApplyTexture2D(UINT slot, Texture2D* resource)
+{
+	auto res = reinterpret_cast<DXTexture2D*>(resource);
+	m_DeviceContext->PSSetShaderResources(slot, 1, res->resource.GetAddressOf());
+}
+
+void DXRenderer::ToggleWireframe(bool wireframe)
 {
 	if (wireframe)
 	{
@@ -147,7 +227,7 @@ void DxRenderer::ToggleWireframe(bool wireframe)
 	}
 }
 
-void DxRenderer::QueryHardwareInfo()
+void DXRenderer::QueryHardwareInfo()
 {
 	std::vector<ComPtr<IDXGIAdapter>> adapters;
 	ComPtr<IDXGIAdapter> adapter = nullptr;
@@ -198,7 +278,7 @@ void DxRenderer::QueryHardwareInfo()
 	}
 }
 
-bool DxRenderer::CreateDevice()
+bool DXRenderer::CreateDevice()
 {
 	D3D_FEATURE_LEVEL featureLevels[] =
 	{
@@ -214,23 +294,23 @@ bool DxRenderer::CreateDevice()
 	deviceFlag = D3D11_CREATE_DEVICE_DEBUG;
 #endif
 
-	DX::ThrowIfFailed(D3D11CreateDevice(nullptr, D3D_DRIVER_TYPE_HARDWARE, nullptr, deviceFlag, featureLevels, numFeatureLevels, D3D11_SDK_VERSION, m_Device.ReleaseAndGetAddressOf(), &featureLevel, m_DeviceContext.ReleaseAndGetAddressOf()));
+	DX::Check(D3D11CreateDevice(nullptr, D3D_DRIVER_TYPE_HARDWARE, nullptr, deviceFlag, featureLevels, numFeatureLevels, D3D11_SDK_VERSION, m_Device.ReleaseAndGetAddressOf(), &featureLevel, m_DeviceContext.ReleaseAndGetAddressOf()));
 
 	return true;
 }
 
-bool DxRenderer::CreateSwapChain(Window* window, int width, int height)
+bool DXRenderer::CreateSwapChain(Window* window, int width, int height)
 {
 	auto hwnd = DX::GetHwnd(window);
 
 	ComPtr<IDXGIDevice> dxgiDevice = nullptr;
-	DX::ThrowIfFailed(m_Device.As(&dxgiDevice));
+	DX::Check(m_Device.As(&dxgiDevice));
 
 	ComPtr<IDXGIAdapter> adapter = nullptr;
-	DX::ThrowIfFailed(dxgiDevice->GetAdapter(adapter.GetAddressOf()));
+	DX::Check(dxgiDevice->GetAdapter(adapter.GetAddressOf()));
 
-	DX::ThrowIfFailed(adapter->GetParent(__uuidof(IDXGIFactory1), reinterpret_cast<void**>(m_DxgiFactory1.GetAddressOf())));
-	DX::ThrowIfFailed(m_DxgiFactory1.As(&m_DxgiFactory2));
+	DX::Check(adapter->GetParent(__uuidof(IDXGIFactory1), reinterpret_cast<void**>(m_DxgiFactory1.GetAddressOf())));
+	DX::Check(m_DxgiFactory1.As(&m_DxgiFactory2));
 
 	if (m_DxgiFactory2 != nullptr)
 	{
@@ -249,8 +329,8 @@ bool DxRenderer::CreateSwapChain(Window* window, int width, int height)
 		fsd.Windowed = window->GetWindowMode() != WindowMode::FULLSCREEN;
 
 		ComPtr<IDXGISwapChain1> swapChain1 = nullptr;
-		DX::ThrowIfFailed(m_DxgiFactory2->CreateSwapChainForHwnd(m_Device.Get(), hwnd, &sd, &fsd, nullptr, &swapChain1));
-		DX::ThrowIfFailed(swapChain1.As(&m_SwapChain));
+		DX::Check(m_DxgiFactory2->CreateSwapChainForHwnd(m_Device.Get(), hwnd, &sd, &fsd, nullptr, &swapChain1));
+		DX::Check(swapChain1.As(&m_SwapChain));
 	}
 	else
 	{
@@ -269,17 +349,17 @@ bool DxRenderer::CreateSwapChain(Window* window, int width, int height)
 		sd.Windowed = window->GetWindowMode() != WindowMode::FULLSCREEN;
 		sd.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
 
-		DX::ThrowIfFailed(m_DxgiFactory1->CreateSwapChain(m_Device.Get(), &sd, &m_SwapChain));
+		DX::Check(m_DxgiFactory1->CreateSwapChain(m_Device.Get(), &sd, &m_SwapChain));
 	}
 
 	return true;
 }
 
-bool DxRenderer::CreateRenderTargetAndDepthStencilView(int width, int height)
+bool DXRenderer::CreateRenderTargetAndDepthStencilView(int width, int height)
 {
 	// Render target view
-	DX::ThrowIfFailed(m_SwapChain->GetBuffer(0, __uuidof(ID3D11Resource), reinterpret_cast<void**>(m_RenderTarget.GetAddressOf())));
-	DX::ThrowIfFailed(m_Device->CreateRenderTargetView(m_RenderTarget.Get(), nullptr, m_RenderTargetView.GetAddressOf()));
+	DX::Check(m_SwapChain->GetBuffer(0, __uuidof(ID3D11Resource), reinterpret_cast<void**>(m_RenderTarget.GetAddressOf())));
+	DX::Check(m_Device->CreateRenderTargetView(m_RenderTarget.Get(), nullptr, m_RenderTargetView.GetAddressOf()));
 
 	// Depth stencil view
 	D3D11_TEXTURE2D_DESC descDepth = {};
@@ -294,14 +374,14 @@ bool DxRenderer::CreateRenderTargetAndDepthStencilView(int width, int height)
 	descDepth.BindFlags = D3D11_BIND_DEPTH_STENCIL;
 
 	ComPtr<ID3D11Texture2D> depthStencil = nullptr;
-	DX::ThrowIfFailed(m_Device->CreateTexture2D(&descDepth, nullptr, &depthStencil));
-	DX::ThrowIfFailed(m_Device->CreateDepthStencilView(depthStencil.Get(), nullptr, m_DepthStencilView.GetAddressOf()));
+	DX::Check(m_Device->CreateTexture2D(&descDepth, nullptr, &depthStencil));
+	DX::Check(m_Device->CreateDepthStencilView(depthStencil.Get(), nullptr, m_DepthStencilView.GetAddressOf()));
 
 	m_DeviceContext->OMSetRenderTargets(1, m_RenderTargetView.GetAddressOf(), m_DepthStencilView.Get());
 	return true;
 }
 
-void DxRenderer::SetViewport(int width, int height)
+void DXRenderer::SetViewport(int width, int height)
 {
 	m_Viewport.Width = static_cast<float>(width);
 	m_Viewport.Height = static_cast<float>(height);
@@ -313,7 +393,7 @@ void DxRenderer::SetViewport(int width, int height)
 	m_DeviceContext->RSSetViewports(1, &m_Viewport);
 }
 
-bool DxRenderer::CreateAntiAliasingTarget(int msaa_level, int window_width, int window_height)
+bool DXRenderer::CreateAntiAliasingTarget(int msaa_level, int window_width, int window_height)
 {
 	m_CurrentMsaaLevel = msaa_level;
 	if (msaa_level == 0)
@@ -330,28 +410,28 @@ bool DxRenderer::CreateAntiAliasingTarget(int msaa_level, int window_width, int 
 	CD3D11_TEXTURE2D_DESC renderTargetDesc(DXGI_FORMAT_R8G8B8A8_UNORM, window_width, window_height, 1, 1,
 		D3D11_BIND_RENDER_TARGET, D3D11_USAGE_DEFAULT, 0, m_CurrentMsaaLevel);
 
-	DX::ThrowIfFailed(m_Device->CreateTexture2D(&renderTargetDesc, nullptr, m_MsaaRenderTarget.ReleaseAndGetAddressOf()));
+	DX::Check(m_Device->CreateTexture2D(&renderTargetDesc, nullptr, m_MsaaRenderTarget.ReleaseAndGetAddressOf()));
 
 	CD3D11_RENDER_TARGET_VIEW_DESC renderTargetViewDesc(D3D11_RTV_DIMENSION_TEXTURE2DMS, DXGI_FORMAT_R8G8B8A8_UNORM);
-	DX::ThrowIfFailed(m_Device->CreateRenderTargetView(m_MsaaRenderTarget.Get(), &renderTargetViewDesc, m_MsaaRenderTargetView.ReleaseAndGetAddressOf()));
+	DX::Check(m_Device->CreateRenderTargetView(m_MsaaRenderTarget.Get(), &renderTargetViewDesc, m_MsaaRenderTargetView.ReleaseAndGetAddressOf()));
 
 	// Depth stencil view
 	CD3D11_TEXTURE2D_DESC depthStencilDesc(DXGI_FORMAT_D32_FLOAT, window_width, window_height, 1, 1,
 		D3D11_BIND_DEPTH_STENCIL, D3D11_USAGE_DEFAULT, 0, m_CurrentMsaaLevel);
 
 	ComPtr<ID3D11Texture2D> depthStencil;
-	DX::ThrowIfFailed(m_Device->CreateTexture2D(&depthStencilDesc, nullptr, depthStencil.GetAddressOf()));
-	DX::ThrowIfFailed(m_Device->CreateDepthStencilView(depthStencil.Get(), nullptr, m_MsaaDepthStencilView.ReleaseAndGetAddressOf()));
+	DX::Check(m_Device->CreateTexture2D(&depthStencilDesc, nullptr, depthStencil.GetAddressOf()));
+	DX::Check(m_Device->CreateDepthStencilView(depthStencil.Get(), nullptr, m_MsaaDepthStencilView.ReleaseAndGetAddressOf()));
 
 	return true;
 }
 
-int DxRenderer::GetMaxAnisotropicFilterLevel()
+int DXRenderer::GetMaxAnisotropicFilterLevel()
 {
 	return D3D11_REQ_MAXANISOTROPY;
 }
 
-void DxRenderer::SetAnisotropicFilter(int level)
+void DXRenderer::SetAnisotropicFilter(int level)
 {
 	D3D11_SAMPLER_DESC samplerDesc = {};
 	samplerDesc.Filter = D3D11_FILTER_ANISOTROPIC;
@@ -364,15 +444,15 @@ void DxRenderer::SetAnisotropicFilter(int level)
 	samplerDesc.MinLOD = 0;
 	samplerDesc.MaxLOD = 1000.0f;
 
-	DX::ThrowIfFailed(m_Device->CreateSamplerState(&samplerDesc, &m_AnisotropicSampler));
+	DX::Check(m_Device->CreateSamplerState(&samplerDesc, &m_AnisotropicSampler));
 }
 
-void DxRenderer::SetVync(bool enable)
+void DXRenderer::SetVync(bool enable)
 {
 	m_Vsync = enable;
 }
 
-void DxRenderer::CreateRasterStateSolid()
+void DXRenderer::CreateRasterStateSolid()
 {
 	D3D11_RASTERIZER_DESC rasterizerState = {};
 	rasterizerState.AntialiasedLineEnable = true;
@@ -386,10 +466,10 @@ void DxRenderer::CreateRasterStateSolid()
 	rasterizerState.DepthBiasClamp = 1.0f;
 	rasterizerState.SlopeScaledDepthBias = 1.0f;
 
-	DX::ThrowIfFailed(m_Device->CreateRasterizerState(&rasterizerState, m_RasterStateSolid.ReleaseAndGetAddressOf()));
+	DX::Check(m_Device->CreateRasterizerState(&rasterizerState, m_RasterStateSolid.ReleaseAndGetAddressOf()));
 }
 
-void DxRenderer::CreateRasterStateWireframe()
+void DXRenderer::CreateRasterStateWireframe()
 {
 	D3D11_RASTERIZER_DESC rasterizerState = {};
 	rasterizerState.AntialiasedLineEnable = true;
@@ -403,10 +483,10 @@ void DxRenderer::CreateRasterStateWireframe()
 	rasterizerState.DepthBiasClamp = 1.0f;
 	rasterizerState.SlopeScaledDepthBias = 1.0f;
 
-	DX::ThrowIfFailed(m_Device->CreateRasterizerState(&rasterizerState, m_RasterStateWireframe.ReleaseAndGetAddressOf()));
+	DX::Check(m_Device->CreateRasterizerState(&rasterizerState, m_RasterStateWireframe.ReleaseAndGetAddressOf()));
 }
 
-GlRenderer::~GlRenderer()
+GLRenderer::~GLRenderer()
 {
 	glDeleteSamplers(1, &m_TextureSampler);
 	glDeleteTextures(1, &m_BackBuffer);
@@ -414,7 +494,7 @@ GlRenderer::~GlRenderer()
 	glDeleteRenderbuffers(1, &m_DepthBuffer);
 }
 
-bool GlRenderer::Create(Window* window)
+bool GLRenderer::Create(Window* window)
 {
 	m_Window = window;
 
@@ -429,11 +509,6 @@ bool GlRenderer::Create(Window* window)
 		SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", glew_error, nullptr);
 		return false;
 	}
-
-#ifdef _DEBUG
-	auto glewVersion = glewGetString(GLEW_VERSION);
-	std::cout << "Glew: " << glewVersion << '\n';
-#endif
 
 	glEnable(GL_DEBUG_OUTPUT);
 
@@ -455,13 +530,13 @@ bool GlRenderer::Create(Window* window)
 	return true;
 }
 
-void GlRenderer::Resize(int width, int height)
+void GLRenderer::Resize(int width, int height)
 {
 	CreateAntiAliasingTarget(m_CurrentMsaaLevel, width, height);
 	glViewport(0, 0, width, height);
 }
 
-void GlRenderer::Clear()
+void GLRenderer::Clear()
 {
 	static const GLfloat blue[] = { 0.274509817f, 0.509803951f, 0.705882370f, 1.000000000f };
 	static GLfloat depth = 1.0f;
@@ -484,7 +559,7 @@ void GlRenderer::Clear()
 	glBindSampler(1, m_TextureSampler);
 }
 
-void GlRenderer::Present()
+void GLRenderer::Present()
 {
 	if (m_UseMsaa)
 	{
@@ -501,7 +576,83 @@ void GlRenderer::Present()
 	SDL_GL_SwapWindow(m_Window->GetSdlWindow());
 }
 
-void GlRenderer::ToggleWireframe(bool wireframe)
+void GLRenderer::DrawIndex(UINT total_indices, UINT start_index, UINT base_vertex)
+{
+	glDrawElementsBaseVertex(m_PrimitiveTopology, total_indices, GL_UNSIGNED_INT, nullptr, base_vertex);
+}
+
+std::unique_ptr<VertexBuffer> GLRenderer::CreateVertexBuffer(const std::vector<Vertex>& vertices)
+{
+	auto vertex_buffer = std::make_unique<GLVertexBuffer>();
+
+	// Vertex array object
+	glCreateVertexArrays(1, &vertex_buffer->vertexArrayObject);
+	glBindVertexArray(vertex_buffer->vertexArrayObject);
+
+	// Create vertex buffer
+	glCreateBuffers(1, &vertex_buffer->buffer);
+	glBindBuffer(GL_ARRAY_BUFFER, vertex_buffer->buffer);
+
+	glNamedBufferStorage(vertex_buffer->buffer, sizeof(Vertex) * vertices.size(), nullptr, GL_DYNAMIC_STORAGE_BIT);
+	glNamedBufferSubData(vertex_buffer->buffer, 0, sizeof(Vertex) * vertices.size(), vertices.data());
+
+	return std::move(vertex_buffer);
+}
+
+void GLRenderer::ApplyVertexBuffer(VertexBuffer* vertex_buffer)
+{
+	auto buffer = reinterpret_cast<GLVertexBuffer*>(vertex_buffer);
+	glBindVertexArray(buffer->vertexArrayObject);
+}
+
+std::unique_ptr<IndexBuffer> GLRenderer::CreateIndexBuffer(const std::vector<UINT>& indices)
+{
+	auto buffer = std::make_unique<GLIndexBuffer>();
+
+	glCreateBuffers(1, &buffer->buffer);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, buffer->buffer);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(GLuint) * indices.size(), indices.data(), GL_STATIC_DRAW);
+
+	return std::move(buffer);
+}
+
+void GLRenderer::ApplyIndexBuffer(IndexBuffer* index_buffer)
+{
+	// OpenGL doesn't require us to specific bind the index buffer, since it will bind it to the currently bound vertex array object
+}
+
+void GLRenderer::SetPrimitiveTopology()
+{
+	// Remember primitive topology as it's part of the OpenGL draw function
+	m_PrimitiveTopology = GL_TRIANGLES;
+}
+
+std::unique_ptr<Texture2D> GLRenderer::CreateTexture2D(const std::string& path)
+{
+	auto resource = std::make_unique<GLTexture2D>();
+
+	Rove::LoadDDS dds;
+	std::string normal_texture_path = path;
+	dds.Load(std::move(normal_texture_path));
+
+	glCreateTextures(GL_TEXTURE_2D, 1, &resource->resource);
+	glTextureStorage2D(resource->resource, dds.MipmapCount(), dds.Format(), dds.Width(), dds.Height());
+
+	for (auto& mipmap : dds.mipmaps)
+	{
+		glCompressedTextureSubImage2D(resource->resource, mipmap.level, 0, 0, mipmap.width, mipmap.height, dds.Format(), mipmap.texture_size, mipmap.data);
+	}
+
+	return std::move(resource);
+}
+
+void GLRenderer::ApplyTexture2D(UINT slot, Texture2D* resource)
+{
+	auto res = reinterpret_cast<GLTexture2D*>(resource);
+	glBindTextureUnit(slot, res->resource);
+}
+
+void GLRenderer::ToggleWireframe(bool wireframe)
 {
 	if (wireframe)
 	{
@@ -513,7 +664,7 @@ void GlRenderer::ToggleWireframe(bool wireframe)
 	}
 }
 
-void GlRenderer::QueryHardwareInfo()
+void GLRenderer::QueryHardwareInfo()
 {
 	std::string vendor = (char*)glGetString(GL_VENDOR);
 	m_DeviceName = (char*)glGetString(GL_RENDERER);
@@ -534,7 +685,7 @@ void GlRenderer::QueryHardwareInfo()
 	}
 }
 
-bool GlRenderer::CreateAntiAliasingTarget(int msaa_level, int window_width, int window_height)
+bool GLRenderer::CreateAntiAliasingTarget(int msaa_level, int window_width, int window_height)
 {
 	glDeleteRenderbuffers(1, &m_DepthBuffer);
 	glDeleteTextures(1, &m_BackBuffer);
@@ -600,14 +751,14 @@ bool GlRenderer::CreateAntiAliasingTarget(int msaa_level, int window_width, int 
 	return true;
 }
 
-int GlRenderer::GetMaxAnisotropicFilterLevel()
+int GLRenderer::GetMaxAnisotropicFilterLevel()
 {
 	auto max_anisotrophic = 0;
 	glGetIntegerv(GL_MAX_TEXTURE_MAX_ANISOTROPY, &max_anisotrophic);
 	return max_anisotrophic;
 }
 
-void GlRenderer::SetAnisotropicFilter(int level)
+void GLRenderer::SetAnisotropicFilter(int level)
 {
 	if (level == 0)
 	{
@@ -622,7 +773,7 @@ void GlRenderer::SetAnisotropicFilter(int level)
 	glSamplerParameterf(m_TextureSampler, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 }
 
-void GlRenderer::SetVync(bool enable)
+void GLRenderer::SetVync(bool enable)
 {
 	m_Vsync = enable;
 }

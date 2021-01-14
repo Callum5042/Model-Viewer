@@ -4,12 +4,17 @@
 #include <map>
 #include <DirectXMath.h>
 class IRenderer;
-class DxRenderer;
+class DXRenderer;
 class Camera;
 class ICamera;
-class GlShader;
+class GLShader;
 class IShader;
 class GlCamera;
+class Camera;
+
+struct VertexBuffer;
+struct IndexBuffer;
+struct Texture2D;
 
 struct Position
 {
@@ -152,59 +157,29 @@ public:
 
 	virtual bool Load(const std::string& path) = 0;
 	virtual void Update(float dt) = 0;
-	virtual void Render(ICamera* camera) = 0;
+	virtual void Render(Camera* camera) = 0;
 };
 
-class DxModel : public IModel
+class Model : public IModel
 {
 public:
-	DxModel(IRenderer* renderer);
-	virtual ~DxModel();
+	Model(IRenderer* renderer, IShader* shader);
+	virtual ~Model();
 
 	bool Load(const std::string& path) override;
 	void Update(float dt) override;
-	void Render(ICamera* camera) override;
+	void Render(Camera* camera) override;
 
 private:
-	DxRenderer* m_Renderer = nullptr;
-	std::unique_ptr<MeshData> m_MeshData = nullptr;
+	DXRenderer* m_Renderer = nullptr;
+	IShader* m_Shader = nullptr;
 
-	// Model buffers
-	ComPtr<ID3D11Buffer> m_VertexBuffer = nullptr;
-	ComPtr<ID3D11Buffer> m_IndexBuffer = nullptr;
-	ComPtr<ID3D11Buffer> m_ConstantBuffer = nullptr;
+	std::unique_ptr<MeshData> m_MeshData = nullptr;
 
 	// Texture resources
-	ComPtr<ID3D11ShaderResourceView> m_DiffuseTexture = nullptr;
-	ComPtr<ID3D11ShaderResourceView> m_NormalTexture = nullptr;
+	std::unique_ptr<Texture2D> m_DiffuseTexture = nullptr;
+	std::unique_ptr<Texture2D> m_NormalTexture = nullptr;
 
-	// Light
-	ComPtr<ID3D11Buffer> m_LightBuffer = nullptr;
-
-	// Bones
-	ComPtr<ID3D11Buffer> m_BoneConstantBuffer = nullptr;
-};
-
-class GlModel : public IModel
-{
-public:
-	GlModel(IShader* shader);
-	virtual ~GlModel();
-
-	bool Load(const std::string& path) override;
-	void Update(float dt) override;
-	void Render(ICamera* camera) override;
-
-private:
-	GlShader* m_Shader = nullptr;
-	std::unique_ptr<MeshData> m_MeshData = nullptr;
-
-	// Mode buffers
-	GLuint m_VertexArrayObject = 0;
-	GLuint m_VertexBuffer = 0;
-	GLuint m_IndexBuffer = 0;
-
-	// Texture resourcees
-	GLuint m_DiffuseTextureId = 0;
-	GLuint m_NormalTextureId = 0;
+	std::unique_ptr<VertexBuffer> m_VertexBuffer = nullptr;
+	std::unique_ptr<IndexBuffer> m_IndexBuffer = nullptr;
 };

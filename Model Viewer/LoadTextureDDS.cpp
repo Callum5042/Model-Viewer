@@ -7,7 +7,7 @@ Rove::LoadDDS::LoadDDS(std::filesystem::path path)
 	Load(path);
 }
 
-Rove::LoadDDS::LoadDDS(std::string&& path)
+Rove::LoadDDS::LoadDDS(const std::string& path)
 {
 	Load(path);
 }
@@ -22,7 +22,7 @@ Rove::LoadDDS::~LoadDDS()
 	mipmaps.clear();
 }
 
-void Rove::LoadDDS::Load(std::string&& path)
+void Rove::LoadDDS::Load(const std::string& path)
 {
 	std::ifstream file(path, std::ios::binary);
 	if (!file.is_open())

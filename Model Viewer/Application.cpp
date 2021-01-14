@@ -9,23 +9,24 @@ Application::Application()
 {
 	m_EventDispatcher = std::make_unique<EventDispatcher>();
 	m_ModelPath = "Data Files/Models/complex_post.glb";
+	//m_ModelPath = "Data Files/Models/simple.glb";
 
-	auto startup = RenderAPI::OPENGL;
+	auto startup = RenderAPI::DIRECTX;
 	if (startup == RenderAPI::DIRECTX)
 	{
 		m_Window = std::make_unique<Window>();
-		m_Renderer = std::make_unique<DxRenderer>();
-		m_Shader = std::make_unique<DxShader>(m_Renderer.get());
-		m_Camera = std::make_unique<Camera>(800, 600, m_Fov);
-		m_Model = std::make_unique<DxModel>(m_Renderer.get());
+		m_Renderer = std::make_unique<DXRenderer>();
+		m_Shader = std::make_unique<DXShader>(m_Renderer.get());
+		m_DxCamera = std::make_unique<Camera>(800, 600, m_Fov);
+		m_Model = std::make_unique<Model>(m_Renderer.get(), m_Shader.get());
 	}
 	else if (startup == RenderAPI::OPENGL)
 	{
 		m_Window = std::make_unique<GLWindow>();
-		m_Renderer = std::make_unique<GlRenderer>();
-		m_Shader = std::make_unique<GlShader>();
-		m_Camera = std::make_unique<GlCamera>(800, 600, m_Fov);
-		m_Model = std::make_unique<GlModel>(m_Shader.get());
+		m_Renderer = std::make_unique<GLRenderer>();
+		m_Shader = std::make_unique<GLShader>(m_Renderer.get());
+		m_DxCamera = std::make_unique<Camera>(800, 600, m_Fov);
+		m_Model = std::make_unique<Model>(m_Renderer.get(), m_Shader.get());
 	}
 }
 
@@ -132,8 +133,8 @@ bool Application::Init()
 	}
 
 	QueryHardwareInfo();
-	m_Camera->SetRadius(m_Radius);
-	m_Camera->SetPitchAndYaw(m_Pitch, m_Yaw);
+	m_DxCamera->SetRadius(m_Radius);
+	m_DxCamera->SetPitchAndYaw(m_Pitch, m_Yaw);
 
 	// Check MSAA levels
 	m_AntiAliasingLevelsText.clear();
@@ -178,10 +179,51 @@ bool Application::Init()
 
 void Application::Render()
 {
+	// Clear the screen
 	m_Renderer->Clear();
+
+	// Apply shader data
 	m_Shader->Use();
-	m_Model->Render(m_Camera.get());
+
+	// Camera buffer
+	ShaderData::ShaderMaterial material = {};
+	material.mDiffuse = DirectX::XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
+	material.mAmbient = DirectX::XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
+	material.mSpecular = DirectX::XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
+
+	ShaderData::WorldBuffer cb = {};
+	auto world = DirectX::XMMatrixIdentity();
+	cb.world = DirectX::XMMatrixTranspose(world);
+	cb.view = DirectX::XMMatrixTranspose(m_DxCamera->GetView());
+	cb.projection = DirectX::XMMatrixTranspose(m_DxCamera->GetProjection());
+	cb.worldInverse = DirectX::XMMatrixInverse(nullptr, world);
+	cb.texture = DirectX::XMMatrixIdentity();
+	cb.mMaterial = material;
+
+	m_Shader->UpdateWorld(cb);
+
+	// Light Buffer
+	auto diffuse = DirectX::XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
+	auto ambient = DirectX::XMFLOAT4(0.5f, 0.5f, 0.5f, 0.0f);
+	auto specular = DirectX::XMFLOAT4(0.1f, 0.1f, 0.1f, 32.0f);
+	auto direction = DirectX::XMFLOAT4(-0.8f, -0.5f, 0.5f, 1.0f);
+
+	ShaderData::LightBuffer lightBuffer = {};
+	lightBuffer.mDirectionalLight.mCameraPos = m_DxCamera->GetPosition();
+	lightBuffer.mDirectionalLight.mDiffuse = diffuse;
+	lightBuffer.mDirectionalLight.mAmbient = ambient;
+	lightBuffer.mDirectionalLight.mSpecular = specular;
+	lightBuffer.mDirectionalLight.mDirection = direction;
+
+	m_Shader->UpdateLights(lightBuffer);
+
+	// Render the models
+	m_Model->Render(m_DxCamera.get());
+
+	// Render the GUI
 	RenderGui();
+
+	// Draw to the screen
 	m_Renderer->Present();
 }
 
@@ -329,24 +371,24 @@ void Application::ChangeRenderAPI()
 		m_Renderer.reset();
 		m_Model.reset();
 		m_Shader.reset();
-		m_Camera.reset();
+		m_DxCamera.reset();
 
 		// Switch Rendering API
 		if (m_SwitchRenderAPI == RenderAPI::DIRECTX)
 		{
 			m_Window = std::make_unique<Window>();
-			m_Renderer = std::make_unique<DxRenderer>();
-			m_Shader = std::make_unique<DxShader>(m_Renderer.get());
-			m_Camera = std::make_unique<Camera>(window_width, window_height, m_Fov);
-			m_Model = std::make_unique<DxModel>(m_Renderer.get());
+			m_Renderer = std::make_unique<DXRenderer>();
+			m_Shader = std::make_unique<DXShader>(m_Renderer.get());
+			m_DxCamera = std::make_unique<Camera>(800, 600, m_Fov);
+			m_Model = std::make_unique<Model>(m_Renderer.get(), m_Shader.get());
 		}
 		else if (m_SwitchRenderAPI == RenderAPI::OPENGL)
 		{
 			m_Window = std::make_unique<GLWindow>();
-			m_Renderer = std::make_unique<GlRenderer>();
-			m_Shader = std::make_unique<GlShader>();
-			m_Camera = std::make_unique<GlCamera>(window_width, window_height, m_Fov);
-			m_Model = std::make_unique<GlModel>(m_Shader.get());
+			m_Renderer = std::make_unique<GLRenderer>();
+			m_Shader = std::make_unique<GLShader>(m_Renderer.get());
+			m_DxCamera = std::make_unique<Camera>(800, 600, m_Fov);
+			m_Model = std::make_unique<Model>(m_Renderer.get(), m_Shader.get());
 		}
 
 		Init();
@@ -461,7 +503,7 @@ void Application::OnQuit()
 void Application::OnResize(int width, int height)
 {
 	m_Renderer->Resize(width, height);
-	m_Camera->Resize(width, height);
+	m_DxCamera->Resize(width, height);
 }
 
 #pragma warning(push)
@@ -489,7 +531,7 @@ void Application::OnMouseMove(const MouseData& mouse)
 		m_Yaw = (m_Yaw < 0.0f ? 360.0f : m_Yaw);
 		m_Pitch = std::clamp<float>(m_Pitch, -89, 89);
 
-		m_Camera->SetPitchAndYaw(m_Pitch, m_Yaw);
+		m_DxCamera->SetPitchAndYaw(m_Pitch, m_Yaw);
 	}
 }
 
@@ -507,6 +549,5 @@ void Application::OnMouseWheel(const MouseData& mouse)
 	m_Fov = std::clamp<float>(m_Fov, 1.0f, 180.0f);
 
 	m_Radius += static_cast<int>(mouse.y);
-	m_Camera->SetRadius(m_Radius);
-	m_Camera->SetPitchAndYaw(m_Pitch, m_Yaw);
+	m_DxCamera->SetRadius(m_Radius);
 }

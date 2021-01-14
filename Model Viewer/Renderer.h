@@ -1,10 +1,12 @@
 #pragma once
 
 #include "Window.h"
+struct Vertex;
 
 namespace DX
 {
-	inline void ThrowIfFailed(HRESULT hr)
+	// Throws an exception if the Direct3D function failed
+	inline void Check(HRESULT hr)
 	{
 #ifdef _DEBUG
 		if (FAILED(hr))
@@ -14,9 +16,11 @@ namespace DX
 #endif
 	}
 
+	// Returns the Win32 handle from the window
 	HWND GetHwnd(Window* window);
 }
 
+// Rendering API's
 enum class RenderAPI
 {
 	NONE,
@@ -24,6 +28,79 @@ enum class RenderAPI
 	OPENGL
 };
 
+// Vertex buffer
+struct VertexBuffer 
+{ 
+	virtual ~VertexBuffer() = default;
+};
+
+// DirectX vertex buffer
+struct DXVertexBuffer : public VertexBuffer
+{
+	ComPtr<ID3D11Buffer> buffer = nullptr;
+};
+
+// OpenGL vertex buffer. Also creates the vertex array object so must be called before the index buffer
+struct GLVertexBuffer : public VertexBuffer
+{
+	GLVertexBuffer() = default;
+	virtual ~GLVertexBuffer()
+	{
+		glDeleteBuffers(1, &buffer);
+		glDeleteVertexArrays(1, &vertexArrayObject);
+	}
+
+	GLuint vertexArrayObject = 0;
+	GLuint buffer = 0;
+};
+
+// Index buffer
+struct IndexBuffer
+{
+	virtual ~IndexBuffer() = default;
+};
+
+// DirectX index buffer
+struct DXIndexBuffer : public IndexBuffer
+{
+	ComPtr<ID3D11Buffer> buffer = nullptr;
+};
+
+// OpenGL index buffer - must be created after the vertex buffer due to the vertex array object being created within the vertex buffer
+struct GLIndexBuffer : public IndexBuffer
+{
+	virtual ~GLIndexBuffer() 
+	{
+		glDeleteBuffers(1, &buffer);
+	}
+
+	GLuint buffer = 0;
+};
+
+// Texture
+struct Texture2D
+{
+	virtual ~Texture2D() = default;
+};
+
+// DirectX Texture
+struct DXTexture2D : public Texture2D
+{
+	ComPtr<ID3D11ShaderResourceView> resource = nullptr;
+};
+
+// OpenGL Texture
+struct GLTexture2D : public Texture2D
+{
+	virtual ~GLTexture2D() 
+	{
+		glDeleteTextures(1, &resource);
+	}
+
+	GLuint resource = 0;
+};
+
+// Base rendering class
 class IRenderer
 {
 public:
@@ -42,6 +119,30 @@ public:
 	// Present back buffer to screen
 	virtual void Present() = 0;
 
+	// Draw indices
+	virtual void DrawIndex(UINT total_indices, UINT start_index, UINT base_vertex) = 0;
+
+	// Create vertex buffer
+	virtual std::unique_ptr<VertexBuffer> CreateVertexBuffer(const std::vector<Vertex>& vertices) = 0;
+
+	// Apply vertex buffer to pipeline
+	virtual void ApplyVertexBuffer(VertexBuffer* vertex_buffer) = 0;
+
+	// Create index buffer
+	virtual std::unique_ptr<IndexBuffer> CreateIndexBuffer(const std::vector<UINT>& indices) = 0;
+
+	// Apply index buffer
+	virtual void ApplyIndexBuffer(IndexBuffer* index_buffer) = 0;
+
+	// Set primitive topology
+	virtual void SetPrimitiveTopology() = 0;
+
+	// Create texture 2D
+	virtual std::unique_ptr<Texture2D> CreateTexture2D(const std::string& path) = 0;
+
+	// Apply texture 2D
+	virtual void ApplyTexture2D(UINT slot, Texture2D* resource) = 0;
+
 	// Rendering API
 	virtual RenderAPI GetRenderAPI() = 0;
 
@@ -54,30 +155,60 @@ public:
 	// Toggle wireframe rendering
 	virtual void ToggleWireframe(bool wireframe) = 0;
 
-	// Anti-aliasing
+	// Create anti-aliasing backbuffer
 	virtual bool CreateAntiAliasingTarget(int msaa_level, int window_width, int window_height) = 0;
+
+	// Get a list of all supported MSAA levels
 	virtual const std::vector<int>& GetSupportMsaaLevels() = 0;
+
+	// Get the max supported MSAA level
 	virtual int GetMaxMsaaLevel() = 0;
 
-	// Texture filtering
+	// Get the anisotropic filter level
 	virtual int GetMaxAnisotropicFilterLevel() = 0;
+
+	// Set the anisotropic filter level
 	virtual void SetAnisotropicFilter(int level) = 0;
 
-	// Vsync
+	// Enable V-sync
 	virtual void SetVync(bool enable) = 0;
 };
 
-class DxRenderer : public IRenderer
+class DXRenderer : public IRenderer
 {
 public:
-	DxRenderer() = default;
-	virtual ~DxRenderer();
+	DXRenderer() = default;
+	virtual ~DXRenderer();
 
 	bool Create(Window* window);
 	void Resize(int width, int height);
 
 	void Clear();
 	void Present();
+
+	// Draw indices
+	virtual void DrawIndex(UINT total_indices, UINT start_index, UINT base_vertex) override;
+
+	// Create vertex buffer
+	std::unique_ptr<VertexBuffer> CreateVertexBuffer(const std::vector<Vertex>& vertices) override;
+
+	// Apply vertex buffer
+	void ApplyVertexBuffer(VertexBuffer* vertex_buffer) override;
+
+	// Create index buffer
+	virtual std::unique_ptr<IndexBuffer> CreateIndexBuffer(const std::vector<UINT>& indices) override;
+
+	// Apply index buffer
+	virtual void ApplyIndexBuffer(IndexBuffer* index_buffer) override;
+
+	// Set primitive topology
+	virtual void SetPrimitiveTopology() override;
+
+	// Create texture 2D
+	virtual std::unique_ptr<Texture2D> CreateTexture2D(const std::string& path) override;
+
+	// Apply texture 2D
+	virtual void ApplyTexture2D(UINT slot, Texture2D* resource) override;
 
 	// Direct3D specific data
 	constexpr ComPtr<ID3D11Device>& GetDevice() { return m_Device; }
@@ -158,17 +289,41 @@ private:
 	bool m_Vsync = false;
 };
 
-class GlRenderer : public IRenderer
+class GLRenderer : public IRenderer
 {
 public:
-	GlRenderer() = default;
-	virtual ~GlRenderer();
+	GLRenderer() = default;
+	virtual ~GLRenderer();
 
 	bool Create(Window* window) override;
 	void Resize(int width, int height) override;
 
 	void Clear() override;
 	void Present() override;
+
+	// Draw indices
+	virtual void DrawIndex(UINT total_indices, UINT start_index, UINT base_vertex) override;
+
+	// Create vertex buffer
+	std::unique_ptr<VertexBuffer> CreateVertexBuffer(const std::vector<Vertex>& vertices) override;
+
+	// Apply vertex buffer
+	void ApplyVertexBuffer(VertexBuffer* vertex_buffer) override;
+
+	// Create index buffer
+	virtual std::unique_ptr<IndexBuffer> CreateIndexBuffer(const std::vector<UINT>& indices) override;
+
+	// Apply index buffer
+	virtual void ApplyIndexBuffer(IndexBuffer* index_buffer) override;
+
+	// Set primitive topology
+	virtual void SetPrimitiveTopology() override;
+
+	// Create texture 2D
+	virtual std::unique_ptr<Texture2D> CreateTexture2D(const std::string& path) override;
+
+	// Apply texture 2D
+	virtual void ApplyTexture2D(UINT slot, Texture2D* resource) override;
 
 	RenderAPI GetRenderAPI() { return RenderAPI::OPENGL; }
 
@@ -216,4 +371,7 @@ private:
 
 	// Vsync
 	bool m_Vsync = false;
+
+	// Topology
+	int m_PrimitiveTopology = 0;
 };

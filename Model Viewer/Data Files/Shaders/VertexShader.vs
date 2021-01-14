@@ -52,7 +52,7 @@ void main()
     }
 
     // Position
-    gl_Position = gProjection * gView * gWorld * vec4(position, 1.0f);
+    gl_Position = vec4(position, 1.0f)* gWorld * gView * gProjection;
     fPosition = position;
 
     // Colour

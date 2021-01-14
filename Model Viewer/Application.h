@@ -3,6 +3,7 @@
 #include "EventDispatcher.h"
 #include "Timer.h"
 #include "Shader.h"
+#include "Camera.h"
 
 // Forward declarions
 class Window;
@@ -12,7 +13,7 @@ class ICamera;
 class IShader;
 
 // Core application
-class Application : public QuitListener, public WindowListener, public KeyboardListener, public MouseListener
+class Application final : public QuitListener, public WindowListener, public KeyboardListener, public MouseListener
 {
 public:
 	Application();
@@ -48,8 +49,10 @@ private:
 	// Rendering pipeline
 	std::unique_ptr<IRenderer> m_Renderer = nullptr;
 	std::unique_ptr<IShader> m_Shader = nullptr;
-	std::unique_ptr<ICamera> m_Camera = nullptr;
 	std::unique_ptr<IModel> m_Model = nullptr;
+
+
+	std::unique_ptr<Camera> m_DxCamera = nullptr;
 
 	// Rendering API switch
 	void ChangeRenderAPI();

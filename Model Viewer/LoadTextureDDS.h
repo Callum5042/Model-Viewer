@@ -52,10 +52,10 @@ namespace Rove
 	public:
 		LoadDDS() = default;
 		LoadDDS(std::filesystem::path path);
-		LoadDDS(std::string&& path);
+		LoadDDS(const std::string& path);
 		virtual ~LoadDDS();
 
-		void Load(std::string&& path);
+		void Load(const std::string& path);
 		void Load(std::filesystem::path path);
 
 		constexpr bool IsLoaded() { return m_Success; }
