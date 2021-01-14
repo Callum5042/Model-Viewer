@@ -163,7 +163,7 @@ public:
 class DxModel : public IModel
 {
 public:
-	DxModel(IRenderer* renderer);
+	DxModel(IRenderer* renderer, IShader* shader);
 	virtual ~DxModel();
 
 	bool Load(const std::string& path) override;
@@ -172,22 +172,13 @@ public:
 
 private:
 	DXRenderer* m_Renderer = nullptr;
-	std::unique_ptr<MeshData> m_MeshData = nullptr;
+	IShader* m_Shader = nullptr;
 
-	// Model buffers
-	//ComPtr<ID3D11Buffer> m_VertexBuffer = nullptr;
-	//ComPtr<ID3D11Buffer> m_IndexBuffer = nullptr;
-	ComPtr<ID3D11Buffer> m_ConstantBuffer = nullptr;
+	std::unique_ptr<MeshData> m_MeshData = nullptr;
 
 	// Texture resources
 	std::unique_ptr<Texture2D> m_DiffuseTexture = nullptr;
 	std::unique_ptr<Texture2D> m_NormalTexture = nullptr;
-
-	// Light
-	ComPtr<ID3D11Buffer> m_LightBuffer = nullptr;
-
-	// Bones
-	ComPtr<ID3D11Buffer> m_BoneConstantBuffer = nullptr;
 
 	std::unique_ptr<VertexBuffer> m_VertexBuffer = nullptr;
 	std::unique_ptr<IndexBuffer> m_IndexBuffer = nullptr;

@@ -1,53 +1,10 @@
 #include "Pch.h"
 #include "Model.h"
 #include "Renderer.h"
-#include "Camera.h"
 #include "Shader.h"
-#include <DirectXMath.h>
-#include "DDSTextureLoader.h"
-#include "LoadTextureDDS.h"
 #include "ModelLoader.h"
 
-__declspec(align(16)) struct ShaderMaterial
-{
-	DirectX::XMFLOAT4 mDiffuse;
-	DirectX::XMFLOAT4 mAmbient;
-	DirectX::XMFLOAT4 mSpecular;
-};
-
-_declspec(align(16)) struct ConstantBuffer
-{
-	DirectX::XMMATRIX world;
-	DirectX::XMMATRIX view;
-	DirectX::XMMATRIX projection;
-	DirectX::XMMATRIX worldInverse;
-	DirectX::XMMATRIX texture;
-	ShaderMaterial mMaterial;
-};
-
-_declspec(align(16)) struct DirectionalLight
-{
-	DirectX::XMFLOAT4 mDiffuse;
-	DirectX::XMFLOAT4 mAmbient;
-	DirectX::XMFLOAT4 mSpecular;
-	DirectX::XMFLOAT4 mDirection;
-	DirectX::XMFLOAT3 mCameraPos;
-	float padding;
-};
-
-_declspec(align(16)) struct LightBuffer
-{
-	DirectionalLight mDirectionalLight;
-	/*DirectX::XMMATRIX mLightView;
-	DirectX::XMMATRIX mLightProj;*/
-};
-
-_declspec(align(16)) struct BoneBuffer
-{
-	DirectX::XMMATRIX transform[96];
-};
-
-DxModel::DxModel(IRenderer* renderer)
+DxModel::DxModel(IRenderer* renderer, IShader* shader) : m_Shader(shader)
 {
 	m_Renderer = reinterpret_cast<DXRenderer*>(renderer);
 }
@@ -74,30 +31,6 @@ bool DxModel::Load(const std::string& path)
 	m_DiffuseTexture = m_Renderer->CreateTexture2D("Data Files/Textures/crate_diffuse.dds");
 	m_NormalTexture = m_Renderer->CreateTexture2D("Data Files/Textures/crate_normal.dds");
 
-	// Constant buffer
-	D3D11_BUFFER_DESC bd = {};
-	bd.Usage = D3D11_USAGE_DEFAULT;
-	bd.ByteWidth = sizeof(ConstantBuffer);
-	bd.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
-
-	DX::Check(m_Renderer->GetDevice()->CreateBuffer(&bd, nullptr, m_ConstantBuffer.ReleaseAndGetAddressOf()));
-
-	// Mr sun
-	D3D11_BUFFER_DESC lbd = {};
-	lbd.Usage = D3D11_USAGE_DEFAULT;
-	lbd.ByteWidth = sizeof(LightBuffer);
-	lbd.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
-
-	DX::Check(m_Renderer->GetDevice()->CreateBuffer(&lbd, nullptr, m_LightBuffer.GetAddressOf()));
-
-	// Mr bone buffer
-	D3D11_BUFFER_DESC bone_bd = {};
-	bone_bd.Usage = D3D11_USAGE_DEFAULT;
-	bone_bd.ByteWidth = sizeof(BoneBuffer);
-	bone_bd.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
-
-	DX::Check(m_Renderer->GetDevice()->CreateBuffer(&bone_bd, nullptr, m_BoneConstantBuffer.ReleaseAndGetAddressOf()));
-
 	return true;
 }
 
@@ -110,7 +43,7 @@ void DxModel::Update(float dt)
 	std::vector<DirectX::XMMATRIX> toParentTransforms(numBones);
 
 	// Animation
-	BoneBuffer bone_buffer = {};
+	ShaderData::BoneBuffer bone_buffer = {};
 	auto clip = m_MeshData->animations.find("Take1");
 	if (clip != m_MeshData->animations.end())
 	{
@@ -145,8 +78,7 @@ void DxModel::Update(float dt)
 	}
 
 	// Update bone buffer
-	m_Renderer->GetDeviceContext()->VSSetConstantBuffers(2, 1, m_BoneConstantBuffer.GetAddressOf());
-	m_Renderer->GetDeviceContext()->UpdateSubresource(m_BoneConstantBuffer.Get(), 0, nullptr, &bone_buffer, 0, 0);
+	m_Shader->UpdateBones(bone_buffer);
 }
 
 void DxModel::Render(Camera* camera)
@@ -157,50 +89,9 @@ void DxModel::Render(Camera* camera)
 	// Bind the index buffer
 	m_Renderer->ApplyIndexBuffer(m_IndexBuffer.get());
 
-	// Set buffer
-	auto world = DirectX::XMMatrixIdentity();
-
-	ConstantBuffer cb = {};
-	cb.world = DirectX::XMMatrixTranspose(world);
-	cb.view = DirectX::XMMatrixTranspose(camera->GetView());
-	cb.projection = DirectX::XMMatrixTranspose(camera->GetProjection());
-	cb.worldInverse = DirectX::XMMatrixInverse(nullptr, world);
-	cb.texture = DirectX::XMMatrixIdentity();
-
-	ShaderMaterial material = {};
-	material.mDiffuse = DirectX::XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
-	material.mAmbient = DirectX::XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
-	material.mSpecular = DirectX::XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
-
-	cb.mMaterial = material;
-
-	m_Renderer->GetDeviceContext()->VSSetConstantBuffers(0, 1, m_ConstantBuffer.GetAddressOf());
-	m_Renderer->GetDeviceContext()->PSSetConstantBuffers(0, 1, m_ConstantBuffer.GetAddressOf());
-	m_Renderer->GetDeviceContext()->UpdateSubresource(m_ConstantBuffer.Get(), 0, nullptr, &cb, 0, 0);
-
 	// Texture
 	m_Renderer->ApplyTexture2D(0, m_DiffuseTexture.get());
 	m_Renderer->ApplyTexture2D(1, m_NormalTexture.get());
-
-	// Light up me life
-	auto diffuse = DirectX::XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
-	auto ambient = DirectX::XMFLOAT4(0.5f, 0.5f, 0.5f, 0.0f);
-	auto specular = DirectX::XMFLOAT4(0.1f, 0.1f, 0.1f, 32.0f);
-	auto direction = DirectX::XMFLOAT4(-0.8f, -0.5f, 0.5f, 1.0f);
-
-	LightBuffer lightBuffer = {};
-	lightBuffer.mDirectionalLight.mCameraPos = camera->GetPosition();
-	lightBuffer.mDirectionalLight.mDiffuse = diffuse;
-	lightBuffer.mDirectionalLight.mAmbient = ambient;
-	lightBuffer.mDirectionalLight.mSpecular = specular;
-	lightBuffer.mDirectionalLight.mDirection = direction;
-
-	//lightBuffer.mLightView = DirectX::XMMatrixTranspose(ortho->GetView());
-	//lightBuffer.mLightProj = DirectX::XMMatrixTranspose(ortho->GetProjection());
-
-	m_Renderer->GetDeviceContext()->VSSetConstantBuffers(1, 1, m_LightBuffer.GetAddressOf());
-	m_Renderer->GetDeviceContext()->PSSetConstantBuffers(1, 1, m_LightBuffer.GetAddressOf());
-	m_Renderer->GetDeviceContext()->UpdateSubresource(m_LightBuffer.Get(), 0, nullptr, &lightBuffer, 0, 0);
 
 	// Set topology
 	m_Renderer->SetPrimitiveTopology();
@@ -294,65 +185,22 @@ void GlModel::Update(float dt)
 	}
 }
 
-struct GlWorld
-{
-	DirectX::XMMATRIX world;
-	DirectX::XMMATRIX view;
-	DirectX::XMMATRIX proj;
-};
-
 void GlModel::Render(Camera* camera)
 {
-	GlWorld world = {};
-	world.world = DirectX::XMMatrixIdentity();
-	world.proj = DirectX::XMMatrixTranspose(camera->GetProjection());
-	world.view = DirectX::XMMatrixTranspose(camera->GetView());
-
-	// Update shader transform
-	auto world_location = glGetUniformBlockIndex(m_Shader->GetShaderId(), "cWorld");
-	glUniformBlockBinding(m_Shader->GetShaderId(), world_location, 0);
-
-	unsigned int uboMatrices;
-	glGenBuffers(1, &uboMatrices);
-
-	glBindBuffer(GL_UNIFORM_BUFFER, uboMatrices);
-	glBufferData(GL_UNIFORM_BUFFER, sizeof(GlWorld), NULL, GL_STATIC_DRAW);
-	glBindBuffer(GL_UNIFORM_BUFFER, 0);
-
-	glBindBufferRange(GL_UNIFORM_BUFFER, 0, uboMatrices, 0, sizeof(GlWorld));
-
-	glBindBuffer(GL_UNIFORM_BUFFER, uboMatrices);
-	glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(GlWorld), &world);
-	glBindBuffer(GL_UNIFORM_BUFFER, 0);
-
-	// The light man
-	auto gDirectionLight = glGetUniformLocation(m_Shader->GetShaderId(), "gDirectionLight");
-	DirectX::XMFLOAT4 direction_light(-0.8f, -0.5f, 0.5f, 1.0f);
-	glUniform4fv(gDirectionLight, 1, reinterpret_cast<float*>(&direction_light));
-
-	auto gDiffuseLight = glGetUniformLocation(m_Shader->GetShaderId(), "gDiffuseLight");
-	DirectX::XMFLOAT4 diffuse_light(1.0f, 1.0f, 1.0f, 1.0f);
-	glUniform4fv(gDiffuseLight, 1, reinterpret_cast<float*>(&diffuse_light));
-
-	auto gAmbientLightLoc = glGetUniformLocation(m_Shader->GetShaderId(), "gAmbientLight");
-	DirectX::XMFLOAT4 ambient_light(0.5f, 0.5f, 0.5f, 1.0f);
-	glUniform4fv(gAmbientLightLoc, 1, reinterpret_cast<float*>(&ambient_light));
-
-	auto gSpecularLight = glGetUniformLocation(m_Shader->GetShaderId(), "gSpecularLight");
-	DirectX::XMFLOAT4 specular_light(0.1f, 0.1f, 0.1f, 32.0f);
-	glUniform4fv(gSpecularLight, 1, reinterpret_cast<float*>(&specular_light));
-
-	auto gCameraPos = glGetUniformLocation(m_Shader->GetShaderId(), "gCameraPos");
-	auto cameraPos = camera->GetPosition();
-	glUniform4fv(gCameraPos, 1, reinterpret_cast<float*>(&cameraPos));
-
-	// Draw
+	// Bind the vertex buffer
 	m_Renderer->ApplyVertexBuffer(m_VertexBuffer.get());
-	m_Renderer->SetPrimitiveTopology();
 
+	// Bind the index buffer
+	m_Renderer->ApplyIndexBuffer(m_IndexBuffer.get());
+
+	// Texture
 	m_Renderer->ApplyTexture2D(0, m_DiffuseTexture.get());
 	m_Renderer->ApplyTexture2D(1, m_NormalTexture.get());
 
+	// Set topology
+	m_Renderer->SetPrimitiveTopology();
+
+	// Render geometry
 	for (auto& subset : m_MeshData->subsets)
 	{
 		m_Renderer->DrawIndex(subset.totalIndex, subset.startIndex, subset.baseVertex);

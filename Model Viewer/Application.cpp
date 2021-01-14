@@ -18,13 +18,13 @@ Application::Application()
 		m_Renderer = std::make_unique<DXRenderer>();
 		m_Shader = std::make_unique<DxShader>(m_Renderer.get());
 		m_DxCamera = std::make_unique<Camera>(800, 600, m_Fov);
-		m_Model = std::make_unique<DxModel>(m_Renderer.get());
+		m_Model = std::make_unique<DxModel>(m_Renderer.get(), m_Shader.get());
 	}
 	else if (startup == RenderAPI::OPENGL)
 	{
 		m_Window = std::make_unique<GLWindow>();
 		m_Renderer = std::make_unique<GLRenderer>();
-		m_Shader = std::make_unique<GlShader>();
+		m_Shader = std::make_unique<GlShader>(m_Renderer.get());
 		m_DxCamera = std::make_unique<Camera>(800, 600, m_Fov);
 		m_Model = std::make_unique<GlModel>(m_Renderer.get(), m_Shader.get());
 	}
@@ -179,10 +179,51 @@ bool Application::Init()
 
 void Application::Render()
 {
+	// Clear the screen
 	m_Renderer->Clear();
+
+	// Apply shader data
 	m_Shader->Use();
+
+	// Camera buffer
+	ShaderData::ShaderMaterial material = {};
+	material.mDiffuse = DirectX::XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
+	material.mAmbient = DirectX::XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
+	material.mSpecular = DirectX::XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
+
+	ShaderData::WorldBuffer cb = {};
+	auto world = DirectX::XMMatrixIdentity();
+	cb.world = DirectX::XMMatrixTranspose(world);
+	cb.view = DirectX::XMMatrixTranspose(m_DxCamera->GetView());
+	cb.projection = DirectX::XMMatrixTranspose(m_DxCamera->GetProjection());
+	cb.worldInverse = DirectX::XMMatrixInverse(nullptr, world);
+	cb.texture = DirectX::XMMatrixIdentity();
+	cb.mMaterial = material;
+
+	m_Shader->UpdateWorld(cb);
+
+	// Here I want to apply LightBuffer
+	auto diffuse = DirectX::XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
+	auto ambient = DirectX::XMFLOAT4(0.5f, 0.5f, 0.5f, 0.0f);
+	auto specular = DirectX::XMFLOAT4(0.1f, 0.1f, 0.1f, 32.0f);
+	auto direction = DirectX::XMFLOAT4(-0.8f, -0.5f, 0.5f, 1.0f);
+
+	ShaderData::LightBuffer lightBuffer = {};
+	lightBuffer.mDirectionalLight.mCameraPos = m_DxCamera->GetPosition();
+	lightBuffer.mDirectionalLight.mDiffuse = diffuse;
+	lightBuffer.mDirectionalLight.mAmbient = ambient;
+	lightBuffer.mDirectionalLight.mSpecular = specular;
+	lightBuffer.mDirectionalLight.mDirection = direction;
+
+	m_Shader->UpdateLights(lightBuffer);
+
+	// Render the models
 	m_Model->Render(m_DxCamera.get());
+
+	// Render the GUI
 	RenderGui();
+
+	// Draw to the screen
 	m_Renderer->Present();
 }
 
@@ -339,13 +380,13 @@ void Application::ChangeRenderAPI()
 			m_Renderer = std::make_unique<DXRenderer>();
 			m_Shader = std::make_unique<DxShader>(m_Renderer.get());
 			m_DxCamera = std::make_unique<Camera>(800, 600, m_Fov);
-			m_Model = std::make_unique<DxModel>(m_Renderer.get());
+			m_Model = std::make_unique<DxModel>(m_Renderer.get(), m_Shader.get());
 		}
 		else if (m_SwitchRenderAPI == RenderAPI::OPENGL)
 		{
 			m_Window = std::make_unique<GLWindow>();
 			m_Renderer = std::make_unique<GLRenderer>();
-			m_Shader = std::make_unique<GlShader>();
+			m_Shader = std::make_unique<GlShader>(m_Renderer.get());
 			m_DxCamera = std::make_unique<Camera>(800, 600, m_Fov);
 			m_Model = std::make_unique<GlModel>(m_Renderer.get(), m_Shader.get());
 		}
