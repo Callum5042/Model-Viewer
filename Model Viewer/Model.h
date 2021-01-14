@@ -7,7 +7,7 @@ class IRenderer;
 class DXRenderer;
 class Camera;
 class ICamera;
-class GlShader;
+class GLShader;
 class IShader;
 class GlCamera;
 class Camera;
@@ -160,11 +160,11 @@ public:
 	virtual void Render(Camera* camera) = 0;
 };
 
-class DxModel : public IModel
+class Model : public IModel
 {
 public:
-	DxModel(IRenderer* renderer, IShader* shader);
-	virtual ~DxModel();
+	Model(IRenderer* renderer, IShader* shader);
+	virtual ~Model();
 
 	bool Load(const std::string& path) override;
 	void Update(float dt) override;

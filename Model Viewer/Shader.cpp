@@ -4,12 +4,12 @@
 #include <fstream>
 #include "Model.h"
 
-DxShader::DxShader(IRenderer* renderer)
+DXShader::DXShader(IRenderer* renderer)
 {
 	m_Renderer = reinterpret_cast<DXRenderer*>(renderer);
 }
 
-bool DxShader::Create()
+bool DXShader::Create()
 {
 	if (!CreateVertexShader("Data Files/Shaders/VertexShader.cso"))
 		return false;
@@ -41,34 +41,34 @@ bool DxShader::Create()
 	return true;
 }
 
-void DxShader::Use()
+void DXShader::Use()
 {
 	m_Renderer->GetDeviceContext()->IASetInputLayout(m_VertexLayout.Get());
 	m_Renderer->GetDeviceContext()->VSSetShader(m_VertexShader.Get(), nullptr, 0);
 	m_Renderer->GetDeviceContext()->PSSetShader(m_PixelShader.Get(), nullptr, 0);
 }
 
-void DxShader::UpdateWorld(const ShaderData::WorldBuffer& data)
+void DXShader::UpdateWorld(const ShaderData::WorldBuffer& data)
 {
 	m_Renderer->GetDeviceContext()->VSSetConstantBuffers(0, 1, m_WorldBuffer.GetAddressOf());
 	m_Renderer->GetDeviceContext()->PSSetConstantBuffers(0, 1, m_WorldBuffer.GetAddressOf());
 	m_Renderer->GetDeviceContext()->UpdateSubresource(m_WorldBuffer.Get(), 0, nullptr, &data, 0, 0);
 }
 
-void DxShader::UpdateLights(const ShaderData::LightBuffer& data)
+void DXShader::UpdateLights(const ShaderData::LightBuffer& data)
 {
 	m_Renderer->GetDeviceContext()->VSSetConstantBuffers(1, 1, m_LightBuffer.GetAddressOf());
 	m_Renderer->GetDeviceContext()->PSSetConstantBuffers(1, 1, m_LightBuffer.GetAddressOf());
 	m_Renderer->GetDeviceContext()->UpdateSubresource(m_LightBuffer.Get(), 0, nullptr, &data, 0, 0);
 }
 
-void DxShader::UpdateBones(const ShaderData::BoneBuffer& data)
+void DXShader::UpdateBones(const ShaderData::BoneBuffer& data)
 {
 	m_Renderer->GetDeviceContext()->VSSetConstantBuffers(2, 1, m_BoneConstantBuffer.GetAddressOf());
 	m_Renderer->GetDeviceContext()->UpdateSubresource(m_BoneConstantBuffer.Get(), 0, nullptr, &data, 0, 0);
 }
 
-bool DxShader::CreateVertexShader(const std::string& vertex_shader_path)
+bool DXShader::CreateVertexShader(const std::string& vertex_shader_path)
 {
 	std::ifstream file(vertex_shader_path, std::fstream::in | std::fstream::binary);
 	if (!file.is_open())
@@ -99,7 +99,7 @@ bool DxShader::CreateVertexShader(const std::string& vertex_shader_path)
 	return true;
 }
 
-bool DxShader::CreatePixelShader(const std::string& pixel_shader_path)
+bool DXShader::CreatePixelShader(const std::string& pixel_shader_path)
 {
 	std::ifstream file(pixel_shader_path, std::fstream::in | std::fstream::binary);
 	if (!file.is_open())
@@ -113,15 +113,15 @@ bool DxShader::CreatePixelShader(const std::string& pixel_shader_path)
 	return true;
 }
 
-GlShader::GlShader(IRenderer* renderer) : m_Renderer(renderer)
+GLShader::GLShader(IRenderer* renderer) : m_Renderer(renderer)
 {
 }
 
-GlShader::~GlShader()
+GLShader::~GLShader()
 {
 }
 
-bool GlShader::Create()
+bool GLShader::Create()
 {
 	m_ShaderId = glCreateProgram();
 	m_VertexShader = LoadVertexShader("Data Files/Shaders/VertexShader.vs");
@@ -135,7 +135,7 @@ bool GlShader::Create()
 	return true;
 }
 
-void GlShader::Use()
+void GLShader::Use()
 {
 	// Something pipeline
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), 0);
@@ -165,7 +165,7 @@ void GlShader::Use()
 	glUseProgram(m_ShaderId);
 }
 
-void GlShader::UpdateWorld(const ShaderData::WorldBuffer& data)
+void GLShader::UpdateWorld(const ShaderData::WorldBuffer& data)
 {
 	auto world_location = glGetUniformBlockIndex(GetShaderId(), "cWorld");
 	glUniformBlockBinding(GetShaderId(), world_location, 0);
@@ -184,7 +184,7 @@ void GlShader::UpdateWorld(const ShaderData::WorldBuffer& data)
 	glBindBuffer(GL_UNIFORM_BUFFER, 0);
 }
 
-void GlShader::UpdateLights(const ShaderData::LightBuffer& data)
+void GLShader::UpdateLights(const ShaderData::LightBuffer& data)
 {
 	auto gDirectionLight = glGetUniformLocation(GetShaderId(), "gDirectionLight");
 	DirectX::XMFLOAT4 direction_light = data.mDirectionalLight.mDirection;
@@ -207,13 +207,13 @@ void GlShader::UpdateLights(const ShaderData::LightBuffer& data)
 	glUniform4fv(gCameraPos, 1, reinterpret_cast<float*>(&cameraPos));
 }
 
-void GlShader::UpdateBones(const ShaderData::BoneBuffer& data)
+void GLShader::UpdateBones(const ShaderData::BoneBuffer& data)
 {
 	auto bone_pos = glGetUniformLocation(GetShaderId(), "gBoneTransform");
 	glUniformMatrix4fv(bone_pos, 95, GL_FALSE, reinterpret_cast<const float*>(&data.transform[0]));
 }
 
-GLuint GlShader::LoadVertexShader(std::string&& vertexPath)
+GLuint GLShader::LoadVertexShader(std::string&& vertexPath)
 {
 	auto vertexShader = glCreateShader(GL_VERTEX_SHADER);
 
@@ -231,7 +231,7 @@ GLuint GlShader::LoadVertexShader(std::string&& vertexPath)
 	return vertexShader;
 }
 
-GLuint GlShader::LoadFragmentShader(std::string&& fragmentPath)
+GLuint GLShader::LoadFragmentShader(std::string&& fragmentPath)
 {
 	auto fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
 
@@ -249,7 +249,7 @@ GLuint GlShader::LoadFragmentShader(std::string&& fragmentPath)
 	return fragmentShader;
 }
 
-std::string GlShader::ReadShader(std::string&& filename)
+std::string GLShader::ReadShader(std::string&& filename)
 {
 	std::ifstream file(filename);
 
@@ -259,7 +259,7 @@ std::string GlShader::ReadShader(std::string&& filename)
 	return source.str();
 }
 
-bool GlShader::HasCompiled(GLuint shader)
+bool GLShader::HasCompiled(GLuint shader)
 {
 	GLint compiled;
 	glGetShaderiv(shader, GL_COMPILE_STATUS, &compiled);

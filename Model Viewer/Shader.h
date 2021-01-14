@@ -72,11 +72,11 @@ public:
 };
 
 // Direct3D 11 shader
-class DxShader : public IShader
+class DXShader : public IShader
 {
 public:
-	DxShader(IRenderer* renderer);
-	virtual ~DxShader() = default;
+	DXShader(IRenderer* renderer);
+	virtual ~DXShader() = default;
 
 	// Create shaders
 	bool Create() override;
@@ -110,11 +110,11 @@ private:
 };
 
 // OpenGL 4 shader
-class GlShader : public IShader
+class GLShader : public IShader
 {
 public:
-	GlShader(IRenderer* renderer);
-	virtual ~GlShader();
+	GLShader(IRenderer* renderer);
+	virtual ~GLShader();
 
 	// Create shaders
 	bool Create() override;

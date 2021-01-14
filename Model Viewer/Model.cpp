@@ -4,16 +4,16 @@
 #include "Shader.h"
 #include "ModelLoader.h"
 
-DxModel::DxModel(IRenderer* renderer, IShader* shader) : m_Shader(shader)
+Model::Model(IRenderer* renderer, IShader* shader) : m_Shader(shader)
 {
 	m_Renderer = reinterpret_cast<DXRenderer*>(renderer);
 }
 
-DxModel::~DxModel()
+Model::~Model()
 {
 }
 
-bool DxModel::Load(const std::string& path)
+bool Model::Load(const std::string& path)
 {
 	m_MeshData = std::make_unique<MeshData>();
 	if (!ModelLoader::Load(path, m_MeshData.get()))
@@ -34,7 +34,7 @@ bool DxModel::Load(const std::string& path)
 	return true;
 }
 
-void DxModel::Update(float dt)
+void Model::Update(float dt)
 {
 	static float TimeInSeconds = 0.0f;
 	TimeInSeconds += dt * 100.0f;
@@ -81,7 +81,7 @@ void DxModel::Update(float dt)
 	m_Shader->UpdateBones(bone_buffer);
 }
 
-void DxModel::Render(Camera* camera)
+void Model::Render(Camera* camera)
 {
 	// Bind the vertex buffer
 	m_Renderer->ApplyVertexBuffer(m_VertexBuffer.get());
