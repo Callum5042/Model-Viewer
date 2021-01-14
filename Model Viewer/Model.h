@@ -183,27 +183,3 @@ private:
 	std::unique_ptr<VertexBuffer> m_VertexBuffer = nullptr;
 	std::unique_ptr<IndexBuffer> m_IndexBuffer = nullptr;
 };
-
-class GlModel : public IModel
-{
-public:
-	GlModel(IRenderer* renderer, IShader* shader);
-	virtual ~GlModel();
-
-	bool Load(const std::string& path) override;
-	void Update(float dt) override;
-	void Render(Camera* camera) override;
-
-private:
-	IRenderer* m_Renderer = nullptr;
-	GlShader* m_Shader = nullptr;
-	std::unique_ptr<MeshData> m_MeshData = nullptr;
-
-	// Mode buffers
-	std::unique_ptr<VertexBuffer> m_VertexBuffer = nullptr;
-	std::unique_ptr<IndexBuffer> m_IndexBuffer = nullptr;
-
-	// Texture resourcees
-	std::unique_ptr<Texture2D> m_DiffuseTexture = nullptr;
-	std::unique_ptr<Texture2D> m_NormalTexture = nullptr;
-};

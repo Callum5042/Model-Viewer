@@ -26,7 +26,7 @@ Application::Application()
 		m_Renderer = std::make_unique<GLRenderer>();
 		m_Shader = std::make_unique<GlShader>(m_Renderer.get());
 		m_DxCamera = std::make_unique<Camera>(800, 600, m_Fov);
-		m_Model = std::make_unique<GlModel>(m_Renderer.get(), m_Shader.get());
+		m_Model = std::make_unique<DxModel>(m_Renderer.get(), m_Shader.get());
 	}
 }
 
@@ -388,7 +388,7 @@ void Application::ChangeRenderAPI()
 			m_Renderer = std::make_unique<GLRenderer>();
 			m_Shader = std::make_unique<GlShader>(m_Renderer.get());
 			m_DxCamera = std::make_unique<Camera>(800, 600, m_Fov);
-			m_Model = std::make_unique<GlModel>(m_Renderer.get(), m_Shader.get());
+			m_Model = std::make_unique<DxModel>(m_Renderer.get(), m_Shader.get());
 		}
 
 		Init();

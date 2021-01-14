@@ -209,7 +209,8 @@ void GlShader::UpdateLights(const ShaderData::LightBuffer& data)
 
 void GlShader::UpdateBones(const ShaderData::BoneBuffer& data)
 {
-
+	auto bone_pos = glGetUniformLocation(GetShaderId(), "gBoneTransform");
+	glUniformMatrix4fv(bone_pos, 95, GL_FALSE, reinterpret_cast<const float*>(&data.transform[0]));
 }
 
 GLuint GlShader::LoadVertexShader(std::string&& vertexPath)
